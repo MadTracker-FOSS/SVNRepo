@@ -17,7 +17,6 @@
 //        MTItemView
 //          MTListBox
 //          MTMenu
-//            MTMainMenu
 //
 //---------------------------------------------------------------------------
 #include "MTGUI1.h"
@@ -934,7 +933,7 @@ MTItemView(tag,p,l,t,w,h)
 	guiid = MTC_LISTBOX;
 	gi->setcontrolname(this,"listbox");
 	skin->getcontrolsize(MTC_SCROLLER,1,sw,tmp);
-	vs = (MTScroller*)gi->newcontrol(MTC_SCROLLER,0,this,sw,0,0,height,0);
+	vs = (MTScroller*)gi->newcontrol(MTC_SCROLLER,0,this,width-sw,0,0,height,0);
 	vs->type = MTST_VBAR;
 	vs->switchflags(MTCF_SYSTEM|MTCF_DONTSAVE,true);
 	vs->align = MTCA_RIGHT;
@@ -1296,37 +1295,6 @@ void MTMenu::popup(MTControl *newcaller,MTRect area)
 {
 	popup(newcaller,mouse);
 	this->area = area;
-}
-//---------------------------------------------------------------------------
-// MTControl
-//   MTWinControl
-//     MTItemView
-//       MTMenu
-//---------------------------------------------------------------------------
-MTMainMenu::MTMainMenu(int tag,MTWinControl *p,int l,int t,int w,int h):
-MTMenu(tag,p,l,t,w,h)
-{
-	guiid = MTC_MAINMENU;
-	flags &= (~MTCF_RAISED);
-	gi->setcontrolname(this,"mainmenu");
-	mtmemzero(&area,sizeof(area));
-}
-
-MTItem *MTMainMenu::additem(const char *caption,int image,int flags,bool editable,void *data)
-{
-	int left;
-	MTItem *ni;
-	
-	if (ncontrols>0) left = controls[ncontrols-1]->left+controls[ncontrols-1]->width;
-	else left = 0;
-	ni = (MTItem*)gi->newcontrol(MTC_ITEM,0,this,left,0,width,16,0);
-	ni->index = ncontrols-2;
-	ni->imageindex = image;
-	ni->itemflags = flags;
-	ni->editable = editable;
-	ni->data = data;
-	ni->setcaption(caption);
-	return ni;
 }
 //---------------------------------------------------------------------------
 // MTControl

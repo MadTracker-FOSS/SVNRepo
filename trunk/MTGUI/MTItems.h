@@ -161,12 +161,6 @@ protected:
 	MTBitmap *ib;
 };
 
-class MTMainMenu : public MTMenu{
-public:
-	MTMainMenu(int tg,MTWinControl *p,int l,int t,int w,int h);
-	virtual MTItem* MTCT additem(const char *caption,int image,int flags,bool editable,void *data);
-};
-
 struct MTFileEntry{
 	int type;
 	int	imageindex;
