@@ -125,6 +125,14 @@ SOURCE=.\MTTabControl.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\MTToolBar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTToolBar.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\MTVisual.cpp
 # End Source File
 # Begin Source File
