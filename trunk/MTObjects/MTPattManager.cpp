@@ -32,7 +32,7 @@ tw(0),
 drag(false),
 clpb(-1)
 {
-	int ah = skin->arm.b.h/2;
+	int tmp,ah;
 
 	mtmemzero(colwidth,sizeof(colwidth));
 	mtmemzero(colncpos,sizeof(colncpos));
@@ -40,6 +40,7 @@ clpb(-1)
 	width = parent->width;
 	height = parent->height;
 	updatemetrics();
+	skin->getcontrolsize(MTC_SCROLLER,0,tmp,ah);
 	hs = (MTScroller*)gi->newcontrol(MTC_SCROLLER,0,parent,pattx,height-ah,width-pattx,0,0);
 	vs = (MTScroller*)gi->newcontrol(MTC_SCROLLER,0,parent,pattx-ah,patty,0,height-patty-ah,0);
 	parent->hs = hs;

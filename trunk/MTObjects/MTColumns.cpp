@@ -176,7 +176,7 @@ void NoteColumn::drawcolumn(MTBitmap* b,MTRect &r,unsigned char *celldata,Column
 	if ((state.line%state.lpb)==0) color = SC_PATT_TEXT3;
 	else color = SC_PATT_TEXT1;
 	if (state.flags & CDS_SELECTED) color++;
-	color = skin->fnm.colors[color];
+	color = skin->getcolor(color);
 	x = r.left;
 	switch (note){
 	case 0:
@@ -214,7 +214,7 @@ void NoteColumn::drawcolumn(MTBitmap* b,MTRect &r,unsigned char *celldata,Column
 			x += 4*w+4;
 			break;
 		};
-		b->fill(x,r.bottom-2,w,2,skin->fnm.colors[SC_CURSOR]);
+		b->fill(x,r.bottom-2,w,2,skin->getcolor(SC_CURSOR));
 	};
 }
 
@@ -384,7 +384,7 @@ void DrumsColumn::drawcolumn(MTBitmap* b,MTRect &r,unsigned char *celldata,Colum
 	if ((state.line%state.lpb)==0) color = SC_PATT_TEXT3;
 	else color = SC_PATT_TEXT1;
 	if (state.flags & CDS_SELECTED) color++;
-	color = skin->fnm.colors[color];
+	color = skin->getcolor(color);
 	x = r.left;
 	if (*celldata) font->drawchar('\x90'+(state.line%8),b,x,r.top,color);
 	else font->drawchar('.',b,x,r.top,color);
@@ -404,7 +404,7 @@ void DrumsColumn::drawcolumn(MTBitmap* b,MTRect &r,unsigned char *celldata,Colum
 			x += 3*w+4;
 			break;
 		};
-		b->fill(x,r.bottom-2,w,2,skin->fnm.colors[SC_CURSOR]);
+		b->fill(x,r.bottom-2,w,2,skin->getcolor(SC_CURSOR));
 	};
 }
 
@@ -490,7 +490,7 @@ void VolumeColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Colu
 	if ((state.line%state.lpb)==0) color = SC_PATT_TEXT3;
 	else color = SC_PATT_TEXT1;
 	if (state.flags & CDS_SELECTED) color++;
-	color = skin->fnm.colors[color];
+	color = skin->getcolor(color);
 // Nothing
 	if (vol<0x10){
 		font->drawtext((unsigned char*)"..",b,x,r.top,color);
@@ -525,7 +525,7 @@ void VolumeColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Colu
 	if (state.cursor>=0){
 		w = font->fontwidth;
 		x = r.left+state.cursor*w;
-		b->fill(x,r.bottom-2,w,2,skin->fnm.colors[SC_CURSOR]);
+		b->fill(x,r.bottom-2,w,2,skin->getcolor(SC_CURSOR));
 	};
 }
 
@@ -608,7 +608,7 @@ void PanningColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Col
 	if ((state.line%state.lpb)==0) color = SC_PATT_TEXT3;
 	else color = SC_PATT_TEXT1;
 	if (state.flags & CDS_SELECTED) color++;
-	color = skin->fnm.colors[color];
+	color = skin->getcolor(color);
 	if (*celldata){
 		font->drawhex(*celldata,true,2,b,x,r.top,color);
 	}
@@ -617,7 +617,7 @@ void PanningColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Col
 	};
 	if (state.cursor>=0){
 		w = font->fontwidth;
-		b->fill(r.left+state.cursor*w,r.bottom-2,w,2,skin->fnm.colors[SC_CURSOR]);
+		b->fill(r.left+state.cursor*w,r.bottom-2,w,2,skin->getcolor(SC_CURSOR));
 	};
 }
 
@@ -774,7 +774,7 @@ void EffectColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Colu
 	if ((state.line%state.lpb)==0) color = SC_PATT_TEXT3;
 	else color = SC_PATT_TEXT1;
 	if (state.flags & CDS_SELECTED) color++;
-	color = skin->fnm.colors[color];
+	color = skin->getcolor(color);
 	if (*celldata) font->drawhex(*celldata,false,2,b,x,r.top,color);
 	else font->drawtext((unsigned char*)"..",b,x,r.top,color);
 	x += 4;
@@ -785,7 +785,7 @@ void EffectColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Colu
 		w = font->fontwidth;
 		x = r.left+state.cursor*w;
 		if (state.cursor>1) x += 4;
-		b->fill(x,r.bottom-2,w,2,skin->fnm.colors[SC_CURSOR]);
+		b->fill(x,r.bottom-2,w,2,skin->getcolor(SC_CURSOR));
 	};
 }
 

@@ -331,13 +331,13 @@ void MTWindow::draw(MTRect &rect)
 	};
 	if (parent){
 		preparedraw(&b,x,y);
-		skin.drawcontrol(this,cr,b,x,y,clipped);
+		skin->drawcontrol(this,cr,b,x,y,clipped);
 	};
 	if (flags & MTCF_CANTDRAW) return;
 	if (design){
 		int x;
 		int y;
-		int color = skin.getcolor(SC_CTRL_S);
+		int color = skin->getcolor(SC_CTRL_S);
 		open(0);
 		for (y=(cr.top>>3)<<3;y<=cr.bottom;y+=8){
 			for (x=(cr.left>>3)<<3;x<=cr.right;x+=8) point(x,y,color);
@@ -792,7 +792,7 @@ void MTWindow::updateregions()
 		trrgn = recttorgn(r);
 	}
 	else{
-		skin.getregions(this,&oprgn,&trrgn);
+		skin->getregions(this,&oprgn,&trrgn);
 	};
 }
 
@@ -839,10 +839,10 @@ void MTWindow::updateborders()
 		br.left = br.top = br.right = br.bottom = 0;
 	}
 	else{
-		br = ::br[cstyle];
+		skin->getwindowborders(cstyle,&br);
 	};
-	skin.getcontrolsize(MTC_WINDOW,cstyle,btnx,btny);
-	skin.getcontrolsize(MTC_WINDOW,(cstyle==7)?18:17,btnw,btnh);
+	skin->getcontrolsize(MTC_WINDOW,cstyle,btnx,btny);
+	skin->getcontrolsize(MTC_WINDOW,(cstyle==7)?18:17,btnw,btnh);
 	btny += btnh;
 	if (style & MTWS_CLOSE){
 		btnx += btnw;

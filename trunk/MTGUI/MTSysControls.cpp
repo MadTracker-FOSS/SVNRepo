@@ -49,7 +49,7 @@ void MTImageList::drawimage(int id,MTBitmap *dest,int x,int y,int opacity)
 		int ox,oy;
 		ox = mm.a.b.x+iw*(id%mm.nx);
 		oy = mm.a.b.y+ih*(id/mm.nx);
-		skin.getbitmap(mm.a.bmpid)->blendblt(dest,x,y,iw,ih,ox,oy,opacity);
+		skin->getbitmap(mm.a.bmpid)->blendblt(dest,x,y,iw,ih,ox,oy,opacity);
 	};
 }
 //---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ ctimer(0),
 ctouch(-1)
 {
 	flags |= (MTCF_TRANSPARENT|MTCF_ACCEPTINPUT);
-	cm = skin.getslider(type,orientation);
+	cm = skin->getslider(type,orientation);
 	switch (cm->type){
 	case SKIN_BUTTON:
 	case SKIN_PROGR:
@@ -89,7 +89,7 @@ int MTSlider::loadfromstream(MTFile *f,int size,int flags)
 	
 	f->read(&type,4);
 	f->read(&orientation,4);
-	cm = skin.getslider(type,orientation);
+	cm = skin->getslider(type,orientation);
 	switch (cm->type){
 	case SKIN_BUTTON:
 	case SKIN_PROGR:
@@ -174,7 +174,7 @@ bool MTSlider::setproperty(int id,void *value)
 	switch (id-ControlNP){
 	case 0:
 		type = iv;
-		cm = skin.getslider(type,orientation);
+		cm = skin->getslider(type,orientation);
 		switch (cm->type){
 		case SKIN_BUTTON:
 		case SKIN_PROGR:
@@ -185,7 +185,7 @@ bool MTSlider::setproperty(int id,void *value)
 		break;
 	case 1:
 		orientation = iv;
-		cm = skin.getslider(type,orientation);
+		cm = skin->getslider(type,orientation);
 		break;
 	default:
 		return false;
@@ -241,7 +241,7 @@ void MTSlider::draw(MTRect &rect)
 		break;
 	};
 	preparedraw(&b,x,y);
-	skin.drawslider(b,x+ox,y+oy,ow,oh,cm,minpos,maxpos,value,(flags & MTCF_OVER) || ((flags & MTCF_FOCUSED) && (cursor)));
+	skin->drawslider(b,x+ox,y+oy,ow,oh,cm,minpos,maxpos,value,(flags & MTCF_OVER) || ((flags & MTCF_FOCUSED) && (cursor)));
 	MTControl::draw(rect);
 }
 
@@ -389,8 +389,8 @@ void MTOscillo::draw(MTRect &rect)
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
-	b->fill(x,y,width,height,skin.getcolor(SC_EDIT_BACKGROUND));
-	skin.drawframe(b,x,y,width,height);
+	b->fill(x,y,width,height,skin->getcolor(SC_EDIT_BACKGROUND));
+	skin->drawframe(b,x,y,width,height);
 	/* if (mtrk){
 	Track &ctrk = *(Track*)mtrk;
 	if (ctrk.buffer){

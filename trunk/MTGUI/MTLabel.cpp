@@ -144,7 +144,7 @@ void MTLabel::draw(MTRect &rect)
 {
 	if (flags & MTCF_CANTDRAW) return;
 	MTRect r = {left,top,left+width,top+height};
-	skin.drawcontrol(this,r,0,0,0);
+	skin->drawcontrol(this,r,0,0,0);
 	MTControl::draw(rect);
 }
 
@@ -162,7 +162,7 @@ void MTLabel::setcaption(const char *c)
 	strcpy(caption,c);
 	if (parent){
 		if (autosize){
-			if ((skin.gettextsize(this,caption,-1,&ts)) && (ts.y>0)){
+			if ((skin->gettextsize(this,caption,-1,&ts)) && (ts.y>0)){
 				w = ts.x;
 				ml = (int)((double)parent->dsk->width/NICE_RATIO);
 				if (w>ml) w = ml;
@@ -170,7 +170,7 @@ void MTLabel::setcaption(const char *c)
 				if (r>NICE_RATIO*1.25){
 					w = (int)(sqrt((double)(w*ts.y)*NICE_RATIO));
 				};
-				if (w!=ts.x) skin.gettextsize(this,caption,-1,&ts,w);
+				if (w!=ts.x) skin->gettextsize(this,caption,-1,&ts,w);
 				setbounds(left,top,ts.x,ts.y);
 			};
 		};

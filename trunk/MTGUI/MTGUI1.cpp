@@ -286,9 +286,9 @@ void MTGUIInterface::uninit()
 	visible = true;
 /*
 	for (x=0;x<16;x++){
-		if (skin.skinbmp[x]){
-			di->delbitmap(skin.skinbmp[x]);
-			skin.skinbmp[x] = 0;
+		if (skin->skinbmp[x]){
+			di->delbitmap(skin->skinbmp[x]);
+			skin->skinbmp[x] = 0;
 		};
 	};
 */
@@ -670,7 +670,7 @@ void MTGUIInterface::loadskin(MTResources *res)
 	for (x=0;x<ndesktops;x++){
 		desktops[x]->flags |= (MTCF_DONTDRAW|MTCF_DONTFLUSH);
 	};
-	loadskinfromres(res);
+	skin->loadfromres(res);
 	for (x=0;x<ndesktops;x++){
 		desktops[x]->flags &= (~(MTCF_DONTDRAW|MTCF_DONTFLUSH));
 		desktops[x]->message(msg);
@@ -681,18 +681,22 @@ void MTGUIInterface::loadskin(MTResources *res)
 
 void *MTGUIInterface::saveskin(int &size)
 {
-	return ::saveskin(size);
+// FIXME
+//	return ::saveskin(size);
+	return 0;
 }
 
 void MTGUIInterface::setdisplay(MTBitmap *s)
 {
 	screen = s;
-	startskin();
+// FIXME
+//	startskin();
 }
 
 void MTGUIInterface::freedisplay()
 {
-	stopskin();
+// FIXME
+//	stopskin();
 	screen = 0;
 }
 

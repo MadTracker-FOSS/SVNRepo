@@ -223,7 +223,7 @@ void MTEdit::draw(MTRect &rect)
 	if (&rect){
 		if (!cliprect(cr,rect)) goto exit;
 	};
-	skin.drawcontrol(this,cr,b,x,y,::cursor);
+	skin->drawcontrol(this,cr,b,x,y,::cursor);
 exit:
 	if (guiid==MTC_EDIT) MTControl::draw(rect);
 }
@@ -253,8 +253,8 @@ bool MTEdit::message(MTCMessage &msg)
 		else{
 			if (focused){
 				md = true;
-				if (password) l = skin.gettextextent(this,0,strlen(text)-offset,msg.x-lblank-4);
-				else l = skin.gettextextent(this,&text[offset],-1,msg.x-lblank-4);
+				if (password) l = skin->gettextextent(this,0,strlen(text)-offset,msg.x-lblank-4);
+				else l = skin->gettextextent(this,&text[offset],-1,msg.x-lblank-4);
 				setcursor(offset+l);
 			}
 			else focused = true;
@@ -263,18 +263,18 @@ bool MTEdit::message(MTCMessage &msg)
 	case MTCM_MOUSEMOVE:
 		if (md){
 			if (msg.x>=lblank+4){
-				if (password) l = offset+skin.gettextextent(this,0,strlen(text)-offset,msg.x-lblank-4);
-				else l = offset+skin.gettextextent(this,&text[offset],-1,msg.x-lblank-4);
+				if (password) l = offset+skin->gettextextent(this,0,strlen(text)-offset,msg.x-lblank-4);
+				else l = offset+skin->gettextextent(this,&text[offset],-1,msg.x-lblank-4);
 			}
 			else{
 				if (offset==0) break;
 				MTPoint ts;
-				skin.gettextsize(this,(password)?0:text,offset,&ts);
+				skin->gettextsize(this,(password)?0:text,offset,&ts);
 				ts.x -= lblank;
 				if (ts.x+msg.x-4<=0) l = 0;
 				else{
-					if (password) l = skin.gettextextent(this,0,strlen(text),ts.x+msg.x-4);
-					else l = skin.gettextextent(this,text,-1,ts.x+msg.x-4);
+					if (password) l = skin->gettextextent(this,0,strlen(text),ts.x+msg.x-4);
+					else l = skin->gettextextent(this,text,-1,ts.x+msg.x-4);
 				};
 			};
 			setselend(l);
@@ -431,8 +431,8 @@ void MTEdit::setselend(int se)
 		char *tmp = &text[offset];
 		MTPoint ts;
 		if (password){
-			if ((skin.gettextsize(this,0,strlen(tmp),&ts)) && (ts.x>width-lblank-rblank-8)){
-				int nc = skin.gettextextent(this,0,cursor-offset,width-lblank-rblank-8);
+			if ((skin->gettextsize(this,0,strlen(tmp),&ts)) && (ts.x>width-lblank-rblank-8)){
+				int nc = skin->gettextextent(this,0,cursor-offset,width-lblank-rblank-8);
 				if (offset<cursor-nc){
 					offset = cursor-nc;
 					if (offset>strlen(text)) offset = strlen(text);
@@ -440,8 +440,8 @@ void MTEdit::setselend(int se)
 			};
 		}
 		else{
-			if ((skin.gettextsize(this,tmp,-1,&ts)) && (ts.x>width-lblank-rblank-8)){
-				int nc = skin.gettextextent(this,tmp,cursor-offset,width-lblank-rblank-8);
+			if ((skin->gettextsize(this,tmp,-1,&ts)) && (ts.x>width-lblank-rblank-8)){
+				int nc = skin->gettextextent(this,tmp,cursor-offset,width-lblank-rblank-8);
 				if (offset<cursor-nc){
 					offset = cursor-nc;
 					if (offset>strlen(text)) offset = strlen(text);
@@ -469,8 +469,8 @@ void MTEdit::setcursor(int c)
 		char *tmp = &text[offset];
 		MTPoint ts;
 		if (password){
-			if ((skin.gettextsize(this,0,strlen(tmp),&ts)) && (ts.x>width-lblank-rblank-8)){
-				int nc = skin.gettextextent(this,0,cursor-offset,width-lblank-rblank-8);
+			if ((skin->gettextsize(this,0,strlen(tmp),&ts)) && (ts.x>width-lblank-rblank-8)){
+				int nc = skin->gettextextent(this,0,cursor-offset,width-lblank-rblank-8);
 				if (offset<cursor-nc){
 					offset = cursor-nc;
 					if (offset>strlen(text)) offset = strlen(text);
@@ -478,8 +478,8 @@ void MTEdit::setcursor(int c)
 			};
 		}
 		else{
-			if ((skin.gettextsize(this,tmp,-1,&ts)) && (ts.x>width-lblank-rblank-8)){
-				int nc = skin.gettextextent(this,tmp,cursor-offset,width-lblank-rblank-8);
+			if ((skin->gettextsize(this,tmp,-1,&ts)) && (ts.x>width-lblank-rblank-8)){
+				int nc = skin->gettextextent(this,tmp,cursor-offset,width-lblank-rblank-8);
 				if (offset<cursor-nc){
 					offset = cursor-nc;
 					if (offset>strlen(text)) offset = strlen(text);
@@ -548,7 +548,7 @@ modified(false)
 
 	guiid = id;
 	lblank = (mlb->viewflags & MTVF_IMAGES)?sysimages.iw+2:0;
-	skin.getcontrolsize(id,1,rblank,tmp);
+	skin->getcontrolsize(id,1,rblank,tmp);
 }
 
 MTComboBox::~MTComboBox()
@@ -682,7 +682,7 @@ bool MTComboBox::message(MTCMessage &msg)
 		if (msg.param1==0){
 			int tmp;
 			lblank = (mlb->viewflags & MTVF_IMAGES)?sysimages.iw+2:0;
-			skin.getcontrolsize(guiid,1,rblank,tmp);
+			skin->getcontrolsize(guiid,1,rblank,tmp);
 		};
 		break;
 	};

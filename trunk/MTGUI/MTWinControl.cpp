@@ -46,13 +46,13 @@ speed(0)
 {
 	flags |= MTCF_ACCEPTINPUT|MTCF_TRANSPARENT;
 	if (w<h){
-		skin.getcontrolsize(MTC_SCROLLER,1,width,height);
+		skin->getcontrolsize(MTC_SCROLLER,1,width,height);
 		if (h) height = h;
 		else height = 128;
 		type = MTST_VBAR;
 	}
 	else{
-		skin.getcontrolsize(MTC_SCROLLER,0,width,height);
+		skin->getcontrolsize(MTC_SCROLLER,0,width,height);
 		if (w) width = w;
 		else width = 128;
 		type = MTST_HBAR;
@@ -183,8 +183,8 @@ void MTScroller::setbounds(int l,int t,int w,int h)
 		if (w>h) type = MTST_HBAR;
 		else if (h>w) type = MTST_VBAR;
 	};
-	if (type==MTST_HBAR) skin.getcontrolsize(MTC_SCROLLER,0,tmp,h);
-	else skin.getcontrolsize(MTC_SCROLLER,1,w,tmp);
+	if (type==MTST_HBAR) skin->getcontrolsize(MTC_SCROLLER,0,tmp,h);
+	else skin->getcontrolsize(MTC_SCROLLER,1,w,tmp);
 	MTControl::setbounds(l,t,w,h);
 }
 
@@ -196,7 +196,7 @@ void MTScroller::draw(MTRect &rect)
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
-	skin.drawcontrol(this,rect,b,x,y);
+	skin->drawcontrol(this,rect,b,x,y);
 	MTControl::draw(rect);
 }
 
@@ -231,12 +231,12 @@ void MTScroller::updatemetrics()
 	int tmp;
 
 	if (type==MTST_VBAR){
-		skin.getcontrolsize(MTC_SCROLLER,1,width,tmp);
-		skin.getcontrolsize(MTC_SCROLLER,3,tmp,minsize);
+		skin->getcontrolsize(MTC_SCROLLER,1,width,tmp);
+		skin->getcontrolsize(MTC_SCROLLER,3,tmp,minsize);
 	}
 	else{
-		skin.getcontrolsize(MTC_SCROLLER,0,tmp,height);
-		skin.getcontrolsize(MTC_SCROLLER,2,minsize,tmp);
+		skin->getcontrolsize(MTC_SCROLLER,0,tmp,height);
+		skin->getcontrolsize(MTC_SCROLLER,2,minsize,tmp);
 	};
 	if (minsize<4) minsize = 4;
 }
@@ -246,7 +246,7 @@ bool MTScroller::message(MTCMessage &msg)
 	int bw,bh;
 	int p;
 	
-	skin.getcontrolsize(MTC_SCROLLER,(type==MTST_HBAR)?4:5,bw,bh);
+	skin->getcontrolsize(MTC_SCROLLER,(type==MTST_HBAR)?4:5,bw,bh);
 	switch (msg.msg){
 	case MTCM_MOUSEDOWN:
 		speed = 0;
@@ -1055,7 +1055,7 @@ void MTWinControl::draw(MTRect &rect)
 			signed char cmodal = (cctrl.flags)>>24;
 			if ((cmodal>0) && (cmodal & 4)){
 				wasmodal = true;
-				skin.drawmodalveil(this,cr);
+				skin->drawmodalveil(this,cr);
 			};
 		};
 		cctrl.getrect(cr2,0);
@@ -1076,7 +1076,7 @@ void MTWinControl::draw(MTRect &rect)
 		int y = -2;
 		MTBitmap *b;
 		preparedraw(&b,x,y);
-		skin.drawborder(this,rect,b,x,y);
+		skin->drawborder(this,rect,b,x,y);
 	};
 	deletergn(vis);
 	unclip();
@@ -1462,7 +1462,7 @@ bool MTWinControl::message(MTCMessage &msg)
 	case MTCM_NOTIFY:
 /* FIXME
 		if (msg.param1==0){
-			if (mb) mb->setfont(skin.hskfont[0]);
+			if (mb) mb->setfont(skin->hskfont[0]);
 		};
 */
 		for (x=0;x<ncontrols;x++){
@@ -2616,7 +2616,7 @@ void MTWinControl::startdrag()
 	else if (window) style = window->style;
 	else style = 0;
 // FIXME
-//	db->skinblt(0,0,r.right,r.bottom,skin.wnm[style & 0xF].bkg);
+//	db->skinblt(0,0,r.right,r.bottom,skin->wnm[style & 0xF].bkg);
 	tb->clip(&tb->wr);
 	y = 0;
 	_box = box;
