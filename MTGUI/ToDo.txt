@@ -13,7 +13,6 @@ v	Resize problems (tab control)
 ToDo
 ----
 
--	Test
 -	"Waiting for processes to terminate..." window if time > 5 seconds (max. 30 sec.) with "Kill" button
 
 GUI
