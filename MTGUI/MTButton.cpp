@@ -201,7 +201,7 @@ void MTButton::draw(MTRect &rect)
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
-	skin.drawcontrol(this,rect,b,x,y,cursor);
+	skin->drawcontrol(this,rect,b,x,y,cursor);
 	MTControl::draw(rect);
 }
 
@@ -295,7 +295,7 @@ int MTButton::getautowidth()
 	
 	if (!parent) return 0;
 	if (caption[0]){
-		if (!skin.gettextsize(this,caption,-1,&bs)) return width;
+		if (!skin->gettextsize(this,caption,-1,&bs)) return width;
 		if (imageindex>=0) bs.x += sysimages.iw+2;
 	}
 	else bs.x = sysimages.iw;

@@ -43,7 +43,6 @@ MTGUIInterface *gi;
 MTObjectsPreferences objectsprefs = {false,false};
 FontManager *font;
 MTSkin *skin;
-MTSkinTools *sktools;
 MTResources *res;
 MTWindow *monitor;
 MTHash *objecttype;

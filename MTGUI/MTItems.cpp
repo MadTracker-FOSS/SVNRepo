@@ -187,7 +187,7 @@ itemmessageproc(0)
 
 	flags |= MTCF_ACCEPTINPUT;
 	gi->setcontrolname(this,"userlist");
-	skin.getcontrolsize(MTC_SCROLLER,1,sw,sh);
+	skin->getcontrolsize(MTC_SCROLLER,1,sw,sh);
 	vs = (MTScroller*)gi->newcontrol(MTC_SCROLLER,0,this,width-sw,0,0,height,0);
 	vs->type = MTST_VBAR;
 	vs->switchflags(MTCF_SYSTEM|MTCF_DONTSAVE,true);
@@ -230,7 +230,7 @@ void MTUserList::draw(MTRect &rect)
 		if (!cliprect(cr,rect)) goto exit;
 	};
 	preparedraw(&b,x,y);
-	skin.drawcontrol(this,cr,b,x,y);
+	skin->drawcontrol(this,cr,b,x,y);
 	clip(cr);
 	r.left = x+2;
 	r.right = x+width-vs->width-2;
@@ -255,7 +255,7 @@ void MTUserList::draw(MTRect &rect)
 				itemflags = 0;
 				editable = false;
 				if (getiteminfoproc(this,i,&caption,&imageindex,&itemflags,&editable)<0) continue;
-				skin.drawitem(this,i,r,b,caption,imageindex,itemflags,editable);
+				skin->drawitem(this,i,r,b,caption,imageindex,itemflags,editable);
 			};
 			r.top += itemheight;
 			r.bottom += itemheight;
@@ -917,7 +917,7 @@ void MTListItem::draw(MTRect &rect)
 		MTControl::draw(rect);
 		return;
 	};
-	skin.drawcontrol(this,rect,b,x,y);
+	skin->drawcontrol(this,rect,b,x,y);
 	MTControl::draw(rect);
 }
 //---------------------------------------------------------------------------
@@ -933,7 +933,7 @@ MTItemView(tag,p,l,t,w,h)
 
 	guiid = MTC_LISTBOX;
 	gi->setcontrolname(this,"listbox");
-	skin.getcontrolsize(MTC_SCROLLER,1,sw,tmp);
+	skin->getcontrolsize(MTC_SCROLLER,1,sw,tmp);
 	vs = (MTScroller*)gi->newcontrol(MTC_SCROLLER,0,this,sw,0,0,height,0);
 	vs->type = MTST_VBAR;
 	vs->switchflags(MTCF_SYSTEM|MTCF_DONTSAVE,true);
@@ -958,7 +958,7 @@ void MTListBox::draw(MTRect &rect)
 	if (&rect){
 		if (!cliprect(cr,rect)) goto exit;
 	};
-	skin.drawcontrol(this,cr,0,0,0);
+	skin->drawcontrol(this,cr,0,0,0);
 exit:
 	MTWinControl::draw(rect);
 }
@@ -1033,7 +1033,7 @@ void MTMenuItem::draw(MTRect &rect)
 		MTControl::draw(rect);
 		return;
 	};
-	skin.drawcontrol(this,rect,b,x,y);
+	skin->drawcontrol(this,rect,b,x,y);
 	MTControl::draw(rect);
 }
 
@@ -1072,7 +1072,7 @@ void MTMenuItem::setcaption(const char *c)
 	if ((hotkey>='a') && (hotkey<='z')) hotkey += 'A'-'a';
 	if (caption[0]!='|'){
 		if (((MTListBox*)parent)->viewflags & MTVF_IMAGES) w += 18;
-		skin.gettextsize(this,caption,-1,&p);
+		skin->gettextsize(this,caption,-1,&p);
 		w += p.x;
 	}
 	else if (caption[1]==0){
@@ -1160,7 +1160,7 @@ void MTMenu::draw(MTRect &rect)
 	if (&rect){
 		if (!cliprect(cr,rect)) goto exit;
 	};
-	skin.drawcontrol(this,cr,0,0,0);
+	skin->drawcontrol(this,cr,0,0,0);
 exit:
 	MTWinControl::draw(rect);
 	if (ib){

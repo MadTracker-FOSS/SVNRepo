@@ -145,7 +145,7 @@ void MTTabControl::draw(MTRect &rect)
 	if ((parent) && ((npages!=1) || (!autohidetabs))){
 		preparedraw(&b,x,y);
 		clip(cr);
-		skin.drawcontrol(this,cr,b,x,y);
+		skin->drawcontrol(this,cr,b,x,y);
 		unclip();
 	};
 	MTWinControl::draw(rect);
@@ -282,7 +282,7 @@ void MTTabControl::addcontrol(MTControl *control)
 		cp->flags = y;
 		cp->align = MTCA_CLIENT;
 		flags &= (~MTCF_DONTRESIZE);
-		skin.getwindowborders(style,&b);
+		skin->getwindowoffsets(style,&b);
 		ox = br.left+b.left;
 		y = 0;
 		for (x=0;x<ncontrols;x++){
@@ -329,7 +329,7 @@ void MTTabControl::delcontrol(MTControl *control)
 				else if (cb.tag>id) cb.tag--;
 			};
 		};
-		skin.getwindowborders(style,&b);
+		skin->getwindowoffsets(style,&b);
 		ox = br.left+b.left;
 		for (x=0;x<ncontrols;x++){
 			MTButton &cb = *(MTButton*)controls[x];
@@ -462,7 +462,7 @@ void MTTabControl::updatecaption(MTWindow *p)
 	
 	id = getpageid(p);
 	if (id<0) return;
-	skin.getwindowborders(style,&b);
+	skin->getwindowoffsets(style,&b);
 	ox = br.left+b.left;
 	for (x=0;x<ncontrols;x++){
 		MTButton &cb = *(MTButton*)controls[x];
@@ -489,12 +489,13 @@ void MTTabControl::updateborders()
 		hide = true;
 	}
 	else{
-		br.left = -::br[style].left;
-		br.top = -::br[style].top;
-		br.right = -::br[style].right;
-		br.bottom = -::br[style].bottom;
+		skin->getwindowborders(style,&b);
+		br.left = -b.left;
+		br.top = -b.top;
+		br.right = -b.right;
+		br.bottom = -b.bottom;
 	};
-	skin.getwindowborders(style,&b);
+	skin->getwindowoffsets(style,&b);
 	ox = br.left+b.left;
 	updatebuttons();
 	flags |= MTCF_DONTRESIZE;
@@ -518,8 +519,8 @@ void MTTabControl::updateborders()
 void MTTabControl::updatebuttons()
 {
 	if (style!=6) return;
-	skin.getcontrolsize(MTC_WINDOW,style,btnx,btny);
-	skin.getcontrolsize(MTC_WINDOW,16,btnw,btnh);
+	skin->getcontrolsize(MTC_WINDOW,style,btnx,btny);
+	skin->getcontrolsize(MTC_WINDOW,16,btnw,btnh);
 	if (cstyle & MTWS_CLOSE){
 		btnx += btnw;
 	};

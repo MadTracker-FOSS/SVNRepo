@@ -24,7 +24,7 @@ sign(0)
 	flags |= MTCF_TRANSPARENT;
 	gi->setcontrolname(this,"sign");
 	if ((w==0) || (h==0)){
-		skin.getcontrolsize(MTC_SIGN,0,width,height);
+		skin->getcontrolsize(MTC_SIGN,0,width,height);
 	};
 }
 
@@ -107,14 +107,14 @@ void MTSign::draw(MTRect &rect)
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
-	skin.drawcontrol(this,rect,b,x,y);
+	skin->drawcontrol(this,rect,b,x,y);
 	MTControl::draw(rect);
 }
 
 void MTSign::setsign(int s)
 {
 	if (sign==s) return;
-	skin.resetcontrol(this,false);
+	skin->resetcontrol(this,false);
 	sign = s;
 	if (parent){
 		MTCMessage msg = {MTCM_CHANGE,0,this};

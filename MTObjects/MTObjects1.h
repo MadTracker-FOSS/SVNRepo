@@ -88,7 +88,6 @@ extern MTGUIInterface *gi;
 extern MTObjectsPreferences objectsprefs;
 extern FontManager *font;
 extern MTSkin *skin;
-extern MTSkinTools *sktools;
 extern MTResources *res;
 extern MTWindow *monitor;
 extern MTHash *objecttype;

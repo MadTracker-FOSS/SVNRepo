@@ -26,7 +26,7 @@ step(1)
 	int tmp;
 
 	flags |= MTCF_TRANSPARENT;
-	skin.getcontrolsize(MTC_PROGRESS,0,tmp,height);
+	skin->getcontrolsize(MTC_PROGRESS,0,tmp,height);
 	if ((width==0) || (height==0)){
 		width = 128;
 		height = 32;
@@ -119,7 +119,7 @@ bool MTProgress::setproperty(int id,void *value)
 
 void MTProgress::setbounds(int l,int t,int w,int h)
 {
-	skin.getcontrolsize(MTC_PROGRESS,0,w,h);
+	skin->getcontrolsize(MTC_PROGRESS,0,w,h);
 	MTControl::setbounds(l,t,w,h);
 }
 
@@ -131,7 +131,7 @@ void MTProgress::draw(MTRect &rect)
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
-	skin.drawslider(b,x,y,width,height,0,0,maxpos,pos,false);
+	skin->drawslider(b,x,y,width,height,0,0,maxpos,pos,false);
 	MTControl::draw(rect);
 }
 

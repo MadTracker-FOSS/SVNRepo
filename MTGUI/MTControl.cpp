@@ -373,17 +373,17 @@ void MTControl::draw(MTRect &rect)
 			if (&rect){
 				MTRect r = {0,0,width,height};
 				cliprect(r,rect);
-				parent->fillcolor(r.left+left,r.top+top,r.right-r.left,r.bottom-r.top,skin.getcolor(SC_EDIT_SELECTION),128);
+				parent->fillcolor(r.left+left,r.top+top,r.right-r.left,r.bottom-r.top,skin->getcolor(SC_EDIT_SELECTION),128);
 			}
-			else parent->fillcolor(left,top,width,height,skin.getcolor(SC_EDIT_SELECTION),128);
+			else parent->fillcolor(left,top,width,height,skin->getcolor(SC_EDIT_SELECTION),128);
 		};
 		if (parent->open(0)){
-			parent->point(left,top,skin.getcolor(SC_EDIT_SELECTED));
-			parent->point(left+width-1,top,skin.getcolor(SC_EDIT_SELECTED));
-			parent->point(left,top+height-1,skin.getcolor(SC_EDIT_SELECTED));
-			parent->point(left+width-1,top+height-1,skin.getcolor(SC_EDIT_SELECTED));
+			parent->point(left,top,skin->getcolor(SC_EDIT_SELECTED));
+			parent->point(left+width-1,top,skin->getcolor(SC_EDIT_SELECTED));
+			parent->point(left,top+height-1,skin->getcolor(SC_EDIT_SELECTED));
+			parent->point(left+width-1,top+height-1,skin->getcolor(SC_EDIT_SELECTED));
 			if (flags & MTCF_OVER){
-				parent->setpen(skin.getcolor(SC_EDIT_SELECTED));
+				parent->setpen(skin->getcolor(SC_EDIT_SELECTED));
 				parent->moveto(left,top);
 				parent->lineto(left+width-1,top);
 				parent->lineto(left+width-1,top+height-1);
@@ -428,12 +428,12 @@ bool MTControl::message(MTCMessage &msg)
 		break;
 	case MTCM_TIMER:
 		if (msg.param1 & MTTF_SKINTIMER){
-			skin.timercontrol(msg.ctrl);
+			skin->timercontrol(msg.ctrl);
 			return true;
 		};
 		break;
 	case MTCM_NOTIFY:
-		skin.resetcontrol(this,(msg.param1==0));
+		skin->resetcontrol(this,(msg.param1==0));
 		break;
 	};
 	return false;

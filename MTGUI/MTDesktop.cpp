@@ -99,7 +99,7 @@ void MTDesktop::draw(MTRect &rect)
 		if ((flags & MTCF_TRANSPARENT)==0){
 //			DUMPRGN(rgn);
 			cliprgn(rgn);
-			skin.drawcontrol(this,rect,0,0,0);
+			skin->drawcontrol(this,rect,0,0,0);
 			unclip();
 		}
 		else{

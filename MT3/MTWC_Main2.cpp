@@ -54,7 +54,9 @@ void MTCT useritemdraw(MTUserList *list,int id,const MTRect &rect,MTBitmap *b)
 	else{
 		caption = object->name;
 	};
-	if (id==list->selected) b->fill(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,skin->fnm.colors[SC_EDIT_SELECTION]);
+	if (id==list->selected) b->fill(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,skin->getcolor(SC_EDIT_SELECTION));
+// FIXME
+/*
 	w = skin->sbm.b.w/6;
 	b->skinblta(r.left,r.top,0,0,skin->sbm,6,2,6);
 	b->skinblta(r.left+w,r.top,0,0,skin->sbm,6,2,1);
@@ -89,6 +91,7 @@ void MTCT useritemdraw(MTUserList *list,int id,const MTRect &rect,MTBitmap *b)
 		};
 		b->close(0);
 	};
+*/
 	r.left -= 20;
 	sysimages->drawimage(imageindex,b,r.left,r.top);
 }

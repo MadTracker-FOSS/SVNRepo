@@ -72,19 +72,19 @@ void MTCPUGraph::ondraw(MTRect &rect)
 		r.right += bx;
 		r.bottom += by;
 	};
-	b->fill(r.left,r.top,r.right-r.left,r.bottom-r.top,skin->fnm.colors[SC_EDIT_BACKGROUND]);
+	b->fill(r.left,r.top,r.right-r.left,r.bottom-r.top,skin->getcolor(SC_EDIT_BACKGROUND));
 	if (output){
 		MTRect cr = {bx+2,by+height-2-(height-4)*output->maxcpu/scale,bx+width-2,by+height-2-(height-4)*output->mincpu/scale};
 		if (cliprect(cr,r)){
-			b->fill(cr.left,cr.top,cr.right-cr.left,cr.bottom-cr.top,skin->fnm.colors[SC_EDIT_SELECTION]);
+			b->fill(cr.left,cr.top,cr.right-cr.left,cr.bottom-cr.top,skin->getcolor(SC_EDIT_SELECTION));
 		};
 	};
 	if ((from>=0) && (to<=width-4)){
 		if (b->open(0)){
 			char st[16];
 			MTRect cr = {bx+2,by+2,bx+width-2,by+height-2};
-			b->setfont(skin->hskfont[1]);
-			b->settextcolor(skin->fnm.colors[SC_EDIT_SELECTED]);
+			b->setfont(skin->getfont(1));
+			b->settextcolor(skin->getcolor(SC_EDIT_SELECTED));
 			sprintf(st,"%.2f%%",scale*100.0);
 			b->drawtext(st,-1,cr,0);
 			cr.top += (height-4)/4;
@@ -96,7 +96,7 @@ void MTCPUGraph::ondraw(MTRect &rect)
 			cr.top += (height-4)/4;
 			sprintf(st,"%.2f%%",scale*25.0);
 			b->drawtext(st,-1,cr,0);
-			b->setpen(skin->fnm.colors[SC_EDIT_SELECTED]);
+			b->setpen(skin->getcolor(SC_EDIT_SELECTED));
 			b->moveto(r.left,2+by+((height-4)*3)/4);
 			b->lineto(r.right,2+by+((height-4)*3)/4);
 			b->moveto(r.left,2+by+(height-4)/2);
@@ -104,13 +104,13 @@ void MTCPUGraph::ondraw(MTRect &rect)
 			b->moveto(r.left,2+by+(height-4)/4);
 			b->lineto(r.right,2+by+(height-4)/4);
 			h = width-5-from;
-			b->setpen(skin->fnm.colors[SC_EDIT_NORMAL]);
+			b->setpen(skin->getcolor(SC_EDIT_NORMAL));
 			b->moveto(bx+from+2,by+height-2-(history[1][h--]*(height-4))/scale);
 			for (x=from+1;x<to,h>=0;x++,h--){
 				b->lineto(bx+x+2,by+height-2-(history[1][h]*(height-4))/scale);
 			};
 			h = width-5-from;
-			b->setpen(skin->fnm.colors[SC_EDIT_FOCUSED]);
+			b->setpen(skin->getcolor(SC_EDIT_FOCUSED));
 			b->moveto(bx+from+2,by+height-2-(history[0][h--]*(height-4))/scale);
 			for (x=from+1;x<to,h>=0;x++,h--){
 				b->lineto(bx+x+2,by+height-2-(history[0][h]*(height-4))/scale);
@@ -118,7 +118,7 @@ void MTCPUGraph::ondraw(MTRect &rect)
 			b->close(0);
 		};
 	};
-	sktools->drawframe(b,bx,by,width,height);
+	skin->drawframe(b,bx,by,width,height);
 }
 
 void MTCPUGraph::cpuproc(void *cpu)
@@ -220,13 +220,13 @@ void MTChannelsGraph::ondraw(MTRect &rect)
 		r.right += bx;
 		r.bottom += by;
 	};
-	b->fill(r.left,r.top,r.right-r.left,r.bottom-r.top,skin->fnm.colors[SC_EDIT_BACKGROUND]);
+	b->fill(r.left,r.top,r.right-r.left,r.bottom-r.top,skin->getcolor(SC_EDIT_BACKGROUND));
 	if ((from>=0) && (to<=width-4)){
 		if (b->open(0)){
 			char st[8];
 			MTRect cr = {bx+2,by+2,bx+width-2,by+height-2};
-			b->setfont(skin->hskfont[1]);
-			b->settextcolor(skin->fnm.colors[SC_EDIT_SELECTED]);
+			b->setfont(skin->getfont(1));
+			b->settextcolor(skin->getcolor(SC_EDIT_SELECTED));
 			sprintf(st,"%d",scale);
 			b->drawtext(st,-1,cr,0);
 			cr.top += (height-4)/4;
@@ -238,7 +238,7 @@ void MTChannelsGraph::ondraw(MTRect &rect)
 			cr.top += (height-4)/4;
 			sprintf(st,"%d",scale/4);
 			b->drawtext(st,-1,cr,0);
-			b->setpen(skin->fnm.colors[SC_EDIT_SELECTED]);
+			b->setpen(skin->getcolor(SC_EDIT_SELECTED));
 			b->moveto(r.left,2+by+((height-4)*3)/4);
 			b->lineto(r.right,2+by+((height-4)*3)/4);
 			b->moveto(r.left,2+by+(height-4)/2);
@@ -246,13 +246,13 @@ void MTChannelsGraph::ondraw(MTRect &rect)
 			b->moveto(r.left,2+by+(height-4)/4);
 			b->lineto(r.right,2+by+(height-4)/4);
 			h = width-5-from;
-			b->setpen(skin->fnm.colors[SC_EDIT_NORMAL]);
+			b->setpen(skin->getcolor(SC_EDIT_NORMAL));
 			b->moveto(bx+from+2,by+height-2-(history[1][h--]*(height-4))/scale);
 			for (x=from+1;x<to,h>=0;x++,h--){
 				b->lineto(bx+x+2,by+height-2-(history[1][h]*(height-4))/scale);
 			};
 			h = width-5-from;
-			b->setpen(skin->fnm.colors[SC_EDIT_FOCUSED]);
+			b->setpen(skin->getcolor(SC_EDIT_FOCUSED));
 			b->moveto(bx+from+2,by+height-2-(history[0][h--]*(height-4))/scale);
 			for (x=from+1;x<to,h>=0;x++,h--){
 				b->lineto(bx+x+2,by+height-2-(history[0][h]*(height-4))/scale);
@@ -260,7 +260,7 @@ void MTChannelsGraph::ondraw(MTRect &rect)
 			b->close(0);
 		};
 	};
-	sktools->drawframe(b,bx,by,width,height);
+	skin->drawframe(b,bx,by,width,height);
 }
 
 void MTChannelsGraph::chanproc(void *channels)
