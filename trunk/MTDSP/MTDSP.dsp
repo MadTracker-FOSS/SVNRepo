@@ -101,6 +101,14 @@ SOURCE=.\MTBufferASM.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\MTCatmullASM.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTCatmullASM.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\MTDSP.cpp
 # End Source File
 # Begin Source File

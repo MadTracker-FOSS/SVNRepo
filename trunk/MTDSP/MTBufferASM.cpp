@@ -255,3 +255,26 @@ _add:
 	};
 }
 //---------------------------------------------------------------------------
+void MTACT a_modulatebuffer(sample *dest,sample *source,int count)
+{
+	_asm{
+		push	esi
+		push	edi
+		mov		esi,source
+		mov		edi,dest
+		mov		ecx,count
+
+_add:
+		fld		a_sample ptr [edi]
+		fmul	a_sample ptr [esi]
+		fstp	a_sample ptr [edi]
+		add		esi,s_sample
+		add		edi,s_sample
+		dec		ecx
+		jnz		_add
+
+		pop		edi
+		pop		esi
+	};
+}
+//---------------------------------------------------------------------------

@@ -214,6 +214,10 @@ SOURCE=.\MTSystem.def
 # End Source File
 # Begin Source File
 
+SOURCE=.\MTSystem.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\MTSystem1.cpp
 # End Source File
 # Begin Source File

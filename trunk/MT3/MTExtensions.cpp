@@ -436,8 +436,9 @@ void* MT3Interface::getconf(char *name,bool user)
 void MT3Interface::releaseconf(void *conf)
 {
 	if (confs){
+		MTConfigFile &cconf = *(MTConfigFile*)conf;
 		_MTConf *econf;
-		econf = (_MTConf*)confs->getitem(((MTConfigFile*)conf)->getfilename());
+		econf = (_MTConf*)confs->getitem((char*)cconf.getfilename());
 		if (econf) si->sync_dec(&econf->refcount);
 		else si->configclose((MTConfigFile*)conf);
 	}

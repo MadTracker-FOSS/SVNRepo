@@ -115,7 +115,7 @@ bool MTMiniConfig::getparameter(const char *paramname,void *value,int desiredtyp
 	return true;
 }
 
-bool MTMiniConfig::setparameter(const char *paramname,void *value,int type,int size)
+bool MTMiniConfig::setparameter(const char *paramname,const void *value,int type,int size)
 {
 	char *e;
 	int l;

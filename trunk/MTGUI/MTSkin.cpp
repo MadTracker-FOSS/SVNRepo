@@ -324,6 +324,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 //	Sign
 		{
 			int anim = ((MTSign*)ctrl)->sign;
+			if (animm[anim].nx<=0) break;
 			b->skinblta(x+(ctrl->width-animm[anim].a.b.w/animm[anim].nx)/2,y+(ctrl->height-animm[anim].a.b.h/animm[anim].ny)/2,0,0,animm[anim].a,animm[anim].nx,animm[anim].ny,((MTSignData*)ctrl->skindata)->frame);
 		};
 		break;
