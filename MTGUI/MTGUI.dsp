@@ -267,6 +267,14 @@ SOURCE=.\MTGUITools.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\MTOSSkin.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTOSSkin.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\MTSkin.cpp
 # End Source File
 # Begin Source File

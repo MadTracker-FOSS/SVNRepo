@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 #include "MTWinControl.h"
 #include "MTTabControl.h"
 //---------------------------------------------------------------------------
@@ -1460,11 +1460,6 @@ bool MTWinControl::message(MTCMessage &msg)
 		};
 		break;
 	case MTCM_NOTIFY:
-/* FIXME
-		if (msg.param1==0){
-			if (mb) mb->setfont(skin->hskfont[0]);
-		};
-*/
 		for (x=0;x<ncontrols;x++){
 			MTControl &cctrl = *controls[x];
 			if (cctrl.guiid & 2){
@@ -2429,8 +2424,7 @@ void MTWinControl::focus(MTControl *ctrl)
 		ctrl->switchflags(MTCF_FOCUSED,true);
 		focused = ctrl;
 		if ((ctrl->guiid & 2)==0){
-			if (guiid==MTC_DESKTOP) ((MTDesktop*)this)->resetcursor();
-			else dsk->resetcursor();
+			gi->resetcursor();
 		};
 		if (ctrl->guiid!=MTC_SCROLLER) showcontrol(ctrl);
 	};

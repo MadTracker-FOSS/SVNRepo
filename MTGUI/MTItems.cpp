@@ -1395,10 +1395,10 @@ void MTFileListBox::setpath(const char *p)
 	char *s;
 
 	if (process){
-		gi->setcursor(DCUR_BACKGROUND);
+		gi->setmouseshape(DCUR_BACKGROUND);
 		process->terminate();
 		process = 0;
-		gi->restorecursor();
+		gi->restoremouseshape();
 	};
 	setitem(-1);
 	over = -1;

@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------
 #include <stdio.h>
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 #include "MTCheckBox.h"
 #include "MTWindow.h"
 #include "../Headers/MTXInput.h"

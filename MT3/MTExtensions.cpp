@@ -517,13 +517,13 @@ bool MT3Interface::canclose()
 			if (res==MTDR_TIMEOUT) res = 0;
 			if ((res==MTDR_CANCEL) || (res==2)) return false;
 			if (res==0){
-				gi->setcursor(DCUR_WORKING);
+				gi->setmouseshape(DCUR_WORKING);
 				for (x=0;x<mtdsk->ncontrols;x++){
 					MTWindow &cwnd = *(MTWindow*)mtdsk->controls[x];
 					if (cwnd.guiid!=MTC_WINDOW) continue;
 					if (cwnd.modified) gi->savewindow(&cwnd);
 				};
-				gi->restorecursor();
+				gi->restoremouseshape();
 			};
 		};
 	};

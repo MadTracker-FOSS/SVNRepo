@@ -41,7 +41,7 @@ MTAudioInterface *ai;
 MTDSPInterface *dspi;
 MTGUIInterface *gi;
 MTObjectsPreferences objectsprefs = {false,false};
-MTSkin *skin;
+Skin *skin;
 MTResources *res;
 MTWindow *monitor;
 MTHash *objecttype;
@@ -324,7 +324,7 @@ void MTObjectsInterface::start()
 	MTCustomControl *cc;
 
 	if (gi){
-		skin = (MTSkin*)gi->getskin();
+		skin = gi->getskin();
 		objectlock->lock();
 		monitor = gi->loadwindow(res,MTW_monitor,0);
 		if (monitor){
@@ -678,7 +678,7 @@ bool MTObjectsInterface::editobject(MTObject *object,MTWindow *window,int flags)
 	
 	cuser = (MTUser*)mtinterface->getcurrentuser();
 	if ((grantaccess(object,MTOA_CANREAD,false)) && (ownobject(object,cuser))){
-		gi->setcursor(DCUR_WORKING);
+		gi->setmouseshape(DCUR_WORKING);
 		for (x=0;x<edit->nitems;x++){
 			ObjectEdit &cedit = *(ObjectEdit*)edit->a[x];
 			if (cedit.type==object->objecttype){
@@ -686,7 +686,7 @@ bool MTObjectsInterface::editobject(MTObject *object,MTWindow *window,int flags)
 				break;
 			};
 		};
-		gi->restorecursor();
+		gi->restoremouseshape();
 	};
 	return ok;
 }

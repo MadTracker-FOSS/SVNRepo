@@ -38,7 +38,7 @@ void setmodule(void *module);
 extern void *wnd;
 extern MTDesktop *mtdsk;
 extern MTResources *mtres,*skinres;
-extern MTSkin *skin;
+extern Skin *skin;
 extern MTImageList *sysimages;
 extern MTModule *cmodule;
 extern MTArray *refreshprocs;

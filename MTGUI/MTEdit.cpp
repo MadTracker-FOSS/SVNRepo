@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------
 #include <stdio.h>
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 #include "MTEdit.h"
 #include "MTSysControls.h"
 #include "MTWindow.h"
@@ -223,7 +223,7 @@ void MTEdit::draw(MTRect &rect)
 	if (&rect){
 		if (!cliprect(cr,rect)) goto exit;
 	};
-	skin->drawcontrol(this,cr,b,x,y,::cursor);
+	skin->drawcontrol(this,cr,b,x,y);
 exit:
 	if (guiid==MTC_EDIT) MTControl::draw(rect);
 }
@@ -486,7 +486,7 @@ void MTEdit::setcursor(int c)
 				};
 			};
 		};
-		parent->dsk->resetcursor();
+		gi->resetcursor();
 	};
 }
 
@@ -626,7 +626,6 @@ void MTComboBox::draw(MTRect &rect)
 	int x = left;
 	int y = top;
 	MTBitmap *b;
-	int imageindex;
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
