@@ -8,23 +8,21 @@
 //	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
 //
 //---------------------------------------------------------------------------
-#include "MTMainMenu.h"
+#include "MTToolBar.h"
 #include "../Headers/MTXSkin.h"
-//---------------------------------------------------------------------------
-extern MTMenu *newctrlmenu;
 //---------------------------------------------------------------------------
 // MTControl
 //   MTWinControl
-//     MTPanel
+//     MTToolBar
 //---------------------------------------------------------------------------
-MTMainMenu::MTMainMenu(int tag,MTWinControl *p,int l,int t,int w,int h):
-MTWinControl(MTC_MAINMENU,tag,p,l,t,w,h)
+MTToolBar::MTToolBar(int tag,MTWinControl *p,int l,int t,int w,int h):
+MTWinControl(MTC_TOOLBAR,tag,p,l,t,w,h)
 {
 	flags |= MTCF_ACCEPTCTRLS|MTCF_TRANSPARENT;
 	flags &= (~MTCF_BORDER);
 }
 
-bool MTMainMenu::message(MTCMessage &msg)
+bool MTToolBar::message(MTCMessage &msg)
 {
 	return MTWinControl::message(msg);
 }
