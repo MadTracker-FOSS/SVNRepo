@@ -164,6 +164,10 @@ SOURCE=.\MT3.rc
 
 SOURCE=.\mt3icon.ico
 # End Source File
+# Begin Source File
+
+SOURCE=.\resource.h
+# End Source File
 # End Group
 # Begin Group "Extension Headers"
 
