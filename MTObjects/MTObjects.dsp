@@ -244,6 +244,10 @@ SOURCE=.\MTInstrEditor.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\debug\Interface\MTObjects.mtr
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\debug\Interface\MTObjectsRES.h
 # End Source File
 # Begin Source File
@@ -356,6 +360,14 @@ SOURCE=.\MTTest.h
 # Begin Group "Extension Headers"
 
 # PROP Default_Filter "h"
+# Begin Source File
+
+SOURCE=..\Headers\MTXAutomation.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\Headers\MTXEffect.cpp
+# End Source File
 # Begin Source File
 
 SOURCE=..\Headers\MTXEffect.h
