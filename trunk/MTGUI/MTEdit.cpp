@@ -547,7 +547,6 @@ modified(false)
 	int tmp;
 
 	guiid = id;
-	lblank = (mlb->viewflags & MTVF_IMAGES)?sysimages.iw+2:0;
 	skin->getcontrolsize(id,1,rblank,tmp);
 }
 
@@ -631,6 +630,7 @@ void MTComboBox::draw(MTRect &rect)
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
+	lblank = (mlb->viewflags & MTVF_IMAGES)?sysimages.iw+2:0;
 	MTEdit::draw(rect);
 	MTControl::draw(rect);
 }

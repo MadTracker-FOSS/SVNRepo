@@ -86,7 +86,6 @@ extern MTAudioInterface *ai;
 extern MTDSPInterface *dspi;
 extern MTGUIInterface *gi;
 extern MTObjectsPreferences objectsprefs;
-extern FontManager *font;
 extern MTSkin *skin;
 extern MTResources *res;
 extern MTWindow *monitor;

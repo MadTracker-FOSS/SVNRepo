@@ -76,7 +76,6 @@ enum{
 //---------------------------------------------------------------------------
 struct MTUndo;
 struct MTShortcut;
-class FontManager;
 class MTControl;
 class MTWinControl;
 class MTWindow;
@@ -138,7 +137,6 @@ struct MTSync{
 
 class MTGUIInterface : public MTXInterface{
 public:
-	FontManager *font;
 	bool active;
 	bool visible;
 

@@ -152,7 +152,6 @@ void tracerect(MTRect &r,MTBitmap *bmp)
 #endif
 //---------------------------------------------------------------------------
 MTGUIInterface::MTGUIInterface():
-font(0),
 active(true),
 visible(true),
 running(false),
@@ -306,7 +305,7 @@ void MTCT menusetshadows(MTShortcut *s,MTControl *c,MTUndo*)
 	int x;
 	
 	guiprefs.shadows = !guiprefs.shadows;
-	skin->setshadows();
+	skin->setshadows(guiprefs.shadows);
 	for (x=0;x<ndesktops;x++) desktops[x]->draw(NORECT);
 }
 
@@ -508,6 +507,7 @@ MTControl *MTGUIInterface::newcontrol(int type,int tag,MTWinControl *parent,int 
 		LOGD("%s - [GUI] ERROR: Unknown object type!"NL);
 		break;
 	};
+	if (skin) skin->initcontrol(res);
 	if ((parent) && (res) && (type!=MTC_DESKTOP)) parent->addcontrol(res);
 	LEAVE();
 	return res;
@@ -518,6 +518,7 @@ void MTGUIInterface::delcontrol(MTControl *control)
 	if (!control) return;
 	FENTER1("MTGUIInterface::delcontrol(%.8X)",control);
  	if (control->parent) control->parent->delcontrol(control);
+	if (skin) skin->uninitcontrol(control);
 	switch (control->guiid){
 	case MTC_DESKTOP:
 		delete (MTDesktop*)control;

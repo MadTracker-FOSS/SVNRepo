@@ -33,64 +33,62 @@ MTSkin::MTSkin()
 {
 	unsigned char x;
 
-/*
-	{"Background",sk_back,&bkg,sizeof(bkg),sizeof(MTSkinPart)},
-	{"Fonts",sk_font,&fnm,sizeof(fnm),sizeof(MTFNMetrics)},
-	{"Windows",sk_wins,&wnm,sizeof(wnm),sizeof(MTWNMetrics)},
-	{"Buttons",sk_btns,&btm,sizeof(btm),sizeof(MTBTMetrics)},
-	{"Tab Buttons",sk_tbtn,&tbtm,sizeof(tbtm),sizeof(MTBTMetrics)},
-	{"Disabled Tab Buttons",sk_dtbt,&dtbtm,sizeof(dtbtm),sizeof(MTBTMetrics)},
-	{"Window Buttons",sk_wbtn,&wbtns,sizeof(wbtns),sizeof(MTSQMetrics)},
-	{"Disabled Window Buttons",sk_dbtn,&dbtns,sizeof(dbtns),sizeof(MTSQMetrics)},
-	{"Main Window Buttons",sk_mbtn,&mbtns,sizeof(mbtns),sizeof(MTSQMetrics)},
-	{"Arrows",sk_arrw,&arm,sizeof(arm),sizeof(MTSkinPart)},
-	{"Combo-box",sk_cbbt,&cbbm,sizeof(cbbm),sizeof(MTSkinPart)},
-	{"Horizontal Scroller",sk_hscr,&hscm,sizeof(hscm),sizeof(MTBTMetrics)},
-	{"Vertical Scroller",sk_vscr,&vscm,sizeof(vscm),sizeof(MTBTMetrics)},
-	{"Horizontal Lift",sk_hscb,&hscbm,sizeof(hscbm),sizeof(MTBTMetrics)},
-	{"Vertical Lift",sk_vscb,&vscbm,sizeof(vscbm),sizeof(MTBTMetrics)},
-	{"Disabled Horizontal Scroller",sk_hdsc,&hdscm,sizeof(hdscm),sizeof(MTBTMetrics)},
-	{"Disabled Vertical Scroller",sk_vdsc,&vdscm,sizeof(vdscm),sizeof(MTBTMetrics)},
-	{"Status Buttons",sk_stbt,&sbm,sizeof(sbm),sizeof(MTSkinPart)},
-	{"Pattern",sk_patt,&ptm,sizeof(ptm),sizeof(MTBTMetrics)},
-	{"Horizontal Slider",sk_hsli,&hslm,sizeof(hslm),sizeof(MTSLMetrics)},
-	{"Vertical Slider",sk_vsli,&vslm,sizeof(vslm),sizeof(MTSLMetrics)},
-	{"Knob",sk_knob,&knm,sizeof(knm),sizeof(MTSLMetrics)},
-	{"Volume Slider",sk_vols,&vsm,sizeof(vsm),sizeof(MTSLMetrics)},
-	{"Vu-meter",sk_vume,&vum,sizeof(vum),sizeof(MTSLMetrics)},
-	{"Animation",sk_anim,&animm,sizeof(animm),sizeof(MTSQMetrics)},
-	{"Icon",sk_icon,&icom,sizeof(icom),sizeof(MTSQMetrics)},
-	{"Checkbox Buttons",sk_chkb,&cbm,sizeof(cbm),sizeof(MTSkinPart)},
-	{"Radio Buttons",sk_radb,&rbm,sizeof(rbm),sizeof(MTSkinPart)},
-	{"Image List",sk_imag,&ilm,sizeof(ilm),sizeof(MTSQMetrics)},
-	{"Progress Bar",sk_prog,&prm,sizeof(prm),sizeof(MTSLMetrics)},
-	{"Skin Information",sk_skin,&info,sizeof(info),sizeof(MTSkinInfo)},
-	{"Bitmap Indexes",sk_bmid,&bmpid,sizeof(bmpid),sizeof(int)}
-*/
 	updatemetrics();
 	mtmemzero(fontmap,sizeof(fontmap));
 	for (x=0;x<96;x++){
 		fontmap[fnm.fontseq[x]] = x;
 	};
-	hskfont[0] = createfont(fnm.caption.name,fnm.caption.size,(fnm.caption.flags & SF_BOLD)!=0);
-	hskfont[1] = createfont(fnm.text.name,fnm.text.size,(fnm.text.flags & SF_BOLD)!=0);
-	hskfont[2] = createfont(fnm.button.name,fnm.button.size,(fnm.button.flags & SF_BOLD)!=0);
-	hskfont[3] = createfont(fnm.edit.name,fnm.edit.size,(fnm.edit.flags & SF_BOLD)!=0);
-	setshadows();
+	mtmemzero(bmpid,sizeof(bmpid));
+	mtmemzero(skinbmp,sizeof(skinbmp));
+	mtmemzero(mask,sizeof(mask));
+	mtmemzero(mr,sizeof(mr));
+	mtmemzero(hskfont,sizeof(hskfont));
+	mtmemzero(br,sizeof(br));
+	sko[0].k = "Background"; sko[0].t = sk_back; sko[0].a = &bkg; sko[0].s = sizeof(bkg); sko[0].p = sizeof(MTSkinPart);
+	sko[1].k = "Fonts"; sko[1].t = sk_font; sko[1].a = &fnm; sko[1].s = sizeof(fnm); sko[1].p = sizeof(MTFNMetrics);
+	sko[2].k = "Windows"; sko[2].t = sk_wins; sko[2].a = &wnm; sko[2].s = sizeof(wnm); sko[2].p = sizeof(MTWNMetrics);
+	sko[3].k = "Buttons"; sko[3].t = sk_btns; sko[3].a = &btm; sko[3].s = sizeof(btm); sko[3].p = sizeof(MTBTMetrics);
+	sko[4].k = "Tab Buttons"; sko[4].t = sk_tbtn; sko[4].a = &tbtm; sko[4].s = sizeof(tbtm); sko[4].p = sizeof(MTBTMetrics);
+	sko[5].k = "Disabled Tab Buttons"; sko[5].t = sk_dtbt; sko[5].a = &dtbtm; sko[5].s = sizeof(dtbtm); sko[5].p = sizeof(MTBTMetrics);
+	sko[6].k = "Window Buttons"; sko[6].t = sk_wbtn; sko[6].a = &wbtns; sko[6].s = sizeof(wbtns); sko[6].p = sizeof(MTSQMetrics);
+	sko[7].k = "Disabled Window Buttons"; sko[7].t = sk_dbtn; sko[7].a = &dbtns; sko[7].s = sizeof(dbtns); sko[7].p = sizeof(MTSQMetrics);
+	sko[8].k = "Main Window Buttons"; sko[8].t = sk_mbtn; sko[8].a = &mbtns; sko[8].s = sizeof(mbtns); sko[8].p = sizeof(MTSQMetrics);
+	sko[9].k = "Arrows"; sko[9].t = sk_arrw; sko[9].a = &arm; sko[9].s = sizeof(arm); sko[9].p = sizeof(MTSkinPart);
+	sko[10].k = "Combo-box"; sko[10].t = sk_cbbt; sko[10].a = &cbbm; sko[10].s = sizeof(cbbm); sko[10].p = sizeof(MTSkinPart);
+	sko[11].k = "Horizontal Scroller"; sko[11].t = sk_hscr; sko[11].a = &hscm; sko[11].s = sizeof(hscm); sko[11].p = sizeof(MTBTMetrics);
+	sko[12].k = "Vertical Scroller"; sko[12].t = sk_vscr; sko[12].a = &vscm; sko[12].s = sizeof(vscm); sko[12].p = sizeof(MTBTMetrics);
+	sko[13].k = "Horizontal Lift"; sko[13].t = sk_hscb; sko[13].a = &hscbm; sko[13].s = sizeof(hscbm); sko[13].p = sizeof(MTBTMetrics);
+	sko[14].k = "Vertical Lift"; sko[14].t = sk_vscb; sko[14].a = &vscbm; sko[14].s = sizeof(vscbm); sko[14].p = sizeof(MTBTMetrics);
+	sko[15].k = "Disabled Horizontal Scroller"; sko[15].t = sk_hdsc; sko[15].a = &hdscm; sko[15].s = sizeof(hdscm); sko[15].p = sizeof(MTBTMetrics);
+	sko[16].k = "Disabled Vertical Scroller"; sko[16].t = sk_vdsc; sko[16].a = &vdscm; sko[16].s = sizeof(vdscm); sko[16].p = sizeof(MTBTMetrics);
+	sko[17].k = "Status Buttons"; sko[17].t = sk_stbt; sko[17].a = &sbm; sko[17].s = sizeof(sbm); sko[17].p = sizeof(MTSkinPart);
+	sko[18].k = "Pattern"; sko[18].t = sk_patt; sko[18].a = &ptm; sko[18].s = sizeof(ptm); sko[18].p = sizeof(MTBTMetrics);
+	sko[19].k = "Horizontal Slider"; sko[19].t = sk_hsli; sko[19].a = &hslm; sko[19].s = sizeof(hslm); sko[19].p = sizeof(MTSLMetrics);
+	sko[20].k = "Vertical Slider"; sko[20].t = sk_vsli; sko[20].a = &vslm; sko[20].s = sizeof(vslm); sko[20].p = sizeof(MTSLMetrics);
+	sko[21].k = "Knob"; sko[21].t = sk_knob; sko[21].a = &knm; sko[21].s = sizeof(knm); sko[21].p = sizeof(MTSLMetrics);
+	sko[22].k = "Volume Slider"; sko[22].t = sk_vols; sko[22].a = &vsm; sko[22].s = sizeof(vsm); sko[22].p = sizeof(MTSLMetrics);
+	sko[23].k = "Vu-meter"; sko[23].t = sk_vume; sko[23].a = &vum; sko[23].s = sizeof(vum); sko[23].p = sizeof(MTSLMetrics);
+	sko[24].k = "Animation"; sko[24].t = sk_anim; sko[24].a = &animm; sko[24].s = sizeof(animm); sko[24].p = sizeof(MTSQMetrics);
+	sko[25].k = "Icon"; sko[25].t = sk_icon; sko[25].a = &icom; sko[25].s = sizeof(icom); sko[25].p = sizeof(MTSQMetrics);
+	sko[26].k = "Checkbox Buttons"; sko[26].t = sk_chkb; sko[26].a = &cbm; sko[26].s = sizeof(cbm); sko[26].p = sizeof(MTSkinPart);
+	sko[27].k = "Radio Buttons"; sko[27].t = sk_radb; sko[27].a = &rbm; sko[27].s = sizeof(rbm); sko[27].p = sizeof(MTSkinPart);
+	sko[28].k = "Image List"; sko[28].t = sk_imag; sko[28].a = &ilm; sko[28].s = sizeof(ilm); sko[28].p = sizeof(MTSQMetrics);
+	sko[29].k = "Progress Bar"; sko[29].t = sk_prog; sko[29].a = &prm; sko[29].s = sizeof(prm); sko[29].p = sizeof(MTSLMetrics);
+	sko[30].k = "Skin Information"; sko[30].t = sk_skin; sko[30].a = &info; sko[30].s = sizeof(info); sko[30].p = sizeof(MTSkinInfo);
+	sko[31].k = "Bitmap Indexes"; sko[31].t = sk_bmid; sko[31].a = &bmpid; sko[31].s = sizeof(bmpid); sko[31].p = sizeof(int);
 }
 
 MTSkin::~MTSkin()
 {
 	int x;
 
-	deletefont(hskfont[0]);
-	deletefont(hskfont[1]);
-	deletefont(hskfont[2]);
-	deletefont(hskfont[3]);
-	for (x=0;x<8;x++){
-		if (mask[x]){
-			di->delmask(mask[x]);
-			mask[x] = 0;
+	delfonts();
+	delshadows();
+	for (x=0;x<16;x++){
+		if (skinbmp[x]){
+			di->delbitmap(skinbmp[x]);
+			skinbmp[x] = 0;
+			di->setskinbitmap(x,0);
 		};
 	};
 }
@@ -99,23 +97,17 @@ void MTSkin::loadfromres(MTResources *res)
 {
 	int type,size,csize,x,l;
 	void *stream;
+	bool hadshadows;
 	
 	FENTER1("loadskinfromres(%.8X)",res);
-	deletefont(hskfont[0]);
-	deletefont(hskfont[1]);
-	deletefont(hskfont[2]);
-	deletefont(hskfont[3]);
+	hadshadows = (mask[0]!=0);
+	delfonts();
+	delshadows();
 	for (x=0;x<16;x++){
 		if (skinbmp[x]){
 			di->delbitmap(skinbmp[x]);
 			skinbmp[x] = 0;
 			di->setskinbitmap(x,0);
-		};
-	};
-	for (x=0;x<8;x++){
-		if (mask[x]){
-			di->delmask(mask[x]);
-			mask[x] = 0;
 		};
 	};
 	stream = res->getresource(MTR_SKIN,0,&size);
@@ -167,11 +159,8 @@ void MTSkin::loadfromres(MTResources *res)
 				di->setskinbitmap(x,cskin);
 			};
 		};
-		hskfont[0] = createfont(fnm.caption.name,fnm.caption.size,(fnm.caption.flags & SF_BOLD)!=0);
-		hskfont[1] = createfont(fnm.text.name,fnm.text.size,(fnm.text.flags & SF_BOLD)!=0);
-		hskfont[2] = createfont(fnm.button.name,fnm.button.size,(fnm.button.flags & SF_BOLD)!=0);
-		hskfont[3] = createfont(fnm.edit.name,fnm.edit.size,(fnm.edit.flags & SF_BOLD)!=0);
-		setshadows();
+		setfonts();
+		if (hadshadows) setshadows(true);
 	}
 	else{
 		LOGD("%s - [GUI] ERROR: Cannot load skin!"NL);
@@ -263,7 +252,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 //	Label
 		{
 			if (ctrl->parent->open(0)){
-				ctrl->parent->settextcolor(fnm.colors[SC_TEXT_NORMAL]);
+				ctrl->parent->settextcolor(fnm.colors[SC_TEXT_NORMAL & 0xFFFF]);
 				ctrl->parent->setfont(hskfont[1]);
 				ctrl->parent->drawtext(((MTLabel*)ctrl)->caption,-1,rect,DTXT_MULTILINE);
 				ctrl->parent->close(0);
@@ -330,7 +319,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 	case MTC_FILELISTBOX:
 //	List
 		{
-			((MTWinControl*)ctrl)->fillcolor(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_EDIT_BACKGROUND]);
+			((MTWinControl*)ctrl)->fillcolor(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_EDIT_BACKGROUND & 0xFFFF]);
 		};
 		break;
 	case MTC_LISTITEM:
@@ -345,11 +334,11 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 					int h = li.height/2;
 					MTRect r = {x+20,y};
 
-					b->setbrush(fnm.colors[SC_EDIT_BACKGROUND]);
-					b->setpen(fnm.colors[SC_CTRL_S]);
+					b->setbrush(fnm.colors[SC_EDIT_BACKGROUND & 0xFFFF]);
+					b->setpen(fnm.colors[SC_CTRL_S & 0xFFFF]);
 					b->moveto(x,y+h-1);
 					b->lineto(x+li.width,y+h-1);
-					b->setpen(fnm.colors[SC_CTRL_L]);
+					b->setpen(fnm.colors[SC_CTRL_L & 0xFFFF]);
 					b->moveto(x,y+h);
 					b->lineto(x+li.width,y+h);
 					b->gettextsize(&li.caption[1],-1,(MTPoint*)&r.right);
@@ -358,7 +347,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 					if (r.right>x+li.width-2) r.right = x+li.width-2;
 					if (r.bottom>y+li.height) r.bottom = y+li.height;
 					b->fillex(r.left,r.top,r.right-r.left,r.bottom-r.top);
-					b->settextcolor(fnm.colors[SC_CTRL_S]);
+					b->settextcolor(fnm.colors[SC_CTRL_S & 0xFFFF]);
 					b->setfont(hskfont[1]);
 					l = b->gettextextent(&li.caption[1],-1,r.right-r.left);
 					if (l<strlen(&li.caption[1])){
@@ -382,14 +371,14 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 			}
 			else{
 				MTRect r = {x,y};
-				b->fill(x,y,li.width,li.height,(li.flags & MTCF_SELECTED)?fnm.colors[SC_EDIT_SELECTION]:fnm.colors[SC_EDIT_BACKGROUND]);
+				b->fill(x,y,li.width,li.height,(li.flags & MTCF_SELECTED)?fnm.colors[SC_EDIT_SELECTION & 0xFFFF]:fnm.colors[SC_EDIT_BACKGROUND & 0xFFFF]);
 				if (((MTListBox*)li.parent)->viewflags & MTVF_IMAGES){
 					sysimages.drawimage(li.imageindex,b,x+2,y);
 					r.left += 18;
 				};
-				if (li.flags & MTCF_SELECTED) color = fnm.colors[SC_EDIT_SELECTED];
-				else if (li.flags & MTCF_OVER) color = fnm.colors[SC_TEXT_FOCUSED];
-				else color = fnm.colors[SC_TEXT_NORMAL];
+				if (li.flags & MTCF_SELECTED) color = fnm.colors[SC_EDIT_SELECTED & 0xFFFF];
+				else if (li.flags & MTCF_OVER) color = fnm.colors[SC_TEXT_FOCUSED & 0xFFFF];
+				else color = fnm.colors[SC_TEXT_NORMAL & 0xFFFF];
 				if (b->open(0)){
 					b->settextcolor(color);
 					b->setfont(hskfont[1]);
@@ -469,7 +458,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 	case MTC_LISTBOX:
 //	List Box
 		{
-			((MTListBox*)ctrl)->fillcolor(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_EDIT_BACKGROUND]);
+			((MTListBox*)ctrl)->fillcolor(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_EDIT_BACKGROUND & 0xFFFF]);
 		};
 	case MTC_MENUITEM:
 //	Menu Item
@@ -483,11 +472,11 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 					int h = mi.height/2;
 					MTRect r = {x+20,y};
 
-					b->setbrush(fnm.colors[SC_BACKGROUND]);
-					b->setpen(fnm.colors[SC_CTRL_S]);
+					b->setbrush(fnm.colors[SC_BACKGROUND & 0xFFFF]);
+					b->setpen(fnm.colors[SC_CTRL_S & 0xFFFF]);
 					b->moveto(x,y+h-1);
 					b->lineto(x+mi.width,y+h-1);
-					b->setpen(fnm.colors[SC_CTRL_L]);
+					b->setpen(fnm.colors[SC_CTRL_L & 0xFFFF]);
 					b->moveto(x,y+h);
 					b->lineto(x+mi.width,y+h);
 					b->gettextsize(&mi.caption[1],-1,(MTPoint*)&r.right);
@@ -496,7 +485,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 					if (r.right>x+mi.width-2) r.right = x+mi.width-2;
 					if (r.bottom>y+mi.height) r.bottom = y+mi.height;
 					b->fillex(r.left,r.top,r.right-r.left,r.bottom-r.top);
-					b->settextcolor(fnm.colors[SC_TEXT_NORMAL]);
+					b->settextcolor(fnm.colors[SC_TEXT_NORMAL & 0xFFFF]);
 					b->setfont(hskfont[1]);
 					b->drawtext(&mi.caption[1],-1,r,DTXT_VCENTER);
 					b->close(0);
@@ -504,13 +493,13 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 			}
 			else{
 				MTRect r = {x+2,y,x+mi.width-2,y+mi.height};
-				b->fill(x,y,mi.width,mi.height,(mi.flags & MTCF_OVER)?fnm.colors[SC_EDIT_SELECTION]:fnm.colors[SC_BACKGROUND]);
+				b->fill(x,y,mi.width,mi.height,(mi.flags & MTCF_OVER)?fnm.colors[SC_EDIT_SELECTION & 0xFFFF]:fnm.colors[SC_BACKGROUND & 0xFFFF]);
 				if (((MTListBox*)mi.parent)->viewflags & MTVF_IMAGES){
 					sysimages.drawimage(mi.imageindex,b,x+2,y);
 					r.left += 18;
 				};
-				if (mi.flags & MTCF_OVER) color = fnm.colors[SC_EDIT_SELECTED];
-				else color = fnm.colors[SC_TEXT_NORMAL];
+				if (mi.flags & MTCF_OVER) color = fnm.colors[SC_EDIT_SELECTED & 0xFFFF];
+				else color = fnm.colors[SC_TEXT_NORMAL & 0xFFFF];
 				if (b->open(0)){
 					b->settextcolor(color);
 					b->setfont(hskfont[1]);
@@ -532,7 +521,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 	case MTC_MENU:
 //	Menu
 		{
-			((MTMenu*)ctrl)->fillcolor(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_BACKGROUND]);
+			((MTMenu*)ctrl)->fillcolor(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_BACKGROUND & 0xFFFF]);
 		};
 		break;
 	case MTC_WINDOW:
@@ -602,7 +591,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 				else if (fnm.caption.flags & SF_RIGHT) tflags |= DTXT_RIGHT;
 				w.open(0);
 				w.setfont(hskfont[0]);
-				w.settextcolor((w.flags & MTCF_FOCUSED)?fnm.colors[SC_WINDOW_FOCUSED]:fnm.colors[SC_WINDOW_NORMAL]);
+				w.settextcolor((w.flags & MTCF_FOCUSED)?fnm.colors[SC_WINDOW_FOCUSED & 0xFFFF]:fnm.colors[SC_WINDOW_NORMAL & 0xFFFF]);
 				w.drawtext(w.caption,-1,tr,tflags);
 				w.close(0);
 			};
@@ -623,10 +612,10 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 			rect.top += 2;
 			rect.right -= 4;
 			rect.bottom -= 4;
-			b->fill(x+rect.left,y+rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_EDIT_BACKGROUND]);
+			b->fill(x+rect.left,y+rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_EDIT_BACKGROUND & 0xFFFF]);
 			b->open(0);
-			color = fnm.colors[SC_EDIT_NORMAL];
-			if (e.flags & (MTCF_OVER|MTCF_FOCUSED)) color = fnm.colors[SC_EDIT_FOCUSED];
+			color = fnm.colors[SC_EDIT_NORMAL & 0xFFFF];
+			if (e.flags & (MTCF_OVER|MTCF_FOCUSED)) color = fnm.colors[SC_EDIT_FOCUSED & 0xFFFF];
 			b->settextcolor(color);
 			b->setfont(hskfont[3]);
 			ml = strlen(e.text);
@@ -650,10 +639,10 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 					tse.x += e.lblank;
 					if (tss.x<e.width-e.rblank){
 						if (tse.x>=e.width-e.rblank) tse.x = e.width-e.rblank-1;
-						b->setbrush(fnm.colors[SC_EDIT_SELECTION]);
+						b->setbrush(fnm.colors[SC_EDIT_SELECTION & 0xFFFF]);
 						b->fillex(x+4+tss.x,r.top,tse.x-tss.x,r.bottom-r.top);
 						r.left = x+4+tss.x;
-						if (flags & MTCF_FOCUSED) b->settextcolor(fnm.colors[SC_EDIT_SELECTED]);
+						if (flags & MTCF_FOCUSED) b->settextcolor(fnm.colors[SC_EDIT_SELECTED & 0xFFFF]);
 						b->drawtext(&mtext[ss],se-ss,r,0);
 						if (tse.x<e.width-e.rblank-1){
 							r.left = x+4+tse.x;
@@ -676,7 +665,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 				};
 				ts.x += e.lblank;
 				if (ts.x<e.width-e.rblank){
-					b->setpen(fnm.colors[SC_CURSOR]);
+					b->setpen(fnm.colors[SC_CURSOR & 0xFFFF]);
 					b->moveto(x+4+ts.x,r.top);
 					b->lineto(x+4+ts.x,r.bottom);
 				};
@@ -744,13 +733,13 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 			if (bc.caption[0]){
 				tflags = DTXT_VCENTER;
 				if ((&ctb) && (ctb.guiid==MTC_TABCONTROL)){
-					color = fnm.colors[SC_TAB_NORMAL];
-					if ((bc.flags & (MTCF_OVER|MTCF_DOWN)) || (ctb.getpageid(ctb.page)==bc.tag) || (bc.flags & MTCF_FOCUSED)) color = fnm.colors[SC_TAB_FOCUSED];
+					color = fnm.colors[SC_TAB_NORMAL & 0xFFFF];
+					if ((bc.flags & (MTCF_OVER|MTCF_DOWN)) || (ctb.getpageid(ctb.page)==bc.tag) || (bc.flags & MTCF_FOCUSED)) color = fnm.colors[SC_TAB_FOCUSED & 0xFFFF];
 				}
 				else{
-					color = fnm.colors[SC_BUTTON_NORMAL];
-					if (bc.flags & MTCF_DISABLED) color = fnm.colors[SC_BUTTON_DISABLED];
-					else if ((bc.flags & (MTCF_OVER|MTCF_DOWN)) || ((bc.flags & MTCF_FOCUSED) && (flags))) color = fnm.colors[SC_BUTTON_FOCUSED];
+					color = fnm.colors[SC_BUTTON_NORMAL & 0xFFFF];
+					if (bc.flags & MTCF_DISABLED) color = fnm.colors[SC_BUTTON_DISABLED & 0xFFFF];
+					else if ((bc.flags & (MTCF_OVER|MTCF_DOWN)) || ((bc.flags & MTCF_FOCUSED) && (flags))) color = fnm.colors[SC_BUTTON_FOCUSED & 0xFFFF];
 				};
 				if (fnm.button.flags & SF_CENTER) tflags |= DTXT_CENTER;
 				else if (fnm.button.flags & SF_RIGHT) tflags |= DTXT_RIGHT;
@@ -790,11 +779,32 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 				b->skinblta(x,y+(cb.height-csp.b.h)/2,w,csp.b.h,csp,3,1,cb.state);
 			};
 			if (b->open(0)){
-				b->settextcolor(((cb.flags & MTCF_OVER) || ((cb.flags & MTCF_FOCUSED) && (cursor)))?fnm.colors[SC_TEXT_FOCUSED]:fnm.colors[SC_TEXT_NORMAL]);
+				b->settextcolor(((cb.flags & MTCF_OVER) || ((cb.flags & MTCF_FOCUSED) && (cursor)))?fnm.colors[SC_TEXT_FOCUSED & 0xFFFF]:fnm.colors[SC_TEXT_NORMAL & 0xFFFF]);
 				b->setfont(hskfont[1]);
 				b->drawtext(cb.caption,-1,r,DTXT_VCENTER);
 				b->close(0);
 			};
+		};
+		break;
+	};
+}
+
+void MTSkin::drawcontrol(int guiid,int id,MTRect &rect,MTBitmap *b,int x,int y,int flags)
+{
+	switch (guiid){
+	case MTC_STATUS:
+		{
+			if (id<3){
+				b->skinblta(x,y,sbm.b.h/2,sbm.b.h/2,sbm,6,2,id+6*flags);
+			}
+			else{
+				b->skinblta(x,y,sbm.b.w-(sbm.b.h*3)/2,sbm.b.h/2,sbm,2,2,1);
+			};
+		};
+		break;
+	case MTC_SEQUENCE:
+		{
+			drawbutton(b,rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,&ptm[id]);
 		};
 		break;
 	};
@@ -896,6 +906,10 @@ void MTSkin::getcontrolsize(int guiid,int id,int &width,int &height)
 			height = prm.c.a.b.h/prm.c.ny;
 			break;
 		};
+		break;
+	case MTC_STATUS:
+		width = sbm.b.w-(sbm.b.h*3)/2;	// Vu-meter size
+		height = sbm.b.h/2;
 		break;
 	};
 }
@@ -1121,11 +1135,11 @@ void MTSkin::drawitem(MTUserList *list,int i,MTRect &rect,MTBitmap *b,const char
 		r.left = rect.left+18;
 		r.top = rect.top;
 		if (b->open(0)){
-			b->setbrush(fnm.colors[SC_BACKGROUND]);
-			b->setpen(fnm.colors[SC_CTRL_S]);
+			b->setbrush(fnm.colors[SC_BACKGROUND & 0xFFFF]);
+			b->setpen(fnm.colors[SC_CTRL_S & 0xFFFF]);
 			b->moveto(r.left,mid-1);
 			b->lineto(r.right,mid-1);
-			b->setpen(fnm.colors[SC_CTRL_L]);
+			b->setpen(fnm.colors[SC_CTRL_L & 0xFFFF]);
 			b->moveto(r.left,mid);
 			b->lineto(r.right,mid);
 			r.left += 18;
@@ -1135,7 +1149,7 @@ void MTSkin::drawitem(MTUserList *list,int i,MTRect &rect,MTBitmap *b,const char
 			if (r.right>rect.right-2) r.right = rect.right-2;
 			if (r.bottom>rect.bottom) r.bottom = rect.bottom;
 			b->fillex(r.left,r.top,r.right-r.left,r.bottom-r.top);
-			b->settextcolor(fnm.colors[SC_TEXT_NORMAL]);
+			b->settextcolor(fnm.colors[SC_TEXT_NORMAL & 0xFFFF]);
 			b->setfont(hskfont[1]);
 			l = b->gettextextent(&caption[1],-1,r.right-r.left);
 			if (l<strlen(&caption[1])){
@@ -1158,14 +1172,14 @@ void MTSkin::drawitem(MTUserList *list,int i,MTRect &rect,MTBitmap *b,const char
 		};
 	}
 	else{
-		b->fill(r.left,r.top,r.right-r.left,r.bottom-r.top,(i==list->selected)?fnm.colors[SC_EDIT_SELECTION]:fnm.colors[SC_EDIT_BACKGROUND]);
+		b->fill(r.left,r.top,r.right-r.left,r.bottom-r.top,(i==list->selected)?fnm.colors[SC_EDIT_SELECTION & 0xFFFF]:fnm.colors[SC_EDIT_BACKGROUND & 0xFFFF]);
 		if (list->viewflags & MTVF_IMAGES){
 			sysimages.drawimage(imageindex,b,r.left,r.top);
 			r.left += 18;
 		};
-		if (i==list->over) color = fnm.colors[SC_TEXT_FOCUSED];
-		else if (i==list->selected) color = fnm.colors[SC_EDIT_SELECTED];
-		else color = fnm.colors[SC_TEXT_NORMAL];
+		if (i==list->over) color = fnm.colors[SC_TEXT_FOCUSED & 0xFFFF];
+		else if (i==list->selected) color = fnm.colors[SC_EDIT_SELECTED & 0xFFFF];
+		else color = fnm.colors[SC_TEXT_NORMAL & 0xFFFF];
 		if (b->open(0)){
 			b->settextcolor(color);
 			b->setfont(hskfont[1]);
@@ -1339,97 +1353,6 @@ void MTSkin::drawshadow(MTBitmap *bmp,int x,int y,int w,int h,int style)
 	};
 //	bmp->closebits();
 	bmp->unclip();
-}
-
-void MTSkin::setshadows()
-{
-	int x,w,h,t,ox1,oy1,ox2,oy2;
-	
-	ENTER("MTSkin::setshadows");
-	for (x=0;x<8;x++){
-		if (mask[x]){
-			di->delmask(mask[x]);
-			mask[x] = 0;
-		};
-	};
-	if (!guiprefs.shadows){
-		LEAVE();
-		return;
-	};
-	for (x=0;x<8;x++){
-		if ((x==5) || (x==6) || (x==7)) continue;
-		MTWNMetrics &m = wnm[x];
-		MTMask *cmask;
-		MTRect *cr = mr[x];
-		ox1 = m.tl.b.w-m.tlo.x;
-		oy1 = m.tl.b.h-m.tlo.y;
-		ox2 = m.br.b.w-m.bro.x;
-		oy2 = m.br.b.h-m.bro.y;
-		w = m.t.b.w*4+m.tlo.x+m.tro.x+ox1+ox2;
-		t = m.b.b.w*4+m.blo.x+m.bro.x+ox1+ox2;
-		if (t>w) w = t;
-		h = m.l.b.h*4+m.tlo.y+m.blo.y+oy1+oy2;
-		t = m.r.b.h*4+m.tro.y+m.bro.y+oy1+oy2;
-		if (t>h) h = t;
-		cmask = di->newmask(w+32,h+32);
-		// Top-left
-		cr[0].left = 16;
-		cr[0].top = 16;
-		skinbmp[m.tl.bmpid]->maskblt(cmask,cr[0].left,cr[0].top,0,0,m.tl);
-		// Top
-		cr[1].left = 16+m.tlo.x+ox1;
-		cr[1].top = 16+m.to+oy1-m.t.b.h;
-		t = w-m.tlo.x-m.tro.x-ox1-ox2;
-		skinbmp[m.t.bmpid]->maskblt(cmask,cr[1].left,cr[1].top,t,0,m.t);
-		// Top-right
-		cr[2].left = 16+w-m.tro.x-ox2;
-		cr[2].top = 16+m.tro.y+oy1-m.tr.b.h;
-		skinbmp[m.tr.bmpid]->maskblt(cmask,cr[2].left,cr[2].top,0,0,m.tr);
-		// Bottom-left
-		cr[3].left = 16-m.bl.b.w+m.blo.x+ox1;
-		cr[3].top = 16+h-m.blo.y-oy2;
-		skinbmp[m.bl.bmpid]->maskblt(cmask,cr[3].left,cr[3].top,0,0,m.bl);
-		// Bottom
-		cr[4].left = 16+m.blo.x+ox1;
-		cr[4].top = 16+h-m.bo-oy2;
-		t = w-m.blo.x-m.bro.x-ox1-ox2;
-		skinbmp[m.b.bmpid]->maskblt(cmask,cr[4].left,cr[4].top,t,0,m.b);
-		// Bottom-right
-		cr[5].left = 16+w-m.bro.x-ox2;
-		cr[5].top = 16+h-m.bro.y-oy2;
-		skinbmp[m.br.bmpid]->maskblt(cmask,cr[5].left,cr[5].top,0,0,m.br);
-		// Left
-		cr[6].left = 16+m.lo+ox1-m.l.b.w;
-		cr[6].top = 16+m.tlo.y+oy1;
-		t = h-m.tlo.y-m.blo.y-oy1-oy2;
-		skinbmp[m.l.bmpid]->maskblt(cmask,cr[6].left,cr[6].top,0,t,m.l);
-		// Right
-		cr[7].left = 16+w-m.ro-ox1;
-		cr[7].top = 16+m.tro.y+oy1;
-		t = h-m.tro.y-m.bro.y-oy1-oy2;
-		skinbmp[m.r.bmpid]->maskblt(cmask,cr[7].left,cr[7].top,0,t,m.r);
-		cr[0].left -= 8;
-		cr[0].top -= 8;
-		cr[1].left += m.t.b.w-8;
-		cr[1].top -= 8;
-		cr[2].left -= 8;
-		cr[2].top -= 8;
-		cr[3].left -= 8;
-		cr[3].top -= 8;
-		cr[4].left += m.b.b.w-8;
-		cr[4].top -= 8;
-		cr[5].left -= 8;
-		cr[5].top -= 8;
-		cr[6].left -= 8;
-		cr[6].top += m.l.b.h-8;
-		cr[7].left -= 8;
-		cr[7].top += m.r.b.h-8;
-		cmask->fill(16+ox1,16+oy1,w-ox1-ox2,h-oy1-oy2,0);
-		cmask->blur(guiprefs.shadowblur);
-		cmask->opacity(guiprefs.shadowop);
-		mask[x] = cmask;
-	};
-	LEAVE();
 }
 
 void MTSkin::calcbounds(int m)
@@ -1692,24 +1615,138 @@ void MTSkin::drawslider(MTBitmap *bmp,int x,int y,int w,int h,MTSLMetrics *m,int
 void MTSkin::drawframe(MTBitmap *bmp,int x,int y,int w,int h,int flags)
 {
 	if (flags==0){
-		bmp->fill(x,y,w,1,fnm.colors[SC_CTRL_S]);
-		bmp->fill(x,y,1,h,fnm.colors[SC_CTRL_S]);
-		bmp->fill(x+1,y+h-1,w-1,1,fnm.colors[SC_CTRL_HL]);
-		bmp->fill(x+w-1,y+1,1,h-1,fnm.colors[SC_CTRL_HL]);
-		bmp->fill(x+1,y+1,w-2,1,fnm.colors[SC_CTRL_DS]);
-		bmp->fill(x+1,y+1,1,h-2,fnm.colors[SC_CTRL_DS]);
-		bmp->fill(x+2,y+h-2,w-3,1,fnm.colors[SC_CTRL_L]);
-		bmp->fill(x+w-2,y+2,1,h-3,fnm.colors[SC_CTRL_L]);
+		bmp->fill(x,y,w,1,fnm.colors[SC_CTRL_S & 0xFFFF]);
+		bmp->fill(x,y,1,h,fnm.colors[SC_CTRL_S & 0xFFFF]);
+		bmp->fill(x+1,y+h-1,w-1,1,fnm.colors[SC_CTRL_HL & 0xFFFF]);
+		bmp->fill(x+w-1,y+1,1,h-1,fnm.colors[SC_CTRL_HL & 0xFFFF]);
+		bmp->fill(x+1,y+1,w-2,1,fnm.colors[SC_CTRL_DS & 0xFFFF]);
+		bmp->fill(x+1,y+1,1,h-2,fnm.colors[SC_CTRL_DS & 0xFFFF]);
+		bmp->fill(x+2,y+h-2,w-3,1,fnm.colors[SC_CTRL_L & 0xFFFF]);
+		bmp->fill(x+w-2,y+2,1,h-3,fnm.colors[SC_CTRL_L & 0xFFFF]);
 	}
 	else if (flags==1){
-		bmp->fill(x,y,w,1,fnm.colors[SC_CTRL_HL]);
-		bmp->fill(x,y,1,h,fnm.colors[SC_CTRL_HL]);
-		bmp->fill(x+1,y+h-1,w-1,1,fnm.colors[SC_CTRL_DS]);
-		bmp->fill(x+w-1,y+1,1,h-1,fnm.colors[SC_CTRL_DS]);
-		bmp->fill(x+1,y+1,w-2,1,fnm.colors[SC_CTRL_L]);
-		bmp->fill(x+1,y+1,1,h-2,fnm.colors[SC_CTRL_L]);
-		bmp->fill(x+2,y+h-2,w-3,1,fnm.colors[SC_CTRL_S]);
-		bmp->fill(x+w-2,y+2,1,h-3,fnm.colors[SC_CTRL_S]);
+		bmp->fill(x,y,w,1,fnm.colors[SC_CTRL_HL & 0xFFFF]);
+		bmp->fill(x,y,1,h,fnm.colors[SC_CTRL_HL & 0xFFFF]);
+		bmp->fill(x+1,y+h-1,w-1,1,fnm.colors[SC_CTRL_DS & 0xFFFF]);
+		bmp->fill(x+w-1,y+1,1,h-1,fnm.colors[SC_CTRL_DS & 0xFFFF]);
+		bmp->fill(x+1,y+1,w-2,1,fnm.colors[SC_CTRL_L & 0xFFFF]);
+		bmp->fill(x+1,y+1,1,h-2,fnm.colors[SC_CTRL_L & 0xFFFF]);
+		bmp->fill(x+2,y+h-2,w-3,1,fnm.colors[SC_CTRL_S & 0xFFFF]);
+		bmp->fill(x+w-2,y+2,1,h-3,fnm.colors[SC_CTRL_S & 0xFFFF]);
+	};
+}
+
+void MTSkin::setfonts()
+{
+	hskfont[0] = createfont(fnm.caption.name,fnm.caption.size,(fnm.caption.flags & SF_BOLD)!=0);
+	hskfont[1] = createfont(fnm.text.name,fnm.text.size,(fnm.text.flags & SF_BOLD)!=0);
+	hskfont[2] = createfont(fnm.button.name,fnm.button.size,(fnm.button.flags & SF_BOLD)!=0);
+	hskfont[3] = createfont(fnm.edit.name,fnm.edit.size,(fnm.edit.flags & SF_BOLD)!=0);
+}
+
+void MTSkin::delfonts()
+{
+	deletefont(hskfont[0]);
+	deletefont(hskfont[1]);
+	deletefont(hskfont[2]);
+	deletefont(hskfont[3]);
+}
+
+void MTSkin::setshadows(bool enabled)
+{
+	int x,w,h,t,ox1,oy1,ox2,oy2;
+	
+	ENTER("MTSkin::setshadows");
+	delshadows();
+	if (!enabled){
+		LEAVE();
+		return;
+	};
+	for (x=0;x<8;x++){
+		if ((x==5) || (x==6) || (x==7)) continue;
+		MTWNMetrics &m = wnm[x];
+		MTMask *cmask;
+		MTRect *cr = mr[x];
+		ox1 = m.tl.b.w-m.tlo.x;
+		oy1 = m.tl.b.h-m.tlo.y;
+		ox2 = m.br.b.w-m.bro.x;
+		oy2 = m.br.b.h-m.bro.y;
+		w = m.t.b.w*4+m.tlo.x+m.tro.x+ox1+ox2;
+		t = m.b.b.w*4+m.blo.x+m.bro.x+ox1+ox2;
+		if (t>w) w = t;
+		h = m.l.b.h*4+m.tlo.y+m.blo.y+oy1+oy2;
+		t = m.r.b.h*4+m.tro.y+m.bro.y+oy1+oy2;
+		if (t>h) h = t;
+		cmask = di->newmask(w+32,h+32);
+		// Top-left
+		cr[0].left = 16;
+		cr[0].top = 16;
+		skinbmp[m.tl.bmpid]->maskblt(cmask,cr[0].left,cr[0].top,0,0,m.tl);
+		// Top
+		cr[1].left = 16+m.tlo.x+ox1;
+		cr[1].top = 16+m.to+oy1-m.t.b.h;
+		t = w-m.tlo.x-m.tro.x-ox1-ox2;
+		skinbmp[m.t.bmpid]->maskblt(cmask,cr[1].left,cr[1].top,t,0,m.t);
+		// Top-right
+		cr[2].left = 16+w-m.tro.x-ox2;
+		cr[2].top = 16+m.tro.y+oy1-m.tr.b.h;
+		skinbmp[m.tr.bmpid]->maskblt(cmask,cr[2].left,cr[2].top,0,0,m.tr);
+		// Bottom-left
+		cr[3].left = 16-m.bl.b.w+m.blo.x+ox1;
+		cr[3].top = 16+h-m.blo.y-oy2;
+		skinbmp[m.bl.bmpid]->maskblt(cmask,cr[3].left,cr[3].top,0,0,m.bl);
+		// Bottom
+		cr[4].left = 16+m.blo.x+ox1;
+		cr[4].top = 16+h-m.bo-oy2;
+		t = w-m.blo.x-m.bro.x-ox1-ox2;
+		skinbmp[m.b.bmpid]->maskblt(cmask,cr[4].left,cr[4].top,t,0,m.b);
+		// Bottom-right
+		cr[5].left = 16+w-m.bro.x-ox2;
+		cr[5].top = 16+h-m.bro.y-oy2;
+		skinbmp[m.br.bmpid]->maskblt(cmask,cr[5].left,cr[5].top,0,0,m.br);
+		// Left
+		cr[6].left = 16+m.lo+ox1-m.l.b.w;
+		cr[6].top = 16+m.tlo.y+oy1;
+		t = h-m.tlo.y-m.blo.y-oy1-oy2;
+		skinbmp[m.l.bmpid]->maskblt(cmask,cr[6].left,cr[6].top,0,t,m.l);
+		// Right
+		cr[7].left = 16+w-m.ro-ox1;
+		cr[7].top = 16+m.tro.y+oy1;
+		t = h-m.tro.y-m.bro.y-oy1-oy2;
+		skinbmp[m.r.bmpid]->maskblt(cmask,cr[7].left,cr[7].top,0,t,m.r);
+		cr[0].left -= 8;
+		cr[0].top -= 8;
+		cr[1].left += m.t.b.w-8;
+		cr[1].top -= 8;
+		cr[2].left -= 8;
+		cr[2].top -= 8;
+		cr[3].left -= 8;
+		cr[3].top -= 8;
+		cr[4].left += m.b.b.w-8;
+		cr[4].top -= 8;
+		cr[5].left -= 8;
+		cr[5].top -= 8;
+		cr[6].left -= 8;
+		cr[6].top += m.l.b.h-8;
+		cr[7].left -= 8;
+		cr[7].top += m.r.b.h-8;
+		cmask->fill(16+ox1,16+oy1,w-ox1-ox2,h-oy1-oy2,0);
+		cmask->blur(guiprefs.shadowblur);
+		cmask->opacity(guiprefs.shadowop);
+		mask[x] = cmask;
+	};
+	LEAVE();
+}
+
+void MTSkin::delshadows()
+{
+	int x;
+
+	for (x=0;x<8;x++){
+		if (mask[x]){
+			di->delmask(mask[x]);
+			mask[x] = 0;
+		};
 	};
 }
 //---------------------------------------------------------------------------

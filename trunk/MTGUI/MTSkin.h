@@ -323,6 +323,7 @@ public:
 	virtual void MTCT timercontrol(MTControl *ctrl);
 //	Controls drawing
 	virtual void MTCT drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0);
+	virtual void MTCT drawcontrol(int guiid,int id,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0);
 	virtual void MTCT drawborder(MTWinControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y);
 	virtual void MTCT drawmodalveil(MTWinControl *ctrl,MTRect &rect);
 //	Dimensions
@@ -330,6 +331,7 @@ public:
 	virtual MTBitmap* MTCT getbitmap(int id);
 	virtual MTSLMetrics* MTCT getslider(int type,int orientation);
 	virtual void MTCT calcbounds(int m);
+	virtual void MTCT setshadows(bool enabled);
 	virtual void MTCT getcontrolsize(int guiid,int id,int &width,int &height);
 	virtual void MTCT getwindowborders(int style,MTRect *borders);
 	virtual void MTCT getwindowoffsets(int style,MTRect *borders);
@@ -351,8 +353,6 @@ public:
 	virtual void MTCT drawbutton(MTBitmap *bmp,int x,int y,int w,int h,MTBTMetrics *m);
 	virtual void MTCT drawslider(MTBitmap *bmp,int x,int y,int w,int h,MTSLMetrics *m,int min,int max,int pos,bool focused);
 	virtual void MTCT drawframe(MTBitmap *bmp,int x,int y,int w,int h,int flags = 0);
-//	Shadows
-	virtual void MTCT setshadows();
 	virtual void MTCT drawshadow(MTBitmap *bmp,int x,int y,int w,int h,int style);
 
 private:
@@ -394,7 +394,7 @@ private:
 	MTSLMetrics prm;
 	MTSkinInfo info;
 	MTRect br[8];
-	struct{
+	struct SKO{
 		char *k;
 		int t;
 		void *a;
@@ -402,6 +402,9 @@ private:
 		int p;
 	} sko[32];
 	static void MTCT skinchange(MTBitmap *oldskin,MTBitmap *newskin,void *param);
+	void setfonts();
+	void delfonts();
+	void delshadows();
 };
 //---------------------------------------------------------------------------
 bool initSkin();
