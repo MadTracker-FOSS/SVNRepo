@@ -1,15 +1,17 @@
 //---------------------------------------------------------------------------
-#ifndef MTMAINMENU_INCLUDED
-#define MTMAINMENU_INCLUDED
+#ifndef MTTOOLBAR_INCLUDED
+#define MTTOOLBAR_INCLUDED
 //---------------------------------------------------------------------------
-class MTMainMenu;
+class MTToolBar;
 //---------------------------------------------------------------------------
 #include "MTWinControl.h"
 //---------------------------------------------------------------------------
-class MTMainMenu : public MTWinControl{
+class MTToolBar : public MTWinControl{
 public:
-	MTMainMenu(int tg,MTWinControl *p,int l,int t,int w,int h);
-	bool MTCT message(MTCMessage &msg);
+	MTToolBar(int tg,MTWinControl *p,int l,int t,int w,int h);
+	void MTCT draw(MTRect &rect);
+	void MTCT addcontrol(MTControl *control);
+	void MTCT delcontrol(MTControl *control);
 };
 //---------------------------------------------------------------------------
 #endif

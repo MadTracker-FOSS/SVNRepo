@@ -559,9 +559,9 @@ bool MTModule::process(WaveOutput *output)
 			objectlock->unlock();
 			return false;
 		};
-		if (crashcount==0){
+		if (crashcount<=0){
 			play(PLAY_STOP);
-			crashcount = 0;
+			crashcount = 3;
 			mlock->unlock();
 			objectlock->unlock();
 			return false;

@@ -28,6 +28,7 @@
 #include "MTItems.h"
 #include "MTVisual.h"
 #include "MTOSWindow.h"
+#include "MTToolBar.h"
 #include "../Headers/MTXSystem2.h"
 
 #define SPLITRGB(c,r,g,b) {r=c & 0xFF;g=(c>>8) & 0xFF;b=(c>>16) && 0xFF;}
@@ -397,11 +398,11 @@ int MTGUIInterface::processmessages(bool userinput)
 static const char *ctrlname[] = {"MTCustomControl","MTCustomWincontrol","MTVisual",
 	"MTScroller","MTSlider","MTOscillo",
 	"MTLabel","MTButton","MTSign","MTCheckBox","MTEdit","MTUserComboBox","MTItemComboBox","MTProgress",
-	"MTUserList","MTListBox","MTFileListBox","MTPanel","MTTabControl","MTOSWindow"};
+	"MTUserList","MTListBox","MTFileListBox","MTPanel","MTToolBar","MTTabControl","MTOSWindow"};
 static const int ctrltype[] = {MTC_CUSTOMCTRL,MTC_CUSTOMWINCTRL,MTC_VISUAL,
 	MTC_SCROLLER,MTC_SLIDER,MTC_OSCILLO,
 	MTC_LABEL,MTC_BUTTON,MTC_SIGN,MTC_CHECKBOX,MTC_EDIT,MTC_USERCOMBOBOX,MTC_ITEMCOMBOBOX,MTC_PROGRESS,
-	MTC_USERLIST,MTC_LISTBOX,MTC_FILELISTBOX,MTC_PANEL,MTC_TABCONTROL,MTC_OSWINDOW};
+	MTC_USERLIST,MTC_LISTBOX,MTC_FILELISTBOX,MTC_PANEL,MTC_TOOLBAR,MTC_TABCONTROL,MTC_OSWINDOW};
 
 int MTGUIInterface::getnumcontrols()
 {
@@ -455,6 +456,9 @@ MTControl *MTGUIInterface::newcontrol(int type,int tag,MTWinControl *parent,int 
 		break;
 	case MTC_PANEL:
 		res = new MTPanel(tag,parent,l,t,w,h);
+		break;
+	case MTC_TOOLBAR:
+		res = new MTToolBar(tag,parent,l,t,w,h);
 		break;
 	case MTC_TABCONTROL:
 		res = new MTTabControl(tag,parent,l,t,w,h);
@@ -550,6 +554,9 @@ void MTGUIInterface::delcontrol(MTControl *control)
 		break;
 	case MTC_PANEL:
 		delete (MTPanel*)control;
+		break;
+	case MTC_TOOLBAR:
+		delete (MTToolBar*)control;
 		break;
 	case MTC_TABCONTROL:
 		delete (MTTabControl*)control;

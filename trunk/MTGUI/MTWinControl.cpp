@@ -2609,8 +2609,7 @@ void MTWinControl::startdrag()
 	if (guiid==MTC_WINDOW) style = ((MTWindow*)this)->style;
 	else if (window) style = window->style;
 	else style = 0;
-// FIXME
-//	db->skinblt(0,0,r.right,r.bottom,skin->wnm[style & 0xF].bkg);
+	skin->drawdragbkg(db,r,style);
 	tb->clip(&tb->wr);
 	y = 0;
 	_box = box;

@@ -19,7 +19,7 @@ static const char *dspname = {"MadTracker DSP"};
 static const int dspversion = 0x30000;
 static const MTXKey dspkey = {0,0,0,0};
 MTXInterfaces i;
-MTDSPInterface *oi;
+MTDSPInterface *dspi;
 MTInterface *mtinterface;
 MTSystemInterface *si;
 MTResampleProc proc[255];
@@ -140,9 +140,9 @@ extern "C"
 MTXInterfaces* __stdcall MTXMain(MTInterface *mti)
 {
 	mtinterface = mti;
-	if (!oi) oi = new MTDSPInterface();
+	if (!dspi) dspi = new MTDSPInterface();
 	i.ninterfaces = 1;
-	i.interfaces[0] = (MTXInterface*)oi;
+	i.interfaces[0] = (MTXInterface*)dspi;
 	return &i;
 }
 

@@ -1109,7 +1109,7 @@ bool MTDXBitmap::shade(int x,int y,int w,int h,MTMask *mask,int mx,int my)
 
 bool MTDXBitmap::tshade(int x,int y,int w,int h,MTMask *mask,int mx,int my,int mw,int mh)
 {
-// TODO FIX
+//FIXME
 	MTDXMask *dm = (MTDXMask*)mask;
 	if (!mdxbltex(this,x,y,w,h,(MTDXMask*)mask,mx,my,mw,mh,0,0,0,0)) return false/*MTGDIBitmap::tshade(x,y,w,h,mask,mx,my,mw,mh)*/;
 	return true;
@@ -2216,7 +2216,7 @@ bool MTDXBitmap7::shade(int x,int y,int w,int h,MTMask *mask,int mx,int my)
 
 bool MTDXBitmap7::tshade(int x,int y,int w,int h,MTMask *mask,int mx,int my,int mw,int mh)
 {
-// TODO FIX
+//FIXME
 	MTDXMask7 *dm = (MTDXMask7*)mask;
 	if (!mdxbltex(this,x,y,w,h,(MTDXMask7*)mask,mx,my,mw,mh,0,0,0,0)) return false/*MTGDIBitmap::tshade(x,y,w,h,mask,mx,my,mw,mh)*/;
 	return true;

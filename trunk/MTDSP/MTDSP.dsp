@@ -131,6 +131,14 @@ SOURCE=.\MTResamplingASM.cpp
 
 SOURCE=.\MTResamplingASM.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\MTShaper.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTShaper.h
+# End Source File
 # End Group
 # Begin Group "Extension Headers"
 

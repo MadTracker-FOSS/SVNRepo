@@ -16,6 +16,7 @@
 #define   MTC_USERLIST         0x6003
 #define    MTC_FILELISTBOX     0x6103
 #define   MTC_PANEL            0x7003
+#define   MTC_TOOLBAR          0x7403
 #define   MTC_TABCONTROL       0x8003
 #define   MTC_TABSHEET         0x8103
 #define  MTC_SCROLLER          0x0101
