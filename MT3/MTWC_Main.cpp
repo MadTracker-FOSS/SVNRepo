@@ -32,6 +32,8 @@ extern MT3Interface *mi;
 MTWC_main::MTWC_main(MTWindow *w):
 MTWrapper(w)
 {
+// FIXME
+	toolbar = (MTToolBar*)gi->newcontrol(MTC_TOOLBAR,0,wthis,0,0,512,32,0);
 	mfile = (MTButton*)wthis->getcontrolfromuid(MTC_mfile);
 	medit = (MTButton*)wthis->getcontrolfromuid(MTC_medit);
 	mmodule = (MTButton*)wthis->getcontrolfromuid(MTC_mmodule);
@@ -44,6 +46,11 @@ MTWrapper(w)
 	mo.x = mo.y = 0;
 	moving = triggered = false;
 
+	mfile->setparent(toolbar);
+	medit->setparent(toolbar);
+	mmodule->setparent(toolbar);
+	mwindow->setparent(toolbar);
+	mhelp->setparent(toolbar);
 	MTMenu *menu = (MTMenu*)gi->newcontrol(MTC_MENU,0,mtdsk,0,0,0,0,0);
 	MTMenu *submenu = (MTMenu*)gi->newcontrol(MTC_MENU,0,mtdsk,0,0,0,0,0);
 	menu->flags |= MTCF_DONTSAVE;

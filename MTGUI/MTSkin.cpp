@@ -21,6 +21,13 @@
 #include "MTCheckBox.h"
 #include "MTProgress.h"
 //---------------------------------------------------------------------------
+struct MTCheckBoxData{
+	int timerid;
+	int clicktime;
+	float cstate;
+	int fromstate;
+	float fromcstate;
+};
 struct MTSignData{
 	int timerid;
 	int frame;
@@ -187,25 +194,38 @@ void MTSkin::skinchange(MTBitmap *oldskin,MTBitmap *newskin,void *param)
 void MTSkin::initcontrol(MTControl *ctrl)
 {
 	switch (ctrl->guiid){
+	case MTC_CHECKBOX:
+		{
+			MTCheckBoxData *cbd = mtnew(MTCheckBoxData);
+			cbd->timerid = gi->ctrltimer(ctrl,MTTF_SKINTIMER,guiprefs.animinterval,false,true);
+			ctrl->skindata = cbd;
+		};
+		break;
 	case MTC_SIGN:
 		{
 			MTSignData *ad = mtnew(MTSignData);
 			ad->timerid = gi->ctrltimer(ctrl,MTTF_SKINTIMER,1000/animm[0].speed,false,true);
 			ctrl->skindata = ad;
-			break;
 		};
+		break;
 	};
 }
 
 void MTSkin::uninitcontrol(MTControl *ctrl)
 {
 	switch (ctrl->guiid){
+	case MTC_CHECKBOX:
+		{
+			MTCheckBoxData *cbd = (MTCheckBoxData*)ctrl->skindata;
+			gi->deltimer(ctrl,cbd->timerid);
+		};
+		break;
 	case MTC_SIGN:
 		{
 			MTSignData *ad = (MTSignData*)ctrl->skindata;
 			gi->deltimer(ctrl,ad->timerid);
-			break;
 		};
+		break;
 	};
 	if (ctrl->skindata){
 		si->memfree(ctrl->skindata);
@@ -216,6 +236,15 @@ void MTSkin::uninitcontrol(MTControl *ctrl)
 void MTSkin::resetcontrol(MTControl *ctrl,bool skinchange)
 {
 	switch (ctrl->guiid){
+	case MTC_CHECKBOX:
+		{
+			MTCheckBoxData *cbd = (MTCheckBoxData*)ctrl->skindata;
+			MTCheckBox &cb = *(MTCheckBox*)ctrl;
+			if (cbd->timerid) gi->deltimer(ctrl,cbd->timerid);
+			cbd->timerid = gi->ctrltimer(ctrl,MTTF_SKINTIMER,guiprefs.animinterval,false,true);
+			cbd->cstate = cb.state;
+		};
+		break;
 	case MTC_SIGN:
 		{
 			MTSignData *ad = (MTSignData*)ctrl->skindata;
@@ -229,14 +258,62 @@ void MTSkin::resetcontrol(MTControl *ctrl,bool skinchange)
 void MTSkin::timercontrol(MTControl *ctrl)
 {
 	switch (ctrl->guiid){
+	case MTC_CHECKBOX:
+		{
+			MTCheckBoxData &cbd = *(MTCheckBoxData*)ctrl->skindata;
+			MTCheckBox &cb = *(MTCheckBox*)ctrl;
+			cbd.cstate = cbd.fromcstate+((float)cb.state-cbd.fromcstate)*(float)(si->syscounter()-cbd.clicktime)/guiprefs.animtime;
+			if (cb.state>cbd.fromstate){
+				if (cbd.cstate>(float)cb.state){
+					cbd.cstate = (float)cb.state;
+					if (cbd.timerid){
+						gi->deltimer(ctrl,cbd.timerid);
+						cbd.timerid = 0;
+					};
+				};
+			}
+			else{
+				if (cbd.cstate<(float)cb.state){
+					cbd.cstate = (float)cb.state;
+					if (cbd.timerid){
+						gi->deltimer(ctrl,cbd.timerid);
+						cbd.timerid = 0;
+					};
+				};
+			};
+			MTCMessage msg = {MTCM_CHANGE,0,ctrl};
+			ctrl->parent->message(msg);
+		};
+		break;
 	case MTC_SIGN:
 		{
 			MTSignData *ad = (MTSignData*)ctrl->skindata;
 			if (++ad->frame==animm[((MTSign*)ctrl)->sign].nx*animm[((MTSign*)ctrl)->sign].ny) ad->frame = 0;
 			MTCMessage msg = {MTCM_CHANGE,0,ctrl};
 			ctrl->parent->message(msg);
-			break;
 		};
+		break;
+	};
+}
+
+void MTSkin::notify(MTControl *ctrl,int type,int param1,int param2,void *param3)
+{
+	switch (ctrl->guiid){
+	case MTC_CHECKBOX:
+		{
+			MTCheckBoxData &cbd = *(MTCheckBoxData*)ctrl->skindata;
+			MTCheckBox &cb = *(MTCheckBox*)ctrl;
+			cbd.fromstate = cb.state;
+			cbd.fromcstate = cbd.cstate;
+			if ((guiprefs.animctrl) && (!design)){
+				cbd.clicktime = si->syscounter();
+				if (!cbd.timerid) cbd.timerid = gi->ctrltimer(ctrl,MTTF_SKINTIMER,guiprefs.animinterval,false,true);
+			}
+			else{
+				cbd.cstate = (float)cb.state;
+			};
+		};
+		break;
 	};
 }
 
@@ -768,6 +845,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 	case MTC_CHECKBOX:
 //	Check box
 		{
+			MTCheckBoxData &cbd = *(MTCheckBoxData*)ctrl->skindata;
 			MTCheckBox &cb = *(MTCheckBox*)ctrl;
 			int w,ident,o;
 
@@ -775,9 +853,9 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 			ident = csp.b.w/3+4;
 			MTRect r = {x+ident,y,x+cb.width,y+cb.height};
 			w = csp.b.w/3;
-			if ((guiprefs.animctrl) && (cb.cstate!=(float)cb.state)){
-				b->skinblta(x,y+(cb.height-csp.b.h)/2,w,csp.b.h,csp,3,1,cb.fromstate);
-				o = (int)(((cb.cstate-(float)cb.fromstate)/(cb.state-cb.fromstate))*255.0);
+			if ((guiprefs.animctrl) && (cbd.cstate!=(float)cb.state)){
+				b->skinblta(x,y+(cb.height-csp.b.h)/2,w,csp.b.h,csp,3,1,cbd.fromstate);
+				o = (int)(((cbd.cstate-(float)cbd.fromstate)/(cb.state-cbd.fromstate))*255.0);
 				skinbmp[csp.bmpid]->blendblt(b,x,y+(cb.height-csp.b.h)/2,csp.b.w/3,csp.b.h,csp.b.x+cb.state*w,csp.b.y,o);
 			}
 			else{
@@ -861,6 +939,11 @@ void MTSkin::drawmodalveil(MTWinControl *ctrl,MTRect &rect)
 	ctrl->fillcolor(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,0,64);
 }
 
+void MTSkin::drawdragbkg(MTBitmap *b,MTRect &rect,int style)
+{
+	b->skinblt(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,wnm[style & 0xF].bkg);
+}
+
 void MTSkin::updatemetrics()
 {
 	MTSQMetrics &csq = fnm.pattfont;
@@ -895,7 +978,7 @@ void MTSkin::getcontrolsize(int guiid,int id,int &width,int &height)
 			height = arm.b.h/2;
 			break;
 		case 1:	// Vertical
-			width = arm.b.w/2;
+			width = arm.b.h/2;
 			break;
 		// Minimum slider size
 		case 2:	// Horizontal

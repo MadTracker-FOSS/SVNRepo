@@ -25,6 +25,7 @@
 #define   MTC_USERLIST         0x6003
 #define    MTC_FILELISTBOX     0x6103
 #define   MTC_PANEL            0x7003
+#define   MTC_TOOLBAR          0x7403
 #define   MTC_TABCONTROL       0x8003
 #define   MTC_TABSHEET         0x8103
 #define  MTC_SCROLLER          0x0101
@@ -170,7 +171,6 @@ class MTListItem;
 class MTListBox;
 class MTMenuItem;
 class MTMenu;
-class MTMainMenu;
 class MTFileListBox;
 class MTSlider;
 class MTDesktop;
@@ -628,11 +628,6 @@ public:
 	virtual void MTCT popup(MTControl *newcaller,MTRect area) = 0;
 };
 
-class MTMainMenu : public MTMenu{
-public:
-	virtual MTItem* MTCT additem(const char *caption,int image,int flags,bool editable,void *data) = 0;
-};
-
 class MTFileListBox : public MTUserList{
 public:
 	char *path;
@@ -709,6 +704,10 @@ public:
 class MTPanel : public MTWinControl{
 public:
 	int style;
+};
+
+class MTToolBar : public MTWinControl{
+public:
 };
 
 class MTOSWindow : public MTControl{

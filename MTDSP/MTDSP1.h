@@ -82,7 +82,7 @@ public:
 };
 //---------------------------------------------------------------------------
 extern MTInterface *mtinterface;
-extern MTDSPInterface *oi;
+extern MTDSPInterface *dspi;
 extern MTSystemInterface *si;
 //---------------------------------------------------------------------------
 #endif

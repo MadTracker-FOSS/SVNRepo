@@ -264,11 +264,14 @@ public:
 	virtual void MTCT uninitcontrol(MTControl *ctrl) = 0;
 	virtual void MTCT resetcontrol(MTControl *ctrl,bool skinchange) = 0;
 	virtual void MTCT timercontrol(MTControl *ctrl) = 0;
+//	Control-specific skin notifications
+	virtual void MTCT notify(MTControl *ctrl,int type,int param1,int param2,void *param3 = 0) = 0;
 //	Controls drawing
 	virtual void MTCT drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0) = 0;
 	virtual void MTCT drawcontrol(int guiid,int id,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0) = 0;
 	virtual void MTCT drawborder(MTWinControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y) = 0;
 	virtual void MTCT drawmodalveil(MTWinControl *ctrl,MTRect &rect) = 0;
+	virtual void MTCT drawdragbkg(MTBitmap *b,MTRect &rect,int style) = 0;
 //	Dimensions
 	virtual void MTCT updatemetrics() = 0;
 	virtual MTBitmap* MTCT getbitmap(int id) = 0;

@@ -22,12 +22,7 @@ MTCheckBox::MTCheckBox(int tag,MTWinControl *p,int l,int t,int w,int h):
 MTControl(MTC_CHECKBOX,tag,p,l,t,w,h),
 radio(false),
 state(0),
-undef(false),
-timer(0),
-clicktime(0),
-cstate(0.0f),
-fromstate(0),
-fromcstate(0.0f)
+undef(false)
 {
 	flags |= (MTCF_TRANSPARENT|MTCF_ACCEPTINPUT);
 	if ((w==0) || (h==0)){
@@ -46,7 +41,6 @@ fromcstate(0.0f)
 MTCheckBox::~MTCheckBox()
 {
 	si->memfree(caption);
-	if (timer) gi->deltimer(this,timer);
 }
 
 int MTCheckBox::loadfromstream(MTFile *f,int size,int flags)
@@ -62,7 +56,6 @@ int MTCheckBox::loadfromstream(MTFile *f,int size,int flags)
 	l += x;
 	f->read(&radio,8);
 	undef = (state==2);
-	cstate = (float)state;
 	return csize+l+8;
 }
 
@@ -194,29 +187,6 @@ bool MTCheckBox::message(MTCMessage &msg)
 		};
 		setstate(newstate,true);
 		return true;
-	}
-	else if (msg.msg==MTCM_TIMER){
-		cstate = fromcstate+((float)state-fromcstate)*(float)(si->syscounter()-clicktime)/guiprefs.animtime;
-		if (state>fromstate){
-			if (cstate>(float)state){
-				cstate = (float)state;
-				if (timer){
-					gi->deltimer(this,timer);
-					timer = 0;
-				};
-			};
-		}
-		else{
-			if (cstate<(float)state){
-				cstate = (float)state;
-				if (timer){
-					gi->deltimer(this,timer);
-					timer = 0;
-				};
-			};
-		};
-		MTCMessage msg = {MTCM_CHANGE,0,this};
-		parent->message(msg);
 	};
 	return MTControl::message(msg);
 }
@@ -224,18 +194,10 @@ bool MTCheckBox::message(MTCMessage &msg)
 void MTCheckBox::setstate(int c,bool touched)
 {
 	if (state==c) return;
-	fromstate = state;
-	fromcstate = cstate;
 	if (c==2) undef = true;
 	else if (!touched) undef = false;
+	skin->notify(this,0,c,touched);
 	state = c;
-	if ((guiprefs.animctrl) && (!design)){
-		clicktime = si->syscounter();
-		if (!timer) timer = gi->ctrltimer(this,0,guiprefs.animinterval,false,true);
-	}
-	else{
-		cstate = (float)state;
-	};
 	if (parent){
 		MTCMessage msg = {(touched)?MTCM_TOUCHED:MTCM_CHANGE,0,this};
 		parent->message(msg);

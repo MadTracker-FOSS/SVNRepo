@@ -24,14 +24,7 @@ public:
 	bool MTCT message(MTCMessage &msg);
 	virtual void MTCT setstate(int c,bool touched = false);
 private:
-// FIXME skin responsible of this
-	friend class MTSkin;
 	bool undef;
-	int timer;
-	int clicktime;
-	float cstate;
-	int fromstate;
-	float fromcstate;
 };
 //---------------------------------------------------------------------------
 #endif

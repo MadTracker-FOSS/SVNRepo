@@ -477,7 +477,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 		};
 		if (p) p->setprogress((float)f->seek(0,MTF_CURRENT)/max);
 	};
-// <TODO Implement the sequence translation into a function
+//TODO Implement the sequence translation into a function
 // Sequences
 	tmpd = 0.0;
 	pc = 0;
@@ -532,7 +532,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 	module.nsequ[0] = ac;
 	module.nsequ[1] = pc;
 	module.nsequ[2] = dc;
-// TODO>
+
 	module.setstatus();
 	module.playstatus.length = module.loope;
 // Instruments

@@ -22,8 +22,33 @@ MTWinControl(MTC_TOOLBAR,tag,p,l,t,w,h)
 	flags &= (~MTCF_BORDER);
 }
 
-bool MTToolBar::message(MTCMessage &msg)
+void MTToolBar::draw(MTRect &rect)
 {
-	return MTWinControl::message(msg);
+	MTWinControl::draw(rect);
+}
+
+void MTToolBar::addcontrol(MTControl *control)
+{
+	if (ncontrols==0){
+		control->left = control->top = 0;
+	}
+	else{
+		control->left = controls[ncontrols-1]->left+controls[ncontrols-1]->width;
+		control->top = 0;
+	};
+	MTWinControl::addcontrol(control);
+}
+
+void MTToolBar::delcontrol(MTControl *control)
+{
+	int x,l;
+
+	MTWinControl::delcontrol(control);
+	l = 0;
+	for (x=0;x<ncontrols;x++){
+		MTControl &c = *controls[x];
+		c.setbounds(l,0,c.width,c.height);
+		l += c.width;
+	};
 }
 //---------------------------------------------------------------------------

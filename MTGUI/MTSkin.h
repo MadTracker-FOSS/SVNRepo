@@ -88,11 +88,14 @@ public:
 	void MTCT uninitcontrol(MTControl *ctrl);
 	void MTCT resetcontrol(MTControl *ctrl,bool skinchange);
 	void MTCT timercontrol(MTControl *ctrl);
+//	Control-specific skin notifications
+	void MTCT notify(MTControl *ctrl,int type,int param1,int param2,void *param3 = 0);
 //	Controls drawing
 	void MTCT drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0);
 	void MTCT drawcontrol(int guiid,int id,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0);
 	void MTCT drawborder(MTWinControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y);
 	void MTCT drawmodalveil(MTWinControl *ctrl,MTRect &rect);
+	void MTCT drawdragbkg(MTBitmap *b,MTRect &rect,int style);
 //	Dimensions
 	void MTCT updatemetrics();
 	MTBitmap* MTCT getbitmap(int id);

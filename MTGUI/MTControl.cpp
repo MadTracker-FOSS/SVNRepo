@@ -455,8 +455,10 @@ void MTControl::preparedraw(MTBitmap **b,int &ox,int &oy)
 void MTControl::setparent(MTWinControl *newparent)
 {
 	MTWinControl *wc;
+	bool hidden;
 
 	if (!newparent) return;
+	hidden = ((flags & MTCF_HIDDEN)!=0);
 	if (parent) parent->delcontrol(this);
 	parent = newparent;
 	if (window!=(MTWindow*)this){
@@ -470,6 +472,7 @@ void MTControl::setparent(MTWinControl *newparent)
 			wc = wc->parent;
 		} while (wc);
 	};
+	if (!hidden) flags &= (~MTCF_HIDDEN);
 	newparent->addcontrol(this);
 	MTCMessage msg = {MTCM_CHANGE,0,this};
 	parent->message(msg);

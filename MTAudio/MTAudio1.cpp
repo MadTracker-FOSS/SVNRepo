@@ -43,7 +43,7 @@ int AudioThread(MTThread*,void* pool)
 	si->setprivatedata(0,si->memalloc(sizeof(sample)*PRIVATE_BUFFER,MTM_ZERO));
 	oldc = 0;
 	while (ai->running){
-		if (output.event->wait(3000)){
+		if (output.event->wait(1000)){
 			if (!output.ndevices) continue;
 			si->syscounterex(&curc);
 			if (oldc)

@@ -6,6 +6,7 @@
 //---------------------------------------------------------------------------
 class MTWC_main : public MTWrapper{
 public:
+	MTToolBar* toolbar;
 	MTButton* mfile;
 	MTButton* medit;
 	MTButton* mmodule;
@@ -17,7 +18,6 @@ public:
 	bool MTCT onmessage(MTCMessage &msg);
 private:
 //	Your private declarations
-	MTMainMenu* menu;
 	MTPoint mo;
 	MTRect mwo;
 	bool moving,triggered;
