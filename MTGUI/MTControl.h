@@ -33,6 +33,8 @@
 #define   MTC_ITEMCOMBOBOX     0x5101
 #define   MTC_USERCOMBOBOX     0x5201
 #define  MTC_PROGRESS          0x6001
+#define  MTC_STATUS            0x7001
+#define  MTC_SEQUENCE          0x8001
 #define  MTC_OSWINDOW          0xFF01
 
 #define MTCM_MOUSEDOWN   0x0001

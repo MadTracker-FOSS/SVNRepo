@@ -81,7 +81,6 @@ enum{
 //---------------------------------------------------------------------------
 struct MTUndo;
 struct MTShortcut;
-class FontManager;
 class MTControl;
 typedef void (MTCT *MTCommand)(MTShortcut*,MTControl*,MTUndo*);
 //---------------------------------------------------------------------------
@@ -90,6 +89,7 @@ typedef void (MTCT *MTCommand)(MTShortcut*,MTControl*,MTUndo*);
 #include "MTXSystem.h"
 #include "MTXDisplay.h"
 #include "MTXControls.h"
+#include "MTXSkin.h"
 //---------------------------------------------------------------------------
 struct MTUndo{
 	bool redo;
@@ -111,17 +111,6 @@ struct MTShortcut{
 	char *description;
 };
 
-class FontManager{
-public:
-	int fontwidth;
-	int fontheight;
-	
-	virtual void MTCT drawchar(unsigned char c,MTBitmap *bmp,int &x,int y,int color) = 0;
-	virtual void MTCT drawtext(unsigned char *text,MTBitmap *bmp,int &x,int y,int color) = 0;
-	virtual void MTCT drawdec(int val,bool zeroes,int n,MTBitmap *bmp,int &x,int y,int color) = 0;
-	virtual void MTCT drawhex(int val,bool zeroes,int n,MTBitmap *bmp,int &x,int y,int color) = 0;
-};
-
 struct MTSync;
 
 typedef int (MTCT *SyncProc)(MTSync*);
@@ -134,7 +123,6 @@ struct MTSync{
 
 class MTGUIInterface : public MTXInterface{
 public:
-	FontManager *font;
 	bool active;
 	bool visible;
 	
@@ -149,7 +137,6 @@ public:
 	virtual int MTCT savewindowtofile(MTFile *f,MTWindow *window) = 0;
 	virtual void MTCT loadskin(MTResources *res) = 0;
 	virtual void* MTCT saveskin(int &size) = 0;
-	virtual void MTCT setskinbitmap(int bmpid,MTBitmap *bmp) = 0;
 	virtual void MTCT setdisplay(MTBitmap *s) = 0;
 	virtual void MTCT freedisplay() = 0;
 	virtual bool MTCT getdesign() = 0;
@@ -159,8 +146,7 @@ public:
 	virtual void MTCT deltimer(MTControl *ctrl,int timerid) = 0;
 	virtual int MTCT synchronize(MTSync*) = 0;
 	virtual void* MTCT getimagelist(int id) = 0;
-	virtual void* MTCT getskin() = 0;
-	virtual void* MTCT getskintools() = 0;
+	virtual MTSkin* MTCT getskin();
 	virtual void* MTCT createwindow(int l,int t,int w,int h,char *caption,int flags,void *parent) = 0;
 	virtual void MTCT deletewindow(void *wnd) = 0;
 	virtual void* MTCT getwindowproc() = 0;

@@ -263,6 +263,7 @@ public:
 	virtual void MTCT timercontrol(MTControl *ctrl) = 0;
 //	Controls drawing
 	virtual void MTCT drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0) = 0;
+	virtual void MTCT drawcontrol(int guiid,int id,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0);
 	virtual void MTCT drawborder(MTWinControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y) = 0;
 	virtual void MTCT drawmodalveil(MTWinControl *ctrl,MTRect &rect) = 0;
 //	Dimensions
@@ -270,6 +271,7 @@ public:
 	virtual MTBitmap* MTCT getbitmap(int id) = 0;
 	virtual MTSLMetrics* MTCT getslider(int type,int orientation) = 0;
 	virtual void MTCT calcbounds(int m) = 0;
+	virtual void MTCT setshadows(bool enabled) = 0;
 	virtual void MTCT getcontrolsize(int guiid,int id,int &width,int &height) = 0;
 	virtual void MTCT getwindowborders(int style,MTRect *borders) = 0;
 	virtual void MTCT getwindowoffsets(int style,MTRect *borders) = 0;
@@ -291,8 +293,6 @@ public:
 	virtual void MTCT drawbutton(MTBitmap *bmp,int x,int y,int w,int h,MTBTMetrics *m) = 0;
 	virtual void MTCT drawslider(MTBitmap *bmp,int x,int y,int w,int h,MTSLMetrics *m,int min,int max,int pos,bool focused) = 0;
 	virtual void MTCT drawframe(MTBitmap *bmp,int x,int y,int w,int h,int flags = 0) = 0;
-//	Shadows
-	virtual void MTCT setshadows() = 0;
 	virtual void MTCT drawshadow(MTBitmap *bmp,int x,int y,int w,int h,int style) = 0;
 };
 //---------------------------------------------------------------------------

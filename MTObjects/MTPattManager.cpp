@@ -106,7 +106,6 @@ void MTPattManager::ondraw(MTRect &rect)
 	int x,y,w,h,ch,tw;
 	MTRect r;
 	
-	if (!font) return;
 	checkcolors();
 	if (!&rect){
 		drawpos(0,nlines);
@@ -175,7 +174,8 @@ bool MTPattManager::onmessage(MTCMessage &msg)
 		m.y = msg.y;
 		if (msg.y<patty){
 			if (mp.x<0) return true;
-			int bh = skin->sbm.b.h/2;
+			int bh;
+			skin->getcontrolsize(MTC_STATUS,0,x,bh);
 			mp2 = mp;
 			datatoclient(mp2);
 			mp2.x = msg.x-mp2.x;
@@ -337,7 +337,7 @@ void MTPattManager::setpattern(MTPattern *newpatt)
 		for (t=0;t<patt->ntracks;t++){
 			TrackInfo &ti = patt->tracks[t];
 			for (n=0;n<ti.ncolumns;n++){
-				colwidth[t][n] = ti.cols[n].handler->getwidth(font->fontwidth);
+				colwidth[t][n] = ti.cols[n].handler->getwidth(skin->fontwidth);
 				colncpos[t][n] = ti.cols[n].handler->ncpos;
 				colsize[t][n] = ti.cols[n].handler->nbytes;
 				x += colwidth[t][n];
@@ -626,21 +626,22 @@ void MTPattManager::stepit()
 
 void MTPattManager::updatemetrics(bool passive)
 {
-	int fw = font->fontwidth;
-	int ah = skin->arm.b.h/2;
-	int bh = skin->sbm.b.h/2;
+	int fw = skin->fontwidth;
+	int ah,bh;
 	int t,x,w;
 	
+	skin->getcontrolsize(MTC_SCROLLER,0,x,ah);
+	skin->getcontrolsize(MTC_STATUS,0,x,bh);
 	pattx = (parent)?fw*3+ah:0;
 	if ((parent) && (parent->open(0))){
-		parent->setfont(skin->hskfont[1]);
+		parent->setfont(skin->getfont(1));
 		patty = bh+parent->gettextheight()+8;
 		parent->close(0);
 	}
 	else{
 		patty = 0;
 	};
-	cellheight = font->fontheight;
+	cellheight = skin->fontheight;
 	if (patt){
 		for (t=0;t<patt->ntracks;t++){
 			cellwidth[t] = 4;
@@ -705,7 +706,7 @@ void MTPattManager::drawpos(int l,int h)
 	bool zeroes = objectsprefs.showzeroes;
 	bool hex = objectsprefs.hexadecimal;
 	int bx = 0;
-	int by;
+	int by,ah;
 	int state = 0;
 	MTBitmap *b;
 	
@@ -724,7 +725,8 @@ void MTPattManager::drawpos(int l,int h)
 
 	by = patty+l*cellheight;
 	parent->preparedraw(&b,bx,by);
-	b->fill(bx,by,pattx-skin->arm.b.h/2,h*cellheight,skin->fnm.colors[SC_PATT_BACK1]);
+	skin->getcontrolsize(MTC_SCROLLER,0,z,ah);
+	b->fill(bx,by,pattx-ah,h*cellheight,skin->getcolor(SC_PATT_BACK1));
 	if (nlines>patt->nlines-oline){
 		y = patt->nlines-oline;
 		if (l+h>y){
@@ -737,7 +739,7 @@ void MTPattManager::drawpos(int l,int h)
 		for (y=0;y<h;y++){
 			if ((l+y>=nlines) || (z>=patt->nlines)) break;
 			if (z>=0){
-				b->fill(bx,by,pattx-skin->arm.b.h/2,cellheight,colors[0][z%patt->lpb]);
+				b->fill(bx,by,pattx-ah,cellheight,colors[0][z%patt->lpb]);
 				if (z%patt->lpb==0){
 					state = 2;
 				}
@@ -745,8 +747,8 @@ void MTPattManager::drawpos(int l,int h)
 					state = 0;
 				};
 				nx = bx;
-				if (hex) font->drawhex(z,zeroes,3,b,nx,by,skin->fnm.colors[SC_PATT_TEXT1+state]);
-				else font->drawdec(z,zeroes,3,b,nx,by,skin->fnm.colors[SC_PATT_TEXT1+state]);
+				if (hex) skin->drawhex(z,zeroes,3,b,nx,by,skin->getcolor(SC_PATT_TEXT1+state));
+				else skin->drawdec(z,zeroes,3,b,nx,by,skin->getcolor(SC_PATT_TEXT1+state));
 			};
 			z++;
 			by += cellheight;
@@ -757,8 +759,7 @@ void MTPattManager::drawpos(int l,int h)
 void MTPattManager::drawtrack(int t,int w)
 {
 	int x,y,ol,l,r;
-	int bh = skin->sbm.b.h/2;
-	int bw = skin->sbm.b.w-bh*3;
+	int bw,bh;
 	MTRect cr;
 	char *end;
 	char nullname = 0;
@@ -788,7 +789,7 @@ void MTPattManager::drawtrack(int t,int w)
 	};
 	by = 0;
 	parent->preparedraw(&b,bx,by);
-	b->fill(bx,by,w2,patty,skin->fnm.colors[SC_BACKGROUND]);
+	b->fill(bx,by,w2,patty,skin->getcolor(SC_BACKGROUND));
 	if (patt){
 		if (t<-otrack){
 			if (t+w>-otrack){
@@ -803,17 +804,18 @@ void MTPattManager::drawtrack(int t,int w)
 			else w = x-t;
 		};
 	};
+	skin->getcontrolsize(MTC_STATUS,0,bw,bh);
 	y = by;
 	b->open(0);
-	b->setpen(skin->fnm.colors[SC_CTRL_S]);
+	b->setpen(skin->getcolor(SC_CTRL_S));
 	y += patty-2;
 	b->moveto(bx,y);
 	b->lineto(bx+w2,y);
-	b->setpen(skin->fnm.colors[SC_CTRL_DS]);
+	b->setpen(skin->getcolor(SC_CTRL_DS));
 	y++;
 	b->moveto(bx,y);
 	b->lineto(bx+w2,y);
-	b->setfont(skin->hskfont[1]);
+	b->setfont(skin->getfont(1));
 	tw = (b->getcharwidth('0')+2)*2+4;
 	b->close(0);
 	if (patt){
@@ -835,7 +837,7 @@ void MTPattManager::drawtrack(int t,int w)
 			cr.bottom = cr.top+bh;
 			cr.left = l+2;
 			cr.right = l+tw;
-			b->settextcolor(skin->fnm.colors[SC_TEXT_NORMAL]);
+			b->settextcolor(skin->getcolor(SC_TEXT_NORMAL));
 			b->drawtext(tracks,-1,cr,DTXT_CENTER|DTXT_VCENTER);
 			end = &nullname;
 			if (patt->parent){
@@ -855,26 +857,25 @@ void MTPattManager::drawtrack(int t,int w)
 			pt[0].y = pt[1].y-4;
 			pt[2].x = l+6;
 			pt[2].y = pt[1].y+4;
-			b->setbrush(skin->fnm.colors[SC_TEXT_NORMAL]);
-			b->setpen(skin->fnm.colors[SC_TEXT_NORMAL]);
+			b->setbrush(skin->getcolor(SC_TEXT_NORMAL));
+			b->setpen(skin->getcolor(SC_TEXT_NORMAL));
 			b->polygon(pt,3);
-			b->setpen(skin->fnm.colors[SC_CTRL_L]);
+			b->setpen(skin->getcolor(SC_CTRL_L));
 			b->moveto(l,by);
 			b->lineto(l,by+patty-1);
-			b->setpen(skin->fnm.colors[SC_CTRL_S]);
+			b->setpen(skin->getcolor(SC_CTRL_S));
 			b->moveto(r-1,by);
 			b->lineto(r-1,by+patty-2);
 			b->close(0);
 			l += tw;
-			b->skinblta(l,by+2,bh,bh,skin->sbm,6,2,6*patt->tracks[y].on);
+			skin->drawcontrol(MTC_STATUS,0,NORECT,b,l,by+2,(patt->tracks[y].on)?1:0);
 			l += bh+2;
-			b->skinblta(l,by+2,bh,bh,skin->sbm,6,2,1+6*patt->tracks[y].solo);
+			skin->drawcontrol(MTC_STATUS,1,NORECT,b,l,by+2,(patt->tracks[y].solo)?1:0);
 			l += bh+2;
-			b->skinblta(l,by+2,bh,bh,skin->sbm,6,2,2+6*patt->tracks[y].rec);
+			skin->drawcontrol(MTC_STATUS,2,NORECT,b,l,by+2,(patt->tracks[y].rec)?1:0);
 			l += bh+2;
 			if (r>=l+bw+4){
-				b->skinblta(r-bw-4,by+2,bw,bh,skin->sbm,2,2,1);
-//				parent->bmpblt(skinbmp,r-bw-4,2,bw,bh,skin->sbm.b.x+bh*3,skin->sbm.b.y);
+				skin->drawcontrol(MTC_STATUS,3,NORECT,b,r-bw-4,by+2,0);
 			};
 		};
 	};
@@ -885,7 +886,7 @@ void MTPattManager::drawcells(int t,int l,int w,int h)
 	int x,y,n,ct,w2,coffset;
 	int px,py;
 	int bx,by;
-	int fw = font->fontwidth/2;
+	int fw = skin->fontwidth/2;
 	MTBitmap *b;
 	MTRect r,r2;
 	ColumnDrawState cstate;
@@ -920,7 +921,7 @@ void MTPattManager::drawcells(int t,int l,int w,int h)
 	for (;x<otrack+t+w;x++){
 		w2 += cellwidth[x];
 	};
-	parent->fillcolor(bx,patty+l*cellheight,w2,h*cellheight,skin->fnm.colors[SC_PATT_BACK1]);
+	parent->fillcolor(bx,patty+l*cellheight,w2,h*cellheight,skin->getcolor(SC_PATT_BACK1));
 	if (patt){
 		if (t<-otrack){
 			if (t+w>-otrack){
@@ -953,7 +954,7 @@ void MTPattManager::drawcells(int t,int l,int w,int h)
 	py = by;
 	if ((patt) && (patt->data)){
 		r.top = py;
-		r.bottom = py+font->fontheight;
+		r.bottom = py+skin->fontheight;
 		cstate.flags = CDS_SELECTED;
 		cstate.lpb = patt->lpb;
 		cstate.line = l+oline;
@@ -995,7 +996,7 @@ void MTPattManager::drawcells(int t,int l,int w,int h)
 				r.right += 4;
 			};
 			r.top = r.bottom;
-			r.bottom += font->fontheight;
+			r.bottom += skin->fontheight;
 			cstate.line++;
 		};
 		r2.left = t;
@@ -1008,7 +1009,7 @@ void MTPattManager::drawcells(int t,int l,int w,int h)
 				px += cellwidth[x];
 			};
 			parent->open(0);
-			parent->setpen(skin->fnm.colors[SC_CURSOR]);
+			parent->setpen(skin->getcolor(SC_CURSOR));
 			parent->setbrush(-1);
 			parent->rectangle(pattx+px,patty+hl.y*cellheight,cellwidth[x],cellheight);
 			parent->close(0);
@@ -1054,10 +1055,10 @@ void MTPattManager::checkcolors()
 
 	if ((!patt) || (patt->lpb==clpb)) return;
 	clpb = patt->lpb;
-	colors[0][0] = skin->fnm.colors[SC_PATT_BACK3];
-	colors[0][1] = skin->fnm.colors[SC_PATT_BACK1];
-	colors[1][0] = skin->fnm.colors[SC_PATT_BACK4];
-	colors[1][1] = skin->fnm.colors[SC_PATT_BACK2];
+	colors[0][0] = skin->getcolor(SC_PATT_BACK3);
+	colors[0][1] = skin->getcolor(SC_PATT_BACK1);
+	colors[1][0] = skin->getcolor(SC_PATT_BACK4);
+	colors[1][1] = skin->getcolor(SC_PATT_BACK2);
 	if (clpb<4){
 		for (x=2;x<clpb;x++){
 			colors[0][x] = colors[0][1];

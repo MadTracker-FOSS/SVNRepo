@@ -41,7 +41,6 @@ MTAudioInterface *ai;
 MTDSPInterface *dspi;
 MTGUIInterface *gi;
 MTObjectsPreferences objectsprefs = {false,false};
-FontManager *font;
 MTSkin *skin;
 MTResources *res;
 MTWindow *monitor;
@@ -191,7 +190,7 @@ bool MTObjectsInterface::init()
 	if ((!si) || (!dspi)) return false;
 	ENTER("MTObjectsInterface::init");
 	LOGD("%s - [Objects] Initializing..."NL);
-	res = si->resfind("MTObjects.mtr",true);
+	res = si->resfind("MTObjects.mtr",false);
 	if (!res){
 		LEAVE();
 		return false;
@@ -325,9 +324,7 @@ void MTObjectsInterface::start()
 	MTCustomControl *cc;
 
 	if (gi){
-		font = gi->font;
 		skin = (MTSkin*)gi->getskin();
-		sktools = (MTSkinTools*)gi->getskintools();
 		objectlock->lock();
 		monitor = gi->loadwindow(res,MTW_monitor,0);
 		if (monitor){
@@ -349,10 +346,12 @@ void MTObjectsInterface::stop()
 	_test_stop();
 #endif
 	if (!gi) return;
-	objectlock->lock();
-	gi->delcontrol(monitor);
-	monitor = 0;
-	objectlock->unlock();
+	if (monitor){
+		if (objectlock) objectlock->lock();
+		gi->delcontrol(monitor);
+		monitor = 0;
+		if (objectlock) objectlock->unlock();
+	};
 }
 
 void MTObjectsInterface::processcmdline(void *params)

@@ -60,8 +60,9 @@ pattx(128),
 patty(16),
 patth(20)
 {
-	int ah = skin->arm.b.h/2;
+	int tmp,ah;
 	
+	skin->getcontrolsize(MTC_SCROLLER,0,tmp,ah);
 	width = parent->width;
 	height = parent->height;
 	hs = (MTScroller*)gi->newcontrol(MTC_SCROLLER,0,parent,pattx,height-ah,width-pattx,0,0);
@@ -135,12 +136,11 @@ void MTSeqManager::ondraw(MTRect &rect)
 	MTRect r = {0,0,width,height};
 	MTRect cr = {0,patty,pattx-vs->width,height-hs->height};
 
-	if (!font) return;
 	if (&rect){
 		parent->clip(rect);
 		r = rect;
 	};
-	parent->fillcolor(r.left,r.top,r.right-r.left,r.bottom-r.top,skin->fnm.colors[SC_EDIT_BACKGROUND]);
+	parent->fillcolor(r.left,r.top,r.right-r.left,r.bottom-r.top,skin->getcolor(SC_EDIT_BACKGROUND));
 	if (cliprect(cr,r)){
 		y = (cr.top-patty)/patth;
 		h = ((cr.bottom-patty+patth-1)/patth)-y;
@@ -483,11 +483,12 @@ void MTSeqManager::deletesequence(int layer,int s,bool adapt)
 
 void MTSeqManager::updatemetrics()
 {
-	int ah = skin->arm.b.h/2;
+	int tmp,ah;
 	MTPoint ts;
 	
+	skin->getcontrolsize(MTC_SCROLLER,0,tmp,ah);
 	parent->open(0);
-	parent->setfont(skin->hskfont[1]);
+	parent->setfont(skin->getfont(1));
 	parent->gettextsize(autoc,-1,&ts);
 	parent->close(0);
 	pattx = ts.x+8+ah;
@@ -549,13 +550,13 @@ void MTSeqManager::drawlayer(int sy,int sh)
 		if (sy>=nlayers) return;
 		else sh = nlayers-sy;
 	};
-	parent->fillcolor(0,sy*patth+patty,pattx-ah,sh*patth,skin->fnm.colors[SC_BACKGROUND]);
+	parent->fillcolor(0,sy*patth+patty,pattx-ah,sh*patth,skin->getcolor(SC_BACKGROUND));
 	cr.left = 4;
 	cr.right = pattx-ah-4;
 	sy += offsety;
 	if (parent->open(0)){
-		parent->settextcolor(skin->fnm.colors[SC_TEXT_NORMAL]);
-		parent->setfont(skin->hskfont[1]);
+		parent->settextcolor(skin->getcolor(SC_TEXT_NORMAL));
+		parent->setfont(skin->getfont(1));
 		if (!sy){
 			cr.top = patty;
 			cr.bottom = patty+patth-1;
@@ -569,10 +570,10 @@ void MTSeqManager::drawlayer(int sy,int sh)
 				sprintf(layers,layerc,x);
 				parent->drawtext(layers,-1,cr,DTXT_VCENTER);
 			};
-			parent->setpen(skin->fnm.colors[SC_CTRL_L]);
+			parent->setpen(skin->getcolor(SC_CTRL_L));
 			parent->moveto(0,cr.top);
 			parent->lineto(pattx-ah,cr.top);
-			parent->setpen(skin->fnm.colors[SC_CTRL_S]);
+			parent->setpen(skin->getcolor(SC_CTRL_S));
 			parent->moveto(0,cr.bottom);
 			parent->lineto(pattx-ah,cr.bottom);
 		};
@@ -590,7 +591,7 @@ void MTSeqManager::drawseqp(int layer,int s,double sl,double el)
 	char *pattname;
 	unsigned char f;
 	char pattid[8];
-	MTRect cr;
+	MTRect cr,br;
 	MTPoint pt;
 	int bx = 0;
 	int by = 0;
@@ -643,17 +644,21 @@ void MTSeqManager::drawseqp(int layer,int s,double sl,double el)
 	else if ((hl.x==s) && (hl.y==layer)) f = 1;
 	else if (f & SF_SELECTED) f = 2;
 	else f = 0;
-	sktools->drawbutton(b,sx+bx,y+by,w,patth,skin->ptm[f]);
+	br.left = sx+bx;
+	br.top = y+by;
+	br.right = br.left+w;
+	br.bottom = br.top+patth;
+	skin->drawcontrol(MTC_SEQUENCE,f,br,b,0,0);
 	if (parent->open(0)){
 		if ((nl>0) && (w>=16) && (w-(int)((lng/nl)/zoom)>1)){
 			while (lng>0){
 				if (nl>lng) nl = lng;
 				if (cl!=stl){
 					sx = (int)((cl-offsetx)/zoom)+pattx;
-					parent->setpen(skin->fnm.colors[SC_CTRL_S]);
+					parent->setpen(skin->getcolor(SC_CTRL_S));
 					parent->moveto(sx-1,y+2);
 					parent->lineto(sx-1,y+patth-3);
-					parent->setpen(skin->fnm.colors[SC_CTRL_L]);
+					parent->setpen(skin->getcolor(SC_CTRL_L));
 					parent->moveto(sx,y+2);
 					parent->lineto(sx,y+patth-3);
 				};
@@ -662,8 +667,8 @@ void MTSeqManager::drawseqp(int layer,int s,double sl,double el)
 			};
 		};
 		sx = (int)((stl-offsetx)/zoom)+pattx;
-		parent->settextcolor(skin->fnm.colors[SC_CTRL_S]);
-		parent->setfont(skin->hskfont[1]);
+		parent->settextcolor(skin->getcolor(SC_CTRL_S));
+		parent->setfont(skin->getfont(1));
 		if (w>=16){
 			if ((parent->gettextsize(pattname,-1,&pt)) && (pt.x<=w-16)){
 				cr.left = sx+8;
@@ -741,7 +746,7 @@ void MTSeqManager::drawseq(double sx,double sw,int sy,int sh)
 		if (sy>=nlayers) return;
 		else sh = nlayers-sy;
 	};
-//	parent->fillcolor(sx/zoom+pattx,sy*patth+patty,sw/zoom,sh*patth,skin->fnm.colors[SC_EDIT_BACKGROUND]);
+//	parent->fillcolor(sx/zoom+pattx,sy*patth+patty,sw/zoom,sh*patth,skin->getcolor(SC_EDIT_BACKGROUND));
 	if (module){
 		sl = sx+offsetx;
 		el = sx+sw+offsetx;
@@ -754,7 +759,7 @@ void MTSeqManager::drawseq(double sx,double sw,int sy,int sh)
 		};
 		if ((cursor>=sl) && (cursor<el)){
 			parent->open(0);
-			parent->setbrush(skin->fnm.colors[SC_CURSOR]);
+			parent->setbrush(skin->getcolor(SC_CURSOR));
 			parent->fillrect(pattx+((cursor-offsetx)/zoom),patty+sy*patth,1,sh*patth,MTBM_INVERT);
 			parent->close(0);
 		};

@@ -180,25 +180,25 @@ void NoteColumn::drawcolumn(MTBitmap* b,MTRect &r,unsigned char *celldata,Column
 	x = r.left;
 	switch (note){
 	case 0:
-		font->drawtext((unsigned char*)"...",b,x,r.top,color);
+		skin->drawtext((unsigned char*)"...",b,x,r.top,color);
 		break;
 	case 97:
-		font->drawtext((unsigned char*)"\x80\x81\x82",b,x,r.top,color);
+		skin->drawtext((unsigned char*)"\x80\x81\x82",b,x,r.top,color);
 		break;
 	case 98:
-		font->drawtext((unsigned char*)"\x84\x85\x86",b,x,r.top,color);
+		skin->drawtext((unsigned char*)"\x84\x85\x86",b,x,r.top,color);
 		break;
 	case 99:
-		font->drawtext((unsigned char*)"\x88\x89\x8A",b,x,r.top,color);
+		skin->drawtext((unsigned char*)"\x88\x89\x8A",b,x,r.top,color);
 		break;
 	default:
-		font->drawtext(nt[(note-1)%12],b,x,r.top,color);
-		font->drawchar('0'+((note-1)/12),b,x,r.top,color);
+		skin->drawtext(nt[(note-1)%12],b,x,r.top,color);
+		skin->drawchar('0'+((note-1)/12),b,x,r.top,color);
 	};
 	x += 4;
-	if (*(celldata+1)) font->drawhex(*(celldata+1),false,2,b,x,r.top,color);
+	if (*(celldata+1)) skin->drawhex(*(celldata+1),false,2,b,x,r.top,color);
 	if (state.cursor>=0){
-		w = font->fontwidth;
+		w = skin->fontwidth;
 		x = r.left;
 		switch (state.cursor){
 		case 0:
@@ -386,12 +386,12 @@ void DrumsColumn::drawcolumn(MTBitmap* b,MTRect &r,unsigned char *celldata,Colum
 	if (state.flags & CDS_SELECTED) color++;
 	color = skin->getcolor(color);
 	x = r.left;
-	if (*celldata) font->drawchar('\x90'+(state.line%8),b,x,r.top,color);
-	else font->drawchar('.',b,x,r.top,color);
+	if (*celldata) skin->drawchar('\x90'+(state.line%8),b,x,r.top,color);
+	else skin->drawchar('.',b,x,r.top,color);
 	x += 4;
-	if (*(celldata+1)) font->drawhex(*(celldata+1),false,2,b,x,r.top,color);
+	if (*(celldata+1)) skin->drawhex(*(celldata+1),false,2,b,x,r.top,color);
 	if (state.cursor>=0){
-		w = font->fontwidth;
+		w = skin->fontwidth;
 		x = r.left;
 		switch (state.cursor){
 		case 0:
@@ -493,37 +493,37 @@ void VolumeColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Colu
 	color = skin->getcolor(color);
 // Nothing
 	if (vol<0x10){
-		font->drawtext((unsigned char*)"..",b,x,r.top,color);
+		skin->drawtext((unsigned char*)"..",b,x,r.top,color);
 	}
 // Set volume
 	else if (vol<=0x90){
-		font->drawhex(vol-0x10,true,2,b,x,r.top,color);
+		skin->drawhex(vol-0x10,true,2,b,x,r.top,color);
 	}
 // Nothing
 	else if (vol<0xA0){
 	}
 // Fine volume down
 	else if (vol<0xB0){
-		font->drawchar('\x99',b,x,r.top,color);
-		font->drawhex(vol-0xA0,true,1,b,x,r.top,color);
+		skin->drawchar('\x99',b,x,r.top,color);
+		skin->drawhex(vol-0xA0,true,1,b,x,r.top,color);
 	}
 // Fine volume up
 	else if (vol<0xC0){
-		font->drawchar('\x98',b,x,r.top,color);
-		font->drawhex(vol-0xA0,true,1,b,x,r.top,color);
+		skin->drawchar('\x98',b,x,r.top,color);
+		skin->drawhex(vol-0xA0,true,1,b,x,r.top,color);
 	}
 // Volume down
 	else if (vol<0xD0){
-		font->drawchar('\x9B',b,x,r.top,color);
-		font->drawhex(vol-0xA0,true,1,b,x,r.top,color);
+		skin->drawchar('\x9B',b,x,r.top,color);
+		skin->drawhex(vol-0xA0,true,1,b,x,r.top,color);
 	}
 // Volume up
 	else if (vol<0xE0){
-		font->drawchar('\x9A',b,x,r.top,color);
-		font->drawhex(vol-0xA0,true,1,b,x,r.top,color);
+		skin->drawchar('\x9A',b,x,r.top,color);
+		skin->drawhex(vol-0xA0,true,1,b,x,r.top,color);
 	};
 	if (state.cursor>=0){
-		w = font->fontwidth;
+		w = skin->fontwidth;
 		x = r.left+state.cursor*w;
 		b->fill(x,r.bottom-2,w,2,skin->getcolor(SC_CURSOR));
 	};
@@ -610,13 +610,13 @@ void PanningColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Col
 	if (state.flags & CDS_SELECTED) color++;
 	color = skin->getcolor(color);
 	if (*celldata){
-		font->drawhex(*celldata,true,2,b,x,r.top,color);
+		skin->drawhex(*celldata,true,2,b,x,r.top,color);
 	}
 	else{
-		font->drawtext((unsigned char*)"..",b,x,r.top,color);
+		skin->drawtext((unsigned char*)"..",b,x,r.top,color);
 	};
 	if (state.cursor>=0){
-		w = font->fontwidth;
+		w = skin->fontwidth;
 		b->fill(r.left+state.cursor*w,r.bottom-2,w,2,skin->getcolor(SC_CURSOR));
 	};
 }
@@ -775,14 +775,14 @@ void EffectColumn::drawcolumn(MTBitmap *b,MTRect &r,unsigned char *celldata,Colu
 	else color = SC_PATT_TEXT1;
 	if (state.flags & CDS_SELECTED) color++;
 	color = skin->getcolor(color);
-	if (*celldata) font->drawhex(*celldata,false,2,b,x,r.top,color);
-	else font->drawtext((unsigned char*)"..",b,x,r.top,color);
+	if (*celldata) skin->drawhex(*celldata,false,2,b,x,r.top,color);
+	else skin->drawtext((unsigned char*)"..",b,x,r.top,color);
 	x += 4;
 	param = *(unsigned short*)(celldata+1);
-	if (param) font->drawhex(param,false,4,b,x,r.top,color);
-	else font->drawtext((unsigned char*)"....",b,x,r.top,color);
+	if (param) skin->drawhex(param,false,4,b,x,r.top,color);
+	else skin->drawtext((unsigned char*)"....",b,x,r.top,color);
 	if (state.cursor>=0){
-		w = font->fontwidth;
+		w = skin->fontwidth;
 		x = r.left+state.cursor*w;
 		if (state.cursor>1) x += 4;
 		b->fill(x,r.bottom-2,w,2,skin->getcolor(SC_CURSOR));
