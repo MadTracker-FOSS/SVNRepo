@@ -68,8 +68,11 @@ public:
 	void (MTACT *addbufferslide)(sample *dest,sample *source,double mul,double inc,int count);
 	void (MTACT *addbufferslide2)(sample *dest1,sample *dest2,sample *source,double mul1,double mul2,double inc1,double inc2,int count);
 	void (MTACT *ampbuffer)(sample *dest,double mul,int count);
+	void (MTACT *modulatebuffer)(sample *dest,sample *source,int count);
 	void (MTACT *filter[16])(sample *dest,sample *source,FilterStatus &status,int count,int frequency);
 	void (MTACT *resample[32])(char *dest,char *source,int count,ChannelStatus &status,int pitchi,unsigned int pitchd);
+	void (MTACT *splinereplace)(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt);
+	void (MTACT *splinemodulate)(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt);
 
 	MTDSPInterface();
 	bool MTCT init();

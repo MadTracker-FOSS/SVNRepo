@@ -9,7 +9,6 @@
 //---------------------------------------------------------------------------
 #ifndef MTSYSTEM1_INCLUDED
 #define MTSYSTEM1_INCLUDED
-#define MTXSYSTEM_INCLUDED
 
 #ifdef __BORLANDC__
 static const int systemtype = 'XSYS';

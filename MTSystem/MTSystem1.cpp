@@ -640,13 +640,13 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 			r = l+ob->width;
 			ob->switchflags(MTCF_HIDDEN,true);
 			switch ((int)buttons){
-			case MTD_OK:
+			case (int)MTD_OK:
 				b[7] = (MTButton*)gi->newcontrol(MTC_BUTTON,0,alert,l,t,0,h,0);
 				b[7]->setcaption(d_ok);
 				b[7]->modalresult = 0;
 				alert->focus(b[7]);
 				break;
-			case MTD_OKCANCEL:
+			case (int)MTD_OKCANCEL:
 				b[6] = (MTButton*)gi->newcontrol(MTC_BUTTON,0,alert,l,t,0,h,0);
 				b[7] = (MTButton*)gi->newcontrol(MTC_BUTTON,0,alert,l,t,0,h,0);
 				b[6]->setcaption(d_ok);
@@ -656,7 +656,7 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 				if (cbutton>1) cbutton = 1;
 				alert->focus(b[6+cbutton]);
 				break;
-			case MTD_YESNO:
+			case (int)MTD_YESNO:
 				b[6] = (MTButton*)gi->newcontrol(MTC_BUTTON,0,alert,l,t,0,h,0);
 				b[7] = (MTButton*)gi->newcontrol(MTC_BUTTON,0,alert,l,t,0,h,0);
 				b[6]->setcaption(d_yes);
@@ -666,7 +666,7 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 				if (cbutton>1) cbutton = 1;
 				alert->focus(b[6+cbutton]);
 				break;
-			case MTD_YESNOCANCEL:
+			case (int)MTD_YESNOCANCEL:
 				b[5] = (MTButton*)gi->newcontrol(MTC_BUTTON,0,alert,l,t,0,h,0);
 				b[6] = (MTButton*)gi->newcontrol(MTC_BUTTON,0,alert,l,t,0,h,0);
 				b[7] = (MTButton*)gi->newcontrol(MTC_BUTTON,0,alert,l,t,0,h,0);
@@ -726,16 +726,16 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 		int wflags = 0;
 		int res;
 		switch ((int)buttons){
-		case MTD_OK:
+		case (int)MTD_OK:
 			wflags = MB_OK;
 			break;
-		case MTD_OKCANCEL:
+		case (int)MTD_OKCANCEL:
 			wflags = MB_OKCANCEL;
 			break;
-		case MTD_YESNO:
+		case (int)MTD_YESNO:
 			wflags = MB_YESNO;
 			break;
-		case MTD_YESNOCANCEL:
+		case (int)MTD_YESNOCANCEL:
 			wflags = MB_YESNOCANCEL;
 			break;
 		};
@@ -1108,8 +1108,10 @@ _nommx:
 				fchs
 				fdiv	cpu_div;
 				mov		eax,this
-#ifdef __BORLANDC__
+#if __BORLANDC__
 				fistp	dword ptr [eax].cpufrequ
+#elif __MWERKS__
+				fistp	dword ptr [eax+MTSystemInterface.cpufrequ]
 #else
 				fistp	dword ptr [eax]this.cpufrequ
 #endif

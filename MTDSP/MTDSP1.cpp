@@ -10,9 +10,11 @@
 //---------------------------------------------------------------------------
 #include <math.h>
 #include "MTDSP1.h"
+#include "MTShaper.h"
 #include "MTBufferASM.h"
 #include "MTFilterASM.h"
 #include "MTResamplingASM.h"
+#include "MTCatmullASM.h"
 #include "../Headers/MTXSystem2.h"
 //---------------------------------------------------------------------------
 static const char *dspname = {"MadTracker DSP"};
@@ -49,6 +51,7 @@ bool MTDSPInterface::init()
 	addbufferslide = a_addbufferslide;
 	addbufferslide2 = a_addbufferslide2;
 	ampbuffer = a_ampbuffer;
+	modulatebuffer = a_modulatebuffer;
 	filter[0x0] = a_filter_;
 	filter[0x1] = a_filter_;
 	filter[0x2] = a_filter_;
@@ -97,9 +100,33 @@ bool MTDSPInterface::init()
 	resample[0x1D] = a_resample_none_16;
 	resample[0x1E] = a_resample_none_32;
 	resample[0x1F] = a_resample_none_32;
+	splinereplace = a_splinereplace;
+	splinemodulate = a_splinemodulate;
+#ifdef _DEBUG
+	char file[256];
+	MTFile *f;
+	MTShaper s;
+	MTShape *sh;
+	sample *p;
+	int x;
+	short v;
+
+	s.add(0,64,0.5,192,0.75);
+	s.add(1,0,0.0,64,1.0,128,0.0,256,1.0);
+	sh = s.get(0,256,MTSHAPE_BUFFER);
+	strcpy(file,mtinterface->getprefs()->syspath[SP_ROOT]);
+	strcat(file,"Spline.raw");
+	f = si->fileopen(file,MTF_WRITE|MTF_SHAREREAD|MTF_CREATE);
+	p = sh->data;
+	for (x=sh->x1;x<sh->x2;x++){
+		v = (short)(32767*(*p++));
+		f->write(&v,sizeof(v));
+	};
+	si->fileclose(f);
+#endif
 	status |= MTX_INITIALIZED;
 	LEAVE();
-	return true;
+	return false;
 }
 
 void MTDSPInterface::uninit()

@@ -13,5 +13,6 @@ void MTACT a_addbuffermul2(sample *dest1,sample *dest2,sample *source,double a1,
 void MTACT a_addbufferslide(sample *dest,sample *source,double mul,double i,int count);
 void MTACT a_addbufferslide2(sample *dest1,sample *dest2,sample *source,double mul1,double mul2,double i1,double i2,int count);
 void MTACT a_ampbuffer(sample *dest,double a,int count);
+void MTACT a_modulatebuffer(sample *dest,sample *source,int count);
 //---------------------------------------------------------------------------
 #endif

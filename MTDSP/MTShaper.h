@@ -29,6 +29,7 @@ struct MTShape
 };
 
 class MTShaper{
+public:
 	MTShaper();
 	virtual ~MTShaper();
 

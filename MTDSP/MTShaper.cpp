@@ -76,10 +76,64 @@ void MTShaper::add(int layer,int x1,int x2,sample *data)
 MTShape* MTShaper::get(int from,int to,int accept)
 {
 	MTShape *res;
+	sample *c,*e;
+	sample v,i;
+	int x,_from,_to;
 
 	if (!(accept & MTSHAPE_BUFFER)) return 0;
 	res = mtnew(MTShape);
-
+	res->type = MTSHAPE_BUFFER;
+	res->data = (sample*)si->memalloc(s_sample*(to-from));
+	res->x1 = from;
+	res->x2 = to;
+	c = res->data;
+	e = res->data+to-from;
+	while (c<e) *c++ = 1;
+	for (x=0;x<16;x++){
+		MTShape &cl = l[x];
+		switch (cl.type){
+		case MTSHAPE_FLAT:
+			if ((cl.x1<to) && (cl.x2>from)){
+				if (cl.x1>from) c += cl.x1-from;
+				if (cl.x2<to) e -= to-cl.x2;
+				while (c<e) *c++ *= cl.y1;
+			};
+			break;
+		case MTSHAPE_LINEAR:
+			if ((cl.x1<to) && (cl.x2>from)){
+				i = (cl.y2-cl.y1)/(cl.x2-cl.x1);
+				v = cl.y1;
+				if (cl.x1>from) c += cl.x1-from;
+				else v += i*(from-cl.x1);
+				if (cl.x2<to) e -= to-cl.x2;
+				while (c<e){
+					*c++ *= v;
+					v += i;
+				};
+			};
+			break;
+		case MTSHAPE_SECOND:
+			break;
+		case MTSHAPE_THIRD:
+			break;
+		case MTSHAPE_SPLINE:
+			if ((cl.x2<to) && (cl.x3>from)){
+				_from = (cl.x2>from)?cl.x2:from;
+				_to = (cl.x3<to)?cl.x3:to;
+				dspi->splinemodulate(res->data+_from-from,_to-_from,cl.x1,cl.y1,cl.x2,cl.y2,cl.x3,cl.y3,cl.x4,cl.y4,_from,_to);
+			};
+			break;
+		case MTSHAPE_BUFFER:
+			if ((cl.x1<to) && (cl.x2>from)){
+				_from = (cl.x1>from)?cl.x1:from;
+				_to = (cl.x2<to)?cl.x2:to;
+				dspi->modulatebuffer(res->data+_from-from,cl.data+_from-cl.x1,_to-_from);
+			};
+			break;
+		default:
+			break;
+		};
+	};
 	return res;
 }
 
@@ -121,7 +175,6 @@ void MTShaper::flush(int to)
 			};
 			break;
 		default:
-			continue;
 			break;
 		};
 	};
