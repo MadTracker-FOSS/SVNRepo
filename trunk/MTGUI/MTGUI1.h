@@ -86,7 +86,7 @@ typedef void (MTCT *MTCommand)(MTShortcut*,MTControl*,MTUndo*);
 #include "MTGUITools.h"
 #include "../Headers/MTXSystem.h"
 #include "../Headers/MTXDisplay.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 //---------------------------------------------------------------------------
 struct MTGUIPreferences{
 	char skin[256];
@@ -168,7 +168,7 @@ public:
 	virtual void MTCT deltimer(MTControl *ctrl,int timerid);
 	virtual int MTCT synchronize(MTSync*);
 	virtual void* MTCT getimagelist(int id);
-	virtual MTSkin* MTCT getskin();
+	virtual Skin* MTCT getskin();
 	virtual void* MTCT createwindow(int l,int t,int w,int h,char *caption,int flags,void *parent);
 	virtual void MTCT deletewindow(void *wnd);
 	virtual void* MTCT getwindowproc();
@@ -178,8 +178,11 @@ public:
 	virtual void MTCT invalidatergn(void *wnd,void *rgn);
 	virtual void MTCT windowaction(void *wnd,int action);
 	virtual void MTCT windowmove(void *wnd,int x,int y,bool relative);
-	virtual void MTCT setcursor(int cursor);
-	virtual void MTCT restorecursor();
+	virtual void MTCT resetcursor();
+	virtual float MTCT getcursorphase();
+	virtual MTControl* MTCT getfocusedcontrol();
+	virtual void MTCT setmouseshape(int cursor);
+	virtual void MTCT restoremouseshape();
 	virtual void MTCT getmousevector(float &x,float &y);
 	virtual void MTCT getmousepos(MTPoint &mp);
 	virtual void MTCT registershortcut(MTShortcut *s);
@@ -229,10 +232,9 @@ extern MTDisplayInterface *di;
 extern MTGUIInterface *gi;
 extern MTGUIPreferences guiprefs;
 extern MTBitmap *screen;
-extern bool cursor;
 extern int doubleclick,dragx,dragy,gridx,gridy;
 extern int guitick;
 extern int lastwparam,lastlparam;
-extern MTSkin *skin;
+extern Skin *skin;
 //---------------------------------------------------------------------------
 #endif

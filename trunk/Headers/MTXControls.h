@@ -399,7 +399,6 @@ public:
 	virtual void MTCT setcursor(int c) = 0;
 	virtual void MTCT undo() = 0;
 protected:
-	friend class MTSkin;
 	int lblank,rblank;
 	bool md,focused,isnew;
 	int cursor,offset;
@@ -419,7 +418,6 @@ public:
 	virtual void MTCT setitem(int id) = 0;
 	virtual int MTCT searchitem(const char *search,char **caption) = 0;
 protected:
-	friend class MTSkin;
 	friend class MTDesktop;
 	MTList *mlb;
 	bool modified;

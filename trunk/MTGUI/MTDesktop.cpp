@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------
 #include "MTDesktop.h"
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 //---------------------------------------------------------------------------
 extern MTDesktop *desktops[32];
 extern int ndesktops;
@@ -35,8 +35,7 @@ MTDesktop::MTDesktop(int tag,void *p,int l,int t,int w,int h):
 MTWinControl(MTC_DESKTOP,tag,0,l,t,w,h),
 mwnd(p),
 newctrl(0),
-ccombo(0),
-ctimer(0)
+ccombo(0)
 {
 	if (!popup){
 		popup = (MTMenu*)gi->newcontrol(MTC_MENU,0,this,0,0,0,0,0);
@@ -47,7 +46,6 @@ ctimer(0)
 	};
 	desktops[ndesktops++] = this;
 	di->adddesktop(this);
-	ctimer = gi->ctrltimer(this,0,guiprefs.cursorspeed*100,false);
 	if (candesign){
 		int x,n,type;
 		char name[256];
@@ -68,7 +66,6 @@ MTDesktop::~MTDesktop()
 {
 	int x;
 	
-	gi->deltimer(this,ctimer);
 	flags |= (MTCF_DONTDRAW|MTCF_DONTFLUSH);
 	di->deldesktop(this);
 	for (x=0;x<ncontrols;x++){
@@ -119,22 +116,6 @@ bool MTDesktop::message(MTCMessage &msg)
 			ccombo->popuptick = guitick;
 			ccombo->mlb->switchflags(MTCF_FOCUSED,false);
 		};
-		return true;
-	}
-	else if (msg.msg==MTCM_TIMER){
-		MTControl *cctrl = focused;
-		MTWinControl *parent = this;
-		if (cctrl){
-			while ((cctrl->guiid & 2) && (((MTWinControl*)cctrl)->focused)){
-				parent = (MTWinControl*)cctrl;
-				cctrl = parent->focused;
-			};
-			if ((cctrl->guiid & 2)==0){
-				MTCMessage msg = {MTCM_CHANGE,0,cctrl};
-				parent->message(msg);
-			};
-		};
-		cursor = !cursor;
 		return true;
 	}
 	else if ((msg.msg==MTCM_CHANGE) && (msg.param1 & MTCF_FOCUSED)){
@@ -241,12 +222,5 @@ void MTDesktop::drawover(MTWinControl *wnd,MTRect &rect)
 	unclip();
 	flags = bflags;
 	MTControl::draw(rect);
-}
-
-void MTDesktop::resetcursor()
-{
-	cursor = true;
-	gi->deltimer(this,ctimer);
-	ctimer = gi->ctrltimer(this,0,guiprefs.cursorspeed*100,true);
 }
 //---------------------------------------------------------------------------

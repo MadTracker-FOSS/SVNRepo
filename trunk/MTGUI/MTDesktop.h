@@ -21,10 +21,8 @@ public:
 	void MTCT clearmenu(MTMenu *m);
 	void MTCT setcombo(MTComboBox *c);
 	void MTCT drawover(MTWinControl *wnd,MTRect &rect);
-	void MTCT resetcursor();
 private:
 	MTComboBox *ccombo;
-	int ctimer;
 };
 //---------------------------------------------------------------------------
 #include "MTEdit.h"

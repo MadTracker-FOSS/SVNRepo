@@ -146,7 +146,7 @@ public:
 	virtual void MTCT deltimer(MTControl *ctrl,int timerid) = 0;
 	virtual int MTCT synchronize(MTSync*) = 0;
 	virtual void* MTCT getimagelist(int id) = 0;
-	virtual MTSkin* MTCT getskin();
+	virtual Skin* MTCT getskin();
 	virtual void* MTCT createwindow(int l,int t,int w,int h,char *caption,int flags,void *parent) = 0;
 	virtual void MTCT deletewindow(void *wnd) = 0;
 	virtual void* MTCT getwindowproc() = 0;
@@ -156,8 +156,11 @@ public:
 	virtual void MTCT invalidatergn(void *wnd,void *rgn) = 0;
 	virtual void MTCT windowaction(void *wnd,int action) = 0;
 	virtual void MTCT windowmove(void *wnd,int x,int y,bool relative) = 0;
-	virtual void MTCT setcursor(int cursor) = 0;
-	virtual void MTCT restorecursor() = 0;
+	virtual void MTCT resetcursor() = 0;
+	virtual float MTCT getcursorphase() = 0;
+	virtual MTControl* MTCT getfocusedcontrol() = 0;
+	virtual void MTCT setmouseshape(int cursor) = 0;
+	virtual void MTCT restoremouseshape() = 0;
 	virtual void MTCT getmousevector(float &x,float &y) = 0;
 	virtual void MTCT getmousepos(MTPoint &mp) = 0;
 	virtual void MTCT registershortcut(MTShortcut *s) = 0;

@@ -11,7 +11,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 #include "MTWindow.h"
 #include "MTTabControl.h"
 #include "MTSysControls.h"
@@ -322,16 +322,15 @@ void MTWindow::draw(MTRect &rect)
 	int x = 0;
 	int y = 0;
 	MTBitmap *b;
-	bool clipped = true;
 	MTRect cr = {0,0,width,height};
 	
 	if (flags & MTCF_HIDDEN) return;
 	if (&rect){
-		clipped = cliprect(cr,rect);
+		cliprect(cr,rect);
 	};
 	if (parent){
 		preparedraw(&b,x,y);
-		skin->drawcontrol(this,cr,b,x,y,clipped);
+		skin->drawcontrol(this,rect,b,x,y);
 	};
 	if (flags & MTCF_CANTDRAW) return;
 	if (design){

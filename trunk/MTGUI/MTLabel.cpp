@@ -11,7 +11,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 #include "MTLabel.h"
 #include "MTWindow.h"
 //---------------------------------------------------------------------------

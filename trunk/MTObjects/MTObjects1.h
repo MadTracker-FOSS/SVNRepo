@@ -86,7 +86,7 @@ extern MTAudioInterface *ai;
 extern MTDSPInterface *dspi;
 extern MTGUIInterface *gi;
 extern MTObjectsPreferences objectsprefs;
-extern MTSkin *skin;
+extern Skin *skin;
 extern MTResources *res;
 extern MTWindow *monitor;
 extern MTHash *objecttype;

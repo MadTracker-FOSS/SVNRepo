@@ -31,7 +31,7 @@ MTDesktop *mtdsk;
 MTTabControl *mtdock;
 MTWindow *mtmain,*mtmain2;
 MTResources *mtres,*skinres;
-MTSkin *skin;
+Skin *skin;
 MTImageList *sysimages;
 MTThread *refreshthread;
 MTEvent *refreshevent;
@@ -536,7 +536,7 @@ bool initInterface()
 	gi->monitordesktop(mtdsk);
 	mtdsk->draw(NORECT);
 // Initialize the skin
-	skin = (MTSkin*)gi->getskin();
+	skin = gi->getskin();
 	sysimages = (MTImageList*)gi->getimagelist(0);
 	if (outmsg){
 		LEAVE();

@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------
 #include <stdio.h>
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 #include "MTProgress.h"
 #include "MTWindow.h"
 //---------------------------------------------------------------------------
@@ -131,7 +131,7 @@ void MTProgress::draw(MTRect &rect)
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
-	skin->drawslider(b,x,y,width,height,0,0,maxpos,pos,false);
+	skin->drawcontrol(this,rect,b,x,y);
 	MTControl::draw(rect);
 }
 

@@ -11,6 +11,7 @@
 #include <math.h>
 #include <windows.h>
 #include "MTGUI1.h"
+#include "MTSkin.h"
 #include "MTControl.h"
 #include "MTWinControl.h"
 #include "MTCustControls.h"
@@ -47,7 +48,7 @@ MTGUIPreferences guiprefs = {"Default.mtr",4,false,false,4,4,192,32,30,50,true,t
 MTBitmap *screen = 0;
 int ndesktops;
 MTDesktop *desktops[32];
-bool cursor = true;
+int cursorstart = 0;
 bool quit = false;
 bool bitmapcheck = false;
 MSG msg;
@@ -67,7 +68,7 @@ MTArray *cursors;
 static const char* wincurmap[16] = {IDC_ARROW,IDC_ARROW,IDC_APPSTARTING,IDC_WAIT,IDC_IBEAM,IDC_HELP,IDC_SIZEALL,IDC_SIZENS,IDC_SIZEWE,IDC_SIZENWSE,IDC_SIZENESW,IDC_NO,IDC_CROSS,(char*)DCUR_DRAG,(char*)DCUR_POINT};
 int ksgroup = 0;
 int lastwparam,lastlparam;
-MTSkin *skin;
+Skin *skin;
 //---------------------------------------------------------------------------
 inline int WinButtons(int wb)
 {
@@ -230,6 +231,7 @@ bool MTGUIInterface::init()
 	runningevent = si->eventcreate(false);
 	timers = si->hashcreate(8);
 	status |= MTX_INITIALIZED;
+	resetcursor();
 	LEAVE();
 	return true;
 }
@@ -294,7 +296,6 @@ void MTGUIInterface::uninit()
 	candesign = false;
 	design = false;
 	blockinput = false;
-	cursor = true;
 	overctrl = 0;
 	LEAVE();
 }
@@ -507,8 +508,10 @@ MTControl *MTGUIInterface::newcontrol(int type,int tag,MTWinControl *parent,int 
 		LOGD("%s - [GUI] ERROR: Unknown object type!"NL);
 		break;
 	};
-	if (skin) skin->initcontrol(res);
-	if ((parent) && (res) && (type!=MTC_DESKTOP)) parent->addcontrol(res);
+	if (res){
+		if (skin) skin->initcontrol(res);
+		if ((parent) && (type!=MTC_DESKTOP)) parent->addcontrol(res);
+		};
 	LEAVE();
 	return res;
 }
@@ -807,7 +810,7 @@ void* MTGUIInterface::getimagelist(int id)
 	return 0;
 }
 
-MTSkin* MTGUIInterface::getskin()
+Skin* MTGUIInterface::getskin()
 {
 	return skin;
 }
@@ -918,13 +921,30 @@ void MTGUIInterface::windowmove(void *wnd,int x,int y,bool relative)
 	SetWindowPos((HWND)wnd,0,x,y,0,0,SWP_NOSIZE|SWP_NOZORDER);
 }
 
-void MTGUIInterface::setcursor(int cursor)
+void MTGUIInterface::resetcursor()
+{
+	cursorstart = si->syscounter();
+}
+
+float MTGUIInterface::getcursorphase()
+{
+	static const double f2pi = 6.283185307179586476925286766559;
+
+	return (cos(f2pi*(si->syscounter()-cursorstart))+1.0f)/2.0f;
+}
+
+MTControl* MTGUIInterface::getfocusedcontrol()
+{
+	return 0;
+}
+
+void MTGUIInterface::setmouseshape(int cursor)
 {
 	if (cursors) cursors->push((void*)cursor);
 	SetCursor(LoadCursor(0,wincurmap[cursor]));
 }
 
-void MTGUIInterface::restorecursor()
+void MTGUIInterface::restoremouseshape()
 {
 	int cursor = DCUR_DEFAULT;
 

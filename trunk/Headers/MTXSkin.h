@@ -11,6 +11,10 @@
 #ifndef MTXSKIN_INCLUDED
 #define MTXSKIN_INCLUDED
 //---------------------------------------------------------------------------
+class MTControl;
+class MTWinControl;
+class MTUserList;
+//---------------------------------------------------------------------------
 #include "MTXExtension.h"
 #include "MTXDisplay.h"
 #include "MTXControls.h"
@@ -247,12 +251,11 @@ struct MTSkinInfo{
 	char skinurl[256];
 };
 
-class MTSkin{
+class Skin{
 public:
+	MTBitmap *skinbmp[16];
 	int fontwidth;
 	int fontheight;
-
-	virtual ~MTSkin() = 0;
 
 	virtual void MTCT loadfromres(MTResources *res) = 0;
 	virtual void MTCT savetores(MTResources *res) = 0;
@@ -263,7 +266,7 @@ public:
 	virtual void MTCT timercontrol(MTControl *ctrl) = 0;
 //	Controls drawing
 	virtual void MTCT drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0) = 0;
-	virtual void MTCT drawcontrol(int guiid,int id,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0);
+	virtual void MTCT drawcontrol(int guiid,int id,MTRect &rect,MTBitmap *b,int x,int y,int flags = 0) = 0;
 	virtual void MTCT drawborder(MTWinControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y) = 0;
 	virtual void MTCT drawmodalveil(MTWinControl *ctrl,MTRect &rect) = 0;
 //	Dimensions
@@ -288,12 +291,7 @@ public:
 	virtual void MTCT drawtext(unsigned char *text,MTBitmap *bmp,int &x,int y,int color) = 0;
 	virtual void MTCT drawdec(int val,bool zeroes,int n,MTBitmap *bmp,int &x,int y,int color) = 0;
 	virtual void MTCT drawhex(int val,bool zeroes,int n,MTBitmap *bmp,int &x,int y,int color) = 0;
-	virtual void MTCT drawwindow(MTBitmap *bmp,int x,int y,int w,int h,int style) = 0;
-	virtual void MTCT drawinnerwindow(MTBitmap *bmp,int x,int y,int w,int h,int style) = 0;
-	virtual void MTCT drawbutton(MTBitmap *bmp,int x,int y,int w,int h,MTBTMetrics *m) = 0;
-	virtual void MTCT drawslider(MTBitmap *bmp,int x,int y,int w,int h,MTSLMetrics *m,int min,int max,int pos,bool focused) = 0;
 	virtual void MTCT drawframe(MTBitmap *bmp,int x,int y,int w,int h,int flags = 0) = 0;
-	virtual void MTCT drawshadow(MTBitmap *bmp,int x,int y,int w,int h,int style) = 0;
 };
 //---------------------------------------------------------------------------
 #endif

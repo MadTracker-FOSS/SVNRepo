@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------
 #include <stdio.h>
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 #include "MTButton.h"
 #include "MTTabControl.h"
 #include "MTSysControls.h"
@@ -201,7 +201,7 @@ void MTButton::draw(MTRect &rect)
 	
 	if (flags & MTCF_CANTDRAW) return;
 	preparedraw(&b,x,y);
-	skin->drawcontrol(this,rect,b,x,y,cursor);
+	skin->drawcontrol(this,rect,b,x,y);
 	MTControl::draw(rect);
 }
 

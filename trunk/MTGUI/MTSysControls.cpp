@@ -16,7 +16,7 @@
 //---------------------------------------------------------------------------
 #include "MTSysControls.h"
 #include "MTGUI1.h"
-#include "MTSkin.h"
+#include "../Headers/MTXSkin.h"
 #include "MTWindow.h"
 //---------------------------------------------------------------------------
 MTImageList sysimages;
@@ -217,31 +217,10 @@ void MTSlider::draw(MTRect &rect)
 	int x = left;
 	int y = top;
 	MTBitmap *b;
-	int ox,oy,ow,oh;
 	
 	if (flags & MTCF_CANTDRAW) return;
-	switch (cm->type){
-	case SKIN_ANIM:
-		ow = cm->c.a.b.w/cm->c.nx;
-		oh = cm->c.a.b.h/cm->c.ny;
-		ox = (width-ow)/2;
-		oy = (height-oh)/2;
-		break;
-	case SKIN_CIRCLE:
-		ow = cm->d.s.b.w;
-		oh = cm->d.s.b.h;
-		ox = (width-ow)/2;
-		oy = (height-oh)/2;
-		break;
-	default:
-		ox = 0;
-		oy = 0;
-		ow = width;
-		oh = height;
-		break;
-	};
 	preparedraw(&b,x,y);
-	skin->drawslider(b,x+ox,y+oy,ow,oh,cm,minpos,maxpos,value,(flags & MTCF_OVER) || ((flags & MTCF_FOCUSED) && (cursor)));
+	skin->drawcontrol(this,rect,b,x,y);
 	MTControl::draw(rect);
 }
 

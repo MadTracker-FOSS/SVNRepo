@@ -19,6 +19,7 @@
 #include "MTTabControl.h"
 #include "MTButton.h"
 #include "MTCheckBox.h"
+#include "MTProgress.h"
 //---------------------------------------------------------------------------
 struct MTSignData{
 	int timerid;
@@ -29,7 +30,8 @@ MTResources *skinres;
 unsigned char MTSkin::fontmap[256];
 static const char *passtxt = {"********************************"};
 //---------------------------------------------------------------------------
-MTSkin::MTSkin()
+MTSkin::MTSkin():
+Skin()
 {
 	unsigned char x;
 
@@ -460,6 +462,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 		{
 			((MTListBox*)ctrl)->fillcolor(rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_EDIT_BACKGROUND & 0xFFFF]);
 		};
+		break;
 	case MTC_MENUITEM:
 //	Menu Item
 		{
@@ -531,9 +534,14 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 			int tflags,bx,by,cbtn;
 			int cstyle = w.style & 0xFF;
 			MTWNMetrics &cwnm = wnm[cstyle];
+			bool clipped = true;
+			MTRect cr = {0,0,w.width,w.height};
 			MTRect tr;
 
-			if ((flags) && (!(w.flags & MTCF_DONTDRAW))){
+			if (&rect){
+				clipped = cliprect(cr,rect);
+			};
+			if ((clipped) && (!(w.flags & MTCF_DONTDRAW))){
 				w.clip(rect);
 				w.skinblt(0,0,w.width,w.height,cwnm.bkg);
 				w.unclip();
@@ -576,7 +584,6 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 					cbtn++;
 				};
 			};
-			if (&rect) w.unclip();
 			if ((cstyle==1) || (cstyle==3) || (cstyle==4)){
 				tr.left = cwnm.co.left;
 				tr.top = w.br.top+cwnm.co.top;
@@ -595,6 +602,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 				w.drawtext(w.caption,-1,tr,tflags);
 				w.close(0);
 			};
+			if (&rect) w.unclip();
 		};
 		break;
 	case MTC_EDIT:
@@ -608,10 +616,6 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 			const char *mtext = e.text;
 			MTRect r = {x+e.lblank+4,y+2,x+e.width-e.rblank-4,y+e.height-2};
 
-			rect.left += 2;
-			rect.top += 2;
-			rect.right -= 4;
-			rect.bottom -= 4;
 			b->fill(x+rect.left,y+rect.top,rect.right-rect.left,rect.bottom-rect.top,fnm.colors[SC_EDIT_BACKGROUND & 0xFFFF]);
 			b->open(0);
 			color = fnm.colors[SC_EDIT_NORMAL & 0xFFFF];
@@ -762,6 +766,7 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 		};
 		break;
 	case MTC_CHECKBOX:
+//	Check box
 		{
 			MTCheckBox &cb = *(MTCheckBox*)ctrl;
 			int w,ident,o;
@@ -779,11 +784,47 @@ void MTSkin::drawcontrol(MTControl *ctrl,MTRect &rect,MTBitmap *b,int x,int y,in
 				b->skinblta(x,y+(cb.height-csp.b.h)/2,w,csp.b.h,csp,3,1,cb.state);
 			};
 			if (b->open(0)){
-				b->settextcolor(((cb.flags & MTCF_OVER) || ((cb.flags & MTCF_FOCUSED) && (cursor)))?fnm.colors[SC_TEXT_FOCUSED & 0xFFFF]:fnm.colors[SC_TEXT_NORMAL & 0xFFFF]);
+				b->settextcolor(((cb.flags & MTCF_OVER) || ((cb.flags & MTCF_FOCUSED) && (gi->getcursorphase()>0)))?fnm.colors[SC_TEXT_FOCUSED & 0xFFFF]:fnm.colors[SC_TEXT_NORMAL & 0xFFFF]);
 				b->setfont(hskfont[1]);
 				b->drawtext(cb.caption,-1,r,DTXT_VCENTER);
 				b->close(0);
 			};
+		};
+		break;
+	case MTC_PROGRESS:
+//	Progress bar
+		{
+			drawslider(b,x,y,ctrl->width,ctrl->height,0,0,((MTProgress*)ctrl)->maxpos,((MTProgress*)ctrl)->pos,false);
+		};
+		break;
+	case MTC_SLIDER:
+//	Slider
+		{
+			MTSlider &s = *(MTSlider*)ctrl;
+			int ox,oy,ow,oh;
+			MTSLMetrics *cm = getslider(s.type,s.orientation);
+
+			switch (cm->type){
+			case SKIN_ANIM:
+				ow = cm->c.a.b.w/cm->c.nx;
+				oh = cm->c.a.b.h/cm->c.ny;
+				ox = (s.width-ow)/2;
+				oy = (s.height-oh)/2;
+				break;
+			case SKIN_CIRCLE:
+				ow = cm->d.s.b.w;
+				oh = cm->d.s.b.h;
+				ox = (s.width-ow)/2;
+				oy = (s.height-oh)/2;
+				break;
+			default:
+				ox = 0;
+				oy = 0;
+				ow = s.width;
+				oh = s.height;
+				break;
+			};
+			drawslider(b,x+ox,y+oy,ow,oh,cm,s.minpos,s.maxpos,s.value,(s.flags & MTCF_OVER) || ((s.flags & MTCF_FOCUSED) && (gi->getcursorphase()>0)));
 		};
 		break;
 	};
@@ -1033,7 +1074,6 @@ void MTSkin::getregions(MTControl *ctrl,void **opaque,void **transparent)
 	subtractrgn(trrgn,oprgn);
 	if (opaque) *opaque = oprgn;
 	if (transparent) *transparent = trrgn;
-	return;
 }
 
 int MTSkin::getcolor(int id)

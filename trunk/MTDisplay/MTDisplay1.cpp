@@ -130,17 +130,17 @@ void MTDisplayInterface::uninit()
 void MTCT menusetdevice(MTShortcut *s,MTControl *c,MTUndo*)
 {
 	if (!c) return;
-	if (gi) gi->setcursor(DCUR_WORKING);
+	if (gi) gi->setmouseshape(DCUR_WORKING);
 	di->setdevice(c->tag);
-	if (gi) gi->restorecursor();
+	if (gi) gi->restoremouseshape();
 }
 
 void MTCT menusetfullscreen(MTShortcut *s,MTControl *c,MTUndo*)
 {
 	displayprefs.fullscreen = !displayprefs.fullscreen;
-	if (gi) gi->setcursor(DCUR_WORKING);
+	if (gi) gi->setmouseshape(DCUR_WORKING);
 	di->setdevice(-1);
-	if (gi) gi->restorecursor();
+	if (gi) gi->restoremouseshape();
 }
 #endif
 
@@ -208,7 +208,7 @@ void MTDisplayInterface::setdevice(int id,bool silent)
 	MTCMessage msg = {MTCM_NOTIFY,0,0,1};
 
 	FENTER2("MTDisplayInterface::setdevice(%d,%d)",id,silent);
-	if (gi) gi->setcursor(DCUR_WORKING);
+	if (gi) gi->setmouseshape(DCUR_WORKING);
 	if (id>=0) displayprefs.device = id;
 	else{
 		if (cdevice){
@@ -292,7 +292,7 @@ leave:
 			cdsk.draw(NORECT);
 		};
 	};
-	if (gi) gi->restorecursor();
+	if (gi) gi->restoremouseshape();
 	LEAVE();
 }
 
@@ -399,9 +399,9 @@ MTWinControl *MTDisplayInterface::getdefaultdesktop()
 
 void MTDisplayInterface::checkbitmaps()
 {
-	if (gi) gi->setcursor(DCUR_WORKING);
+	if (gi) gi->setmouseshape(DCUR_WORKING);
 	if (cdevice) cdevice->checkbitmaps();
-	if (gi) gi->restorecursor();
+	if (gi) gi->restoremouseshape();
 }
 
 MTBitmap* MTDisplayInterface::getscreen()

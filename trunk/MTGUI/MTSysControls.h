@@ -3,7 +3,6 @@
 #define MTSYSCONTROLS_INCLUDED
 //---------------------------------------------------------------------------
 #include "MTControl.h"
-#include "MTSkin.h"
 #include "../Headers/MTXTrack.h"
 //---------------------------------------------------------------------------
 class MTImageList{
