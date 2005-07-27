@@ -338,7 +338,7 @@ void mtgetlibmemoryrange(void *lib,int flags,void **start,int *length)
 static struct{
 	unsigned int ecode;
 	char *emessage;
-} _e[21] = {
+} _e[20] = {
 	{EXCEPTION_ACCESS_VIOLATION,"Access violation"},
 	{EXCEPTION_ARRAY_BOUNDS_EXCEEDED,"Array out of bounds"},
 	{EXCEPTION_BREAKPOINT,"Breakpoint"},
@@ -376,8 +376,8 @@ int WINAPI onexception(EXCEPTION_POINTERS *ep)
 		bool waslogging = logging;
 
 		if (!logging) startlog();
-		cecode = _e[20].emessage;
-		for (x=0;x<20;x++){
+		cecode = _e[19].emessage;
+		for (x=0;x<19;x++){
 			if (ep->ExceptionRecord->ExceptionCode==_e[x].ecode){
 				cecode = _e[x].emessage;
 				break;
