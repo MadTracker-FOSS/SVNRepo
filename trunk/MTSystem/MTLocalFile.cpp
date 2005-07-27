@@ -7,6 +7,8 @@
 //
 //	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
 //
+//	$Id$
+//
 //---------------------------------------------------------------------------
 #include <time.h>
 #include "MTLocalFile.h"
