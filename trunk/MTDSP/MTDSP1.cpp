@@ -126,7 +126,7 @@ bool MTDSPInterface::init()
 #endif
 	status |= MTX_INITIALIZED;
 	LEAVE();
-	return false;
+	return true;
 }
 
 void MTDSPInterface::uninit()
