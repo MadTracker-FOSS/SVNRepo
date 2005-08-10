@@ -7,6 +7,8 @@
 //	http://www.madtracker.org/
 //	info@madtracker.org
 //
+//	$Id$
+//
 //---------------------------------------------------------------------------
 #ifndef MTXOSCILLATOR_INCLUDED
 #define MTXOSCILLATOR_INCLUDED
