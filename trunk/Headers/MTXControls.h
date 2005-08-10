@@ -7,6 +7,8 @@
 //	http://www.madtracker.org/
 //	info@madtracker.org
 //
+//	$Id$
+//
 //---------------------------------------------------------------------------
 #ifndef MTXCONTROLS_INCLUDED
 #define MTXCONTROLS_INCLUDED

@@ -7,6 +7,8 @@
 //	http://www.madtracker.org/
 //	info@madtracker.org
 //
+//	$Id$
+//
 //---------------------------------------------------------------------------
 #ifndef MTXDSP_INCLUDED
 #define MTXDSP_INCLUDED
