@@ -8,7 +8,10 @@ class MTSocket;
 class MTServer;
 class MTClient;
 //---------------------------------------------------------------------------
+#if defined(_WIN32)
 #include <winsock2.h>
+#elif defined(__LINUX__)
+#endif
 #include "MTSystem1.h"
 #include "../Headers/MTXExtension.h"
 //---------------------------------------------------------------------------
