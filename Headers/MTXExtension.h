@@ -323,7 +323,7 @@ inline void int64todouble(void *int64,double *d)
 		fst		qword ptr d
 	};
 #else
-	asm("fild qword ptr %0; fst qword ptr %1":"=m" (d):"m" (int64));
+	asm("fild qword ptr %0; fst qword ptr %1":"=m" (d):"m" (int64),"m" (d));
 #endif
 }
 #pragma warning(default: 4035)
