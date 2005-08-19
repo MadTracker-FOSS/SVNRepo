@@ -3,9 +3,9 @@
 //  MadTracker System Core
 //
 //		Platforms:	All
-//		Processors:	x86
+//		Processors:	All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	$Id$
 //
