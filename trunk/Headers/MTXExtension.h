@@ -303,7 +303,7 @@ inline short swap_word(short a)
 		xchg	al,ah
 	};
 #else
-	asm("xchg %al,%ah"::"a" (a):"%eax");
+	asm ("xchg %al,%ah"::"a"(a):"%eax");
 #endif
 }
 
@@ -315,7 +315,7 @@ inline long swap_dword(long a)
 		bswap	eax
 	};
 #else
-	asm("bswap %eax"::"a" (a):"%eax");
+	asm ("bswap %eax"::"a"(a):"%eax");
 #endif
 }
 
@@ -327,7 +327,7 @@ inline void int64todouble(void *int64,double *d)
 		fst		qword ptr d
 	};
 #else
-	asm("fild qword ptr %1; fst qword ptr %0":"=m" (d):"m" (int64));
+	asm ("fild qword ptr %1; fst qword ptr %0":"=m"(d):"m"(int64));
 #endif
 }
 #ifdef WIN32
