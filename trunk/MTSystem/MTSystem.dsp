@@ -253,10 +253,6 @@ SOURCE=..\Headers\MTXSystem2.cpp
 
 SOURCE=..\Headers\MTXSystem2.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\Headers\MTXSysTypes.h
-# End Source File
 # End Group
 # Begin Source File
 
