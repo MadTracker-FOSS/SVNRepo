@@ -301,8 +301,8 @@ inline short swap_word(short a)
 #else
 	asm(
 		"xchg %al,%ah"
-		:"=a"
-		:"a" (a)
+		:
+		:"r" (a)
 		:"%eax"
 		);
 #endif
