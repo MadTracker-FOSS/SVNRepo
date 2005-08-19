@@ -10,7 +10,9 @@
 //	$Id$
 //
 //---------------------------------------------------------------------------
+#include "../Headers/MTXSysTypes.h"
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include "MTSystem1.h"
 #include "../Headers/MTXSystem2.h"
@@ -20,8 +22,11 @@
 #include "../Headers/MTXGUI.h"
 #include "../Headers/MTXControls.h"
 #include "../../debug/Interface/MTSystemRES.h"
+#if defined(_WIN32)
 #include <shellapi.h>
 #include <mmsystem.h>
+#elif defined(__LINUX__)
+#endif
 //---------------------------------------------------------------------------
 static const char *sysname = {"MadTracker System Core"};
 static const int sysversion = 0x30000;
@@ -74,6 +79,7 @@ void startlog()
 		mtlog(si->build);
 		mtlog(NL"Processor:     ");
 		mtlog(si->processor);
+#if defined(_WIN32)
 		MEMORYSTATUS mem;
 		GlobalMemoryStatus(&mem);
 		mtlog(NL"Memory:        Total: ");
@@ -85,6 +91,16 @@ void startlog()
 		mtlog("Capabilities:  Timer resolution: ");
 		sprintf(buf,"%d msec"NL""NL,timecaps.wPeriodMin);
 		mtlog(buf);
+#elif defined(__LINUX__)
+		MTFile *pf = mtfileopen("/proc/meminfo",MTF_READ);
+		if (pf){
+			char mbuf[2048];
+			pf->read(buf,sizeof(buf));
+			mtfileclose(pf);
+			mtlog(mbuf);
+			mtlog(NL);
+		};
+#endif
 	};
 }
 

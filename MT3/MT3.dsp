@@ -158,11 +158,11 @@ SOURCE=.\MTInterface.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\MT3.rc
+SOURCE=.\icon_main.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\mt3icon.ico
+SOURCE=.\MT3.rc
 # End Source File
 # Begin Source File
 
