@@ -13,8 +13,6 @@
 #ifndef MTSYSTEM1_INCLUDED
 #define MTSYSTEM1_INCLUDED
 
-static const int systemtype = FOURCC('X','S','Y','S');
-
 #define MTS_WINNT    0x00001
 #define MTS_MMX      0x00002
 #define MTS_SIMD     0x00004
@@ -128,6 +126,8 @@ class MTHash;
 //---------------------------------------------------------------------------
 #include <windows.h>
 //---------------------------------------------------------------------------
+static const int systemtype = FOURCC('X','S','Y','S');
+
 #ifdef MTSYSTEM_EXPORTS
 /*--SDK--*/
 class MTSystemInterface : public MTXInterface{
