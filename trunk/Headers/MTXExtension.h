@@ -299,29 +299,32 @@ inline short swap_word(short a)
 		xchg	al,ah
 	};
 #else
-	asm(
-		"xchg %al,%ah"
-		:
-		:"r" (a)
-		:"%eax"
-		);
+	asm("xchg %al,%ah"::"a" (a):"%eax");
 #endif
 }
 
 inline long swap_dword(long a)
 {
+#ifdef WIN32
 	__asm{
 		mov		eax,a
 		bswap	eax
 	};
+#else
+	asm("bswap %eax"::"a" (a):"%eax");
+#endif
 }
 
 inline void int64todouble(void *int64,double *d)
 {
+#ifdef WIN32
 	__asm{
 		fild	qword ptr int64;
 		fst		qword ptr d
 	};
+#else
+	asm("fild qword ptr %0; fst qword ptr %1":"m" (d):"m" (int64));
+#endif
 }
 #pragma warning(default: 4035)
 #else
