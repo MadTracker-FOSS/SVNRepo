@@ -159,7 +159,11 @@ enum{
 #else
 
 #	include <sys/types.h>
-#	include <config_types.h>
+	typedef int16_t mt_int16;
+	typedef u_int16_t mt_uint16;
+	typedef int32_t mt_int32;
+	typedef u_int32_t mt_uint32;
+	typedef int64_t mt_int64;
 
 #endif
 
