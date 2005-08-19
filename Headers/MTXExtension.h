@@ -292,7 +292,9 @@ typedef MTXInterfaces* __stdcall MTXMainCall(MTInterface *mti);
 //	Swapping functions to convert little<->big endian
 //---------------------------------------------------------------------------
 #ifndef __BORLANDC__
+#ifdef WIN32
 #pragma warning(disable: 4035)
+#endif
 inline short swap_word(short a)
 {
 #ifdef WIN32
@@ -325,10 +327,12 @@ inline void int64todouble(void *int64,double *d)
 		fst		qword ptr d
 	};
 #else
-	asm("fild qword ptr %0; fst qword ptr %1":"=m" (d):"m" (int64),"m" (d));
+	asm("fild qword ptr %1; fst qword ptr %0":"=m" (d):"m" (int64));
 #endif
 }
+#ifdef WIN32
 #pragma warning(default: 4035)
+#endif
 #else
 inline short __fastcall swap_word(short a)
 {
