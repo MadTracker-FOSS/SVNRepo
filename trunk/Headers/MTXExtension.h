@@ -26,6 +26,12 @@
 
 #define NL "\r\n"
 
+#if defined(WIN32)
+	#define ASM(S) __asm S
+#else
+	#define ASM(S) __asm__("S")
+#endif
+
 enum{
 	MTL_FREE = 0,
 	MTL_BASIC,
@@ -190,10 +196,8 @@ typedef MTXInterfaces* __stdcall MTXMainCall(MTInterface *mti);
 #pragma warning(disable: 4035)
 inline short swap_word(short a)
 {
-	__asm{
-		mov		ax,a
-		xchg	al,ah
-	};
+	ASM(mov		ax,a);
+	ASM(xchg	al,ah);
 }
 
 inline long swap_dword(long a)
