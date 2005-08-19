@@ -13,6 +13,8 @@
 #ifndef MTXEXTENSION_INCLUDED
 #define MTXEXTENSION_INCLUDED
 
+#define FOURCC(a,b,c,d) ((((long)a)<<24) | (((long)b)<<16) | (((long)c)<<8) | (((long)d)<<0))
+
 //
 //	Calling Convention
 //

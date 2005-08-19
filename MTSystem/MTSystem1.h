@@ -13,11 +13,7 @@
 #ifndef MTSYSTEM1_INCLUDED
 #define MTSYSTEM1_INCLUDED
 
-#ifdef __BORLANDC__
-static const int systemtype = 'XSYS';
-#else
-static const int systemtype = 'SYSX';
-#endif
+static const int systemtype = FOURCC('X','S','Y','S');
 
 #define MTS_WINNT    0x00001
 #define MTS_MMX      0x00002
