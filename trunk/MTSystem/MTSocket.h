@@ -22,6 +22,9 @@ class MTClient;
 #include <winsock2.h>
 #else
 #include <sys/socket.h>
+#define SOCKET int
+#define INVALID_SOCKET -1
+#define WSAEWOULDBLOCK EWOULDBLOCK
 #endif
 #include "MTSystem1.h"
 //---------------------------------------------------------------------------

@@ -42,7 +42,6 @@ int (WSAAPI *mtshutdown)(SOCKET,int);
 int (WSAAPI *mtsocket)(int,int,int);
 #else
 #include <errno.h>
-#define SOCKET int
 #define mtaccept accept
 #define mtbind bind
 #define mtclosesocket close
@@ -61,9 +60,7 @@ int (WSAAPI *mtsocket)(int,int,int);
 #define mtsendto sendto
 #define mtshutdown shutdown
 #define mtsocket socket
-#define INVALID_SOCKET -1
 #define wsgetlasterror() errno;
-#define WSAEWOULDBLOCK EWOULDBLOCK
 #endif
 //---------------------------------------------------------------------------
 #if defined(_WIN32)
