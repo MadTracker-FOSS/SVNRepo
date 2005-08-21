@@ -19,13 +19,28 @@
 //	Calling Convention
 //
 
-#if defined(WIN32) || defined(__FLAT__) || defined __BORLANDC__
-	#define MTCT __cdecl
-	#define MTACT __stdcall
-#else
-	#define MTCT _cdecl
-	#define MTACT _stdcall
+#ifndef __stdcall
+	#ifdef __i386__
+		#ifdef __GNUC__
+			#define __stdcall __attribute__((__stdcall__))
+		#elif !defined(_MSC_VER)
+			#error You need to define __stdcall for your compiler
+		#endif
+	#else
+		#define __stdcall
+	#endif
 #endif
+
+#ifndef __cdecl
+	#if defined(__i386__) && defined(__GNUC__)
+		#define __cdecl __attribute__((__cdecl__))
+	#elif !defined(_MSC_VER)
+		#define __cdecl
+	#endif
+#endif
+
+#define MTCT __cdecl
+#define MTACT __stdcall
 
 #define NL "\r\n"
 
