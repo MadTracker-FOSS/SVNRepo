@@ -304,7 +304,7 @@ MTSocket* MTServer::accept()
 	
 	if ((nclients==maxconn) || (isdatagram)) return 0;
 	l = sizeof(client);
-	cc = mtaccept(s,(sockaddr*)&client,&l);
+	cc = ::mtaccept(s,(sockaddr*)&client,&l);
 	if (cc!=INVALID_SOCKET){
 		clients[nclients] = new MTSocket(this,cc,&client);
 		clients[nclients]->setblocking(false);
