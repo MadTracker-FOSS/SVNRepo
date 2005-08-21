@@ -42,6 +42,7 @@ int (WSAAPI *mtshutdown)(SOCKET,int);
 int (WSAAPI *mtsocket)(int,int,int);
 #else
 #include <errno.h>
+#define SOCKET int
 #define mtaccept accept
 #define mtbind bind
 #define mtclosesocket close
