@@ -123,10 +123,10 @@ extern char* (WSAAPI *mtinet_ntoa)(struct in_addr);
 extern int (WSAAPI *mtioctlsocket)(SOCKET,long,u_long*);
 extern int (WSAAPI *mtsetsockopt)(SOCKET,int,int,const char*,int);
 extern int (WSAAPI *mtlisten)(SOCKET,int);
-extern int (WSAAPI *mtrecv)(SOCKET,char*,int,int);
-extern int (WSAAPI *mtsend)(SOCKET,const char*,int,int);
-extern int (WSAAPI *mtrecvfrom)(SOCKET s, char*,int,int,struct sockaddr*,int*);
-extern int (WSAAPI *mtsendto)(SOCKET,const char*,int,int,const struct sockaddr*,int);
+extern int (WSAAPI *mtrecv)(SOCKET,char*,int,mt_uint32);
+extern int (WSAAPI *mtsend)(SOCKET,const char*,int,mt_uint32);
+extern int (WSAAPI *mtrecvfrom)(SOCKET s, char*,int,int,struct sockaddr*,mt_uint32*);
+extern int (WSAAPI *mtsendto)(SOCKET,const char*,int,int,const struct sockaddr*,mt_uint32);
 extern int (WSAAPI *mtshutdown)(SOCKET,int);
 extern int (WSAAPI *mtsocket)(int,int,int);
 #endif

@@ -217,7 +217,11 @@ int MTSocket::getip()
 
 int MTSocket::getendip()
 {
+#ifdef _WIN32
 	return addr.sin_addr.S_un.S_addr;
+#else
+	return addr.sin_addr.s_addr;
+#endif
 }
 
 int MTSocket::makesocket()
