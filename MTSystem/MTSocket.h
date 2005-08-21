@@ -111,7 +111,7 @@ void uninitSocket();
 //---------------------------------------------------------------------------
 #if defined(_WIN32)
 extern int (WSAAPI *wsgetlasterror)();
-extern SOCKET (WSAAPI *mtaccept)(SOCKET,struct sockaddr*,int*);
+extern SOCKET (WSAAPI *mtaccept)(SOCKET,struct sockaddr*,mt_uint32*);
 extern int (WSAAPI *mtbind)(SOCKET,const struct sockaddr*,int);
 extern int (WSAAPI *mtclosesocket)(SOCKET);
 extern int (WSAAPI *mtconnect)(SOCKET,const struct sockaddr*,int);

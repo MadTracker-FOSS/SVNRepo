@@ -22,7 +22,7 @@ HMODULE hws;
 int (WSAAPI *wsstartup)(WORD,LPWSADATA);
 int (WSAAPI *wscleanup)();
 int (WSAAPI *wsgetlasterror)();
-SOCKET (WSAAPI *mtaccept)(SOCKET,struct sockaddr*,int*);
+SOCKET (WSAAPI *mtaccept)(SOCKET,struct sockaddr*,mt_uint32*);
 int (WSAAPI *mtbind)(SOCKET,const struct sockaddr*,int);
 int (WSAAPI *mtclosesocket)(SOCKET);
 int (WSAAPI *mtconnect)(SOCKET,const struct sockaddr*,int);
@@ -298,7 +298,7 @@ int MTServer::write(const void *buffer,int size)
 
 MTSocket* MTServer::accept()
 {
-	int l;
+	mt_uint32 l;
 	SOCKET cc;
 	sockaddr_in client;
 	
@@ -307,8 +307,9 @@ MTSocket* MTServer::accept()
 	cc = mtaccept(s,(sockaddr*)&client,&l);
 	if (cc!=INVALID_SOCKET){
 		clients[nclients] = new MTSocket(this,cc,&client);
-		l = 1;
-		mtioctlsocket(cc,FIONBIO,(unsigned long*)&l);
+		clients[nclients]->setblocking(false);
+//		l = 1;
+//		mtioctlsocket(cc,FIONBIO,(unsigned long*)&l);
 		return clients[nclients++];
 	};
 	lasterror = wsgetlasterror();
