@@ -23,9 +23,29 @@ class MTClient;
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <errno.h>
 #define SOCKET int
 #define INVALID_SOCKET -1
 #define WSAEWOULDBLOCK EWOULDBLOCK
+#define mtaccept accept
+#define mtbind bind
+#define mtclosesocket close
+#define mtconnect connect
+#define mtgethostbyaddr gethostbyaddr
+#define mtgethostbyname gethostbyname
+#define mtgethostname gethostname
+#define mthtons htons
+#define mtinet_addr inet_addr
+#define mtinet_ntoa inet_ntoa
+#define mtioctlsocket ioctlsocket
+#define mtsetsockopt setsockopt
+#define mtlisten listen
+#define mtrecv recv
+#define mtrecvfrom recvfrom
+#define mtsendto sendto
+#define mtshutdown shutdown
+#define mtsocket socket
+#define wsgetlasterror() errno;
 #endif
 #include "MTSystem1.h"
 //---------------------------------------------------------------------------
@@ -83,6 +103,7 @@ void initSocket();
 void uninitSocket();
 }
 //---------------------------------------------------------------------------
+#if defined(_WIN32)
 extern int (WSAAPI *wsgetlasterror)();
 extern SOCKET (WSAAPI *mtaccept)(SOCKET,struct sockaddr*,int*);
 extern int (WSAAPI *mtbind)(SOCKET,const struct sockaddr*,int);
@@ -103,5 +124,6 @@ extern int (WSAAPI *mtrecvfrom)(SOCKET s, char*,int,int,struct sockaddr*,int*);
 extern int (WSAAPI *mtsendto)(SOCKET,const char*,int,int,const struct sockaddr*,int);
 extern int (WSAAPI *mtshutdown)(SOCKET,int);
 extern int (WSAAPI *mtsocket)(int,int,int);
+#endif
 //---------------------------------------------------------------------------
 #endif
