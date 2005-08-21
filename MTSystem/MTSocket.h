@@ -24,7 +24,7 @@ class MTClient;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
+#include <fcntl.h>
 #include <errno.h>
 #define SOCKET int
 #define INVALID_SOCKET -1
