@@ -23,7 +23,7 @@
 	#define MTCT __cdecl
 	#define MTACT __stdcall
 #else
-	#define MTCT
+	#define MTCT cdecl
 	#define MTACT stdcall
 #endif
 
@@ -288,7 +288,7 @@ public:
 	virtual int MTCT processinput(const char *input){ return 0; };
 };
 
-typedef MTXInterfaces* MTXMainCall(MTInterface *mti);
+typedef MTXInterfaces* MTACT MTXMainCall(MTInterface *mti);
 //---------------------------------------------------------------------------
 //	Swapping functions to convert little<->big endian
 //---------------------------------------------------------------------------
