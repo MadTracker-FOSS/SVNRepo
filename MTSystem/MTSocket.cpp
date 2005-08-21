@@ -146,7 +146,7 @@ int MTSocket::getlasterror()
 	return lasterror;
 }
 
-int MTSocket::read(void *buffer,int size,sockaddr *from,int *fromsize)
+int MTSocket::read(void *buffer,int size,sockaddr *from,mt_uint32 *fromsize)
 {
 	int res;
 	
@@ -170,7 +170,7 @@ int MTSocket::read(void *buffer,int size,sockaddr *from,int *fromsize)
 	return 0;
 }
 
-int MTSocket::write(const void *buffer,int size)
+int MTSocket::write(const void *buffer,mt_uint32 size)
 {
 	if (!connected) return 0;
 	if (isdatagram){

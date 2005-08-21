@@ -62,8 +62,8 @@ public:
 	virtual bool MTCT isconnected();
 	virtual void MTCT disconnect();
 	virtual int MTCT getlasterror();
-	virtual int MTCT read(void *buffer,int size,sockaddr *from = 0,int *fromsize = 0);
-	virtual int MTCT write(const void *buffer,int size);
+	virtual int MTCT read(void *buffer,int size,sockaddr *from = 0,mt_uint32 *fromsize = 0);
+	virtual int MTCT write(const void *buffer,mt_uint32 size);
 	virtual void MTCT setblocking(bool b);
 	virtual const char* MTCT getname();
 	virtual int MTCT getip();
