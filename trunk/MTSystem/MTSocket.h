@@ -1,5 +1,14 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker System Core
+//
+//		Platforms:	Win32
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
 //	$Id$
+//
 //---------------------------------------------------------------------------
 #ifndef MTSOCKET_INCLUDED
 #define MTSOCKET_INCLUDED
@@ -8,12 +17,13 @@ class MTSocket;
 class MTServer;
 class MTClient;
 //---------------------------------------------------------------------------
+#include "../Headers/MTXExtension.h"
 #if defined(_WIN32)
 #include <winsock2.h>
-#elif defined(__LINUX__)
+#else
+#include <sys/socket.h>
 #endif
 #include "MTSystem1.h"
-#include "../Headers/MTXExtension.h"
 //---------------------------------------------------------------------------
 class MTSocket{
 public:
