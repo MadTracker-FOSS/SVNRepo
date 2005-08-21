@@ -23,8 +23,8 @@
 	#define MTCT __cdecl
 	#define MTACT __stdcall
 #else
-	#define MTCT cdecl
-	#define MTACT stdcall
+	#define MTCT _cdecl
+	#define MTACT _stdcall
 #endif
 
 #define NL "\r\n"
