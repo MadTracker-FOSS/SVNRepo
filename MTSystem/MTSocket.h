@@ -45,6 +45,7 @@ class MTClient;
 #define mtsetsockopt setsockopt
 #define mtlisten listen
 #define mtrecv recv
+#define mtsend send
 #define mtrecvfrom recvfrom
 #define mtsendto sendto
 #define mtshutdown shutdown

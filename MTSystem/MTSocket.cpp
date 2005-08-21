@@ -35,10 +35,10 @@ char* (WSAAPI *mtinet_ntoa)(struct in_addr);
 int (WSAAPI *mtioctlsocket)(SOCKET,long,u_long*);
 int (WSAAPI *mtsetsockopt)(SOCKET,int,int,const char*,int);
 int (WSAAPI *mtlisten)(SOCKET,int);
-int (WSAAPI *mtrecv)(SOCKET,char*,int,int);
-int (WSAAPI *mtsend)(SOCKET,const char*,int,int);
-int (WSAAPI *mtrecvfrom)(SOCKET s, char*,int,int,struct sockaddr*,int*);
-int (WSAAPI *mtsendto)(SOCKET,const char*,int,int,const struct sockaddr*,int);
+int (WSAAPI *mtrecv)(SOCKET,char*,int,mt_uint32);
+int (WSAAPI *mtsend)(SOCKET,const char*,int,mt_uint32);
+int (WSAAPI *mtrecvfrom)(SOCKET s, char*,int,int,struct sockaddr*,mt_uint32*);
+int (WSAAPI *mtsendto)(SOCKET,const char*,int,int,const struct sockaddr*,mt_uint32);
 int (WSAAPI *mtshutdown)(SOCKET,int);
 int (WSAAPI *mtsocket)(int,int,int);
 #endif
