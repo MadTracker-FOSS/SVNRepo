@@ -5,7 +5,7 @@
 //		Platforms:	Win32
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	$Id$
 //
@@ -14,6 +14,7 @@
 #include "../Headers/MTXSystem2.h"
 #include "MTBase64.h"
 //---------------------------------------------------------------------------
+#if defined(_WIN32)
 bool socketinit = false;
 WSADATA wsadata;
 HMODULE hws;
@@ -39,7 +40,32 @@ int (WSAAPI *mtrecvfrom)(SOCKET s, char*,int,int,struct sockaddr*,int*);
 int (WSAAPI *mtsendto)(SOCKET,const char*,int,int,const struct sockaddr*,int);
 int (WSAAPI *mtshutdown)(SOCKET,int);
 int (WSAAPI *mtsocket)(int,int,int);
+#else
+#include <errno.h>
+#define mtaccept accept
+#define mtbind bind
+#define mtclosesocket close
+#define mtconnect connect
+#define mtgethostbyaddr gethostbyaddr
+#define mtgethostbyname gethostbyname
+#define mtgethostname gethostname
+#define mthtons htons
+#define mtinet_addr inet_addr
+#define mtinet_ntoa inet_ntoa
+#define mtioctlsocket ioctlsocket
+#define mtsetsockopt setsockopt
+#define mtlisten listen
+#define mtrecv recv
+#define mtrecvfrom recvfrom
+#define mtsendto sendto
+#define mtshutdown shutdown
+#define mtsocket socket
+#define INVALID_SOCKET -1
+#define wsgetlasterror() errno;
+#define WSAEWOULDBLOCK EWOULDBLOCK
+#endif
 //---------------------------------------------------------------------------
+#if defined(_WIN32)
 void initSocket()
 {
 	LOGD("%s - [System] Initializing WinSock..."NL);
@@ -84,6 +110,7 @@ void uninitSocket()
 		socketinit = false;
 	};
 }
+#endif
 //---------------------------------------------------------------------------
 MTSocket::MTSocket(bool datagram):
 server(0),
@@ -93,7 +120,9 @@ ip(0),
 port(0),
 s(0)
 {
+#if defined(_WIN32)
 	if (!socketinit) initSocket();
+#endif
 	mtmemzero(&addr,sizeof(addr));
 	addr.sin_family = AF_INET;
 }
@@ -106,7 +135,9 @@ ip(0),
 port(0),
 s(cs)
 {
+#if defined(_WIN32)
 	if (!socketinit) initSocket();
+#endif
 	memcpy(&addr,caddr,sizeof(addr));
 	ip = addr.sin_addr.s_addr;
 	port = mthtons(addr.sin_port);
