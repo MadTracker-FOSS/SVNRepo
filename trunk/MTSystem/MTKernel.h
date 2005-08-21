@@ -12,7 +12,7 @@
 #define MTT_HIGH     2
 #define MTT_REALTIME 15
 
-enum{
+enum MTProcessType{
 	MTP_LOADMODULE = 0x10000,
 	MTP_SAVEMODULE,
 	MTP_LOADINSTRUMENT,

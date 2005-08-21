@@ -4,7 +4,7 @@
 #ifndef MTCONFIG_INCLUDED
 #define MTCONFIG_INCLUDED
 //---------------------------------------------------------------------------
-enum{
+enum MTConfigType{
 	MTCT_CONFIG = 0,
 	MTCT_SINTEGER,
 	MTCT_UINTEGER,
