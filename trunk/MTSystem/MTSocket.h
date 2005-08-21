@@ -23,10 +23,14 @@ class MTClient;
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
 #include <errno.h>
 #define SOCKET int
 #define INVALID_SOCKET -1
 #define WSAEWOULDBLOCK EWOULDBLOCK
+#define SD_SEND SHUT_WR
+#define SD_BOTH SHUT_RDWR
 #define mtaccept accept
 #define mtbind bind
 #define mtclosesocket close
@@ -37,7 +41,7 @@ class MTClient;
 #define mthtons htons
 #define mtinet_addr inet_addr
 #define mtinet_ntoa inet_ntoa
-#define mtioctlsocket ioctlsocket
+#define mtioctlsocket fcntl
 #define mtsetsockopt setsockopt
 #define mtlisten listen
 #define mtrecv recv

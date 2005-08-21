@@ -13,6 +13,7 @@
 #include "MTSocket.h"
 #include "../Headers/MTXSystem2.h"
 #include "MTBase64.h"
+#include <string.h>
 //---------------------------------------------------------------------------
 #if defined(_WIN32)
 bool socketinit = false;
@@ -191,8 +192,15 @@ int MTSocket::write(const void *buffer,int size)
 
 void MTSocket::setblocking(bool b)
 {
+#if defined(_WIN32)
 	b ^= true;
 	mtioctlsocket(s,FIONBIO,(unsigned long*)&b);
+#else
+	int state = mtioctlsocket(s,F_GETFL);
+	if (b) state &= (!O_NONBLOCK);
+	else state |= O_NONBLOCK;
+	mtioctlsocket(s,F_SETFL,state);
+#endif
 }
 
 const char* MTSocket::getname()
