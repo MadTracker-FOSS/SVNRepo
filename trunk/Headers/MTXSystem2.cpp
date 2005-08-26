@@ -8,6 +8,7 @@
 //	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
 //
 //---------------------------------------------------------------------------
+#ifdef __BORLANDC__
 void mtmemzero(void *mem,int count)
 {
 	__asm{
@@ -44,4 +45,5 @@ void mtmemzero64(void *mem,int count)
 		pop		edi
 	};
 }
+#endif
 //---------------------------------------------------------------------------

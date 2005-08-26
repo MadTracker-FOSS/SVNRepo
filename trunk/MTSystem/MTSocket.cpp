@@ -2,7 +2,7 @@
 //
 //	MadTracker System Core
 //
-//		Platforms:	Win32
+//		Platforms:	Win32,Linux
 //		Processors: All
 //
 //	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
@@ -15,80 +15,82 @@
 #include "MTBase64.h"
 #include <string.h>
 //---------------------------------------------------------------------------
-#if defined(_WIN32)
-bool socketinit = false;
-WSADATA wsadata;
-HMODULE hws;
-int (WSAAPI *wsstartup)(WORD,LPWSADATA);
-int (WSAAPI *wscleanup)();
-int (WSAAPI *wsgetlasterror)();
-SOCKET (WSAAPI *mtaccept)(SOCKET,struct sockaddr*,mt_uint32*);
-int (WSAAPI *mtbind)(SOCKET,const struct sockaddr*,int);
-int (WSAAPI *mtclosesocket)(SOCKET);
-int (WSAAPI *mtconnect)(SOCKET,const struct sockaddr*,int);
-struct hostent* (WSAAPI *mtgethostbyaddr)(const char*,int,int);
-struct hostent* (WSAAPI *mtgethostbyname)(const char*);
-int (WSAAPI *mtgethostname)(char*,int);
-u_short (WSAAPI *mthtons)(u_short);
-unsigned long (WSAAPI *mtinet_addr)(const char*);
-char* (WSAAPI *mtinet_ntoa)(struct in_addr);
-int (WSAAPI *mtioctlsocket)(SOCKET,long,u_long*);
-int (WSAAPI *mtsetsockopt)(SOCKET,int,int,const char*,int);
-int (WSAAPI *mtlisten)(SOCKET,int);
-int (WSAAPI *mtrecv)(SOCKET,char*,int,mt_uint32);
-int (WSAAPI *mtsend)(SOCKET,const char*,int,mt_uint32);
-int (WSAAPI *mtrecvfrom)(SOCKET s, char*,int,int,struct sockaddr*,mt_uint32*);
-int (WSAAPI *mtsendto)(SOCKET,const char*,int,int,const struct sockaddr*,mt_uint32);
-int (WSAAPI *mtshutdown)(SOCKET,int);
-int (WSAAPI *mtsocket)(int,int,int);
+#ifdef _WIN32
+	bool socketinit = false;
+	WSADATA wsadata;
+	HMODULE hws;
+	int (WSAAPI *wsstartup)(WORD,LPWSADATA);
+	int (WSAAPI *wscleanup)();
+	int (WSAAPI *wsgetlasterror)();
+	SOCKET (WSAAPI *mtaccept)(SOCKET,struct sockaddr*,mt_uint32*);
+	int (WSAAPI *mtbind)(SOCKET,const struct sockaddr*,int);
+	int (WSAAPI *mtclosesocket)(SOCKET);
+	int (WSAAPI *mtconnect)(SOCKET,const struct sockaddr*,int);
+	struct hostent* (WSAAPI *mtgethostbyaddr)(const char*,int,int);
+	struct hostent* (WSAAPI *mtgethostbyname)(const char*);
+	int (WSAAPI *mtgethostname)(char*,int);
+	u_short (WSAAPI *mthtons)(u_short);
+	unsigned long (WSAAPI *mtinet_addr)(const char*);
+	char* (WSAAPI *mtinet_ntoa)(struct in_addr);
+	int (WSAAPI *mtioctlsocket)(SOCKET,long,u_long*);
+	int (WSAAPI *mtsetsockopt)(SOCKET,int,int,const char*,int);
+	int (WSAAPI *mtlisten)(SOCKET,int);
+	int (WSAAPI *mtrecv)(SOCKET,char*,int,mt_uint32);
+	int (WSAAPI *mtsend)(SOCKET,const char*,int,mt_uint32);
+	int (WSAAPI *mtrecvfrom)(SOCKET s, char*,int,int,struct sockaddr*,mt_uint32*);
+	int (WSAAPI *mtsendto)(SOCKET,const char*,int,int,const struct sockaddr*,mt_uint32);
+	int (WSAAPI *mtshutdown)(SOCKET,int);
+	int (WSAAPI *mtsocket)(int,int,int);
 #endif
 //---------------------------------------------------------------------------
-#if defined(_WIN32)
 void initSocket()
 {
-	LOGD("%s - [System] Initializing WinSock..."NL);
-	if (!hws){
-		hws = LoadLibrary("WS2_32.DLL");
+	#ifdef _WIN32
+		LOGD("%s - [System] Initializing WinSock..."NL);
 		if (!hws){
-			LOGD("%s - [System] ERROR: Cannot load WS2_32.DLL!"NL);
-			return;
+			hws = LoadLibrary("WS2_32.DLL");
+			if (!hws){
+				LOGD("%s - [System] ERROR: Cannot load WS2_32.DLL!"NL);
+				return;
+			};
+			*(int*)&wsstartup = (int)GetProcAddress(hws,"WSAStartup");
+			*(int*)&wscleanup = (int)GetProcAddress(hws,"WSACleanup");
+			*(int*)&wsgetlasterror = (int)GetProcAddress(hws,"WSAGetLastError");
+			*(int*)&mtaccept = (int)GetProcAddress(hws,"WSAStartup");
+			*(int*)&mtaccept = (int)GetProcAddress(hws,"accept");
+			*(int*)&mtbind = (int)GetProcAddress(hws,"bind");
+			*(int*)&mtclosesocket = (int)GetProcAddress(hws,"closesocket");
+			*(int*)&mtconnect = (int)GetProcAddress(hws,"connect");
+			*(int*)&mtgethostbyaddr = (int)GetProcAddress(hws,"gethostbyaddr");
+			*(int*)&mtgethostbyname = (int)GetProcAddress(hws,"gethostbyname");
+			*(int*)&mtgethostname = (int)GetProcAddress(hws,"gethostname");
+			*(int*)&mthtons = (int)GetProcAddress(hws,"htons");
+			*(int*)&mtinet_addr = (int)GetProcAddress(hws,"inet_addr");
+			*(int*)&mtinet_ntoa = (int)GetProcAddress(hws,"inet_ntoa");
+			*(int*)&mtioctlsocket = (int)GetProcAddress(hws,"ioctlsocket");
+			*(int*)&mtsetsockopt = (int)GetProcAddress(hws,"setsockopt");
+			*(int*)&mtlisten = (int)GetProcAddress(hws,"listen");
+			*(int*)&mtrecv = (int)GetProcAddress(hws,"recv");
+			*(int*)&mtsend = (int)GetProcAddress(hws,"send");
+			*(int*)&mtrecvfrom = (int)GetProcAddress(hws,"recvfrom");
+			*(int*)&mtsendto = (int)GetProcAddress(hws,"sendto");
+			*(int*)&mtshutdown = (int)GetProcAddress(hws,"shutdown");
+			*(int*)&mtsocket = (int)GetProcAddress(hws,"socket");
 		};
-		*(int*)&wsstartup = (int)GetProcAddress(hws,"WSAStartup");
-		*(int*)&wscleanup = (int)GetProcAddress(hws,"WSACleanup");
-		*(int*)&wsgetlasterror = (int)GetProcAddress(hws,"WSAGetLastError");
-		*(int*)&mtaccept = (int)GetProcAddress(hws,"WSAStartup");
-		*(int*)&mtaccept = (int)GetProcAddress(hws,"accept");
-		*(int*)&mtbind = (int)GetProcAddress(hws,"bind");
-		*(int*)&mtclosesocket = (int)GetProcAddress(hws,"closesocket");
-		*(int*)&mtconnect = (int)GetProcAddress(hws,"connect");
-		*(int*)&mtgethostbyaddr = (int)GetProcAddress(hws,"gethostbyaddr");
-		*(int*)&mtgethostbyname = (int)GetProcAddress(hws,"gethostbyname");
-		*(int*)&mtgethostname = (int)GetProcAddress(hws,"gethostname");
-		*(int*)&mthtons = (int)GetProcAddress(hws,"htons");
-		*(int*)&mtinet_addr = (int)GetProcAddress(hws,"inet_addr");
-		*(int*)&mtinet_ntoa = (int)GetProcAddress(hws,"inet_ntoa");
-		*(int*)&mtioctlsocket = (int)GetProcAddress(hws,"ioctlsocket");
-		*(int*)&mtsetsockopt = (int)GetProcAddress(hws,"setsockopt");
-		*(int*)&mtlisten = (int)GetProcAddress(hws,"listen");
-		*(int*)&mtrecv = (int)GetProcAddress(hws,"recv");
-		*(int*)&mtsend = (int)GetProcAddress(hws,"send");
-		*(int*)&mtrecvfrom = (int)GetProcAddress(hws,"recvfrom");
-		*(int*)&mtsendto = (int)GetProcAddress(hws,"sendto");
-		*(int*)&mtshutdown = (int)GetProcAddress(hws,"shutdown");
-		*(int*)&mtsocket = (int)GetProcAddress(hws,"socket");
-	};
-	if (wsstartup(0x101,&wsadata)==0) socketinit = true;
+		if (wsstartup(0x101,&wsadata)==0) socketinit = true;
+	#endif
 }
 
 void uninitSocket()
 {
-	if (socketinit){
-		wscleanup();
-		FreeLibrary(hws);
-		socketinit = false;
-	};
+	#ifdef _WIN32
+		if (socketinit){
+			wscleanup();
+			FreeLibrary(hws);
+			socketinit = false;
+		};
+	#endif
 }
-#endif
 //---------------------------------------------------------------------------
 MTSocket::MTSocket(bool datagram):
 server(0),
@@ -98,9 +100,9 @@ ip(0),
 port(0),
 s(0)
 {
-#if defined(_WIN32)
-	if (!socketinit) initSocket();
-#endif
+	#ifdef _WIN32
+		if (!socketinit) initSocket();
+	#endif
 	mtmemzero(&addr,sizeof(addr));
 	addr.sin_family = AF_INET;
 }
@@ -113,9 +115,9 @@ ip(0),
 port(0),
 s(cs)
 {
-#if defined(_WIN32)
-	if (!socketinit) initSocket();
-#endif
+	#ifdef _WIN32
+		if (!socketinit) initSocket();
+	#endif
 	memcpy(&addr,caddr,sizeof(addr));
 	ip = addr.sin_addr.s_addr;
 	port = mthtons(addr.sin_port);
@@ -192,15 +194,15 @@ int MTSocket::write(const void *buffer,mt_uint32 size)
 
 void MTSocket::setblocking(bool b)
 {
-#if defined(_WIN32)
-	b ^= true;
-	mtioctlsocket(s,FIONBIO,(unsigned long*)&b);
-#else
-	int state = mtioctlsocket(s,F_GETFL);
-	if (b) state &= (!O_NONBLOCK);
-	else state |= O_NONBLOCK;
-	mtioctlsocket(s,F_SETFL,state);
-#endif
+	#ifdef _WIN32
+		b ^= true;
+		mtioctlsocket(s,FIONBIO,(unsigned long*)&b);
+	#else
+		int state = mtioctlsocket(s,F_GETFL);
+		if (b) state &= (!O_NONBLOCK);
+		else state |= O_NONBLOCK;
+		mtioctlsocket(s,F_SETFL,state);
+	#endif
 }
 
 const char* MTSocket::getname()
@@ -217,11 +219,11 @@ int MTSocket::getip()
 
 int MTSocket::getendip()
 {
-#ifdef _WIN32
-	return addr.sin_addr.S_un.S_addr;
-#else
-	return addr.sin_addr.s_addr;
-#endif
+	#ifdef _WIN32
+		return addr.sin_addr.S_un.S_addr;
+	#else
+		return addr.sin_addr.s_addr;
+	#endif
 }
 
 int MTSocket::makesocket()

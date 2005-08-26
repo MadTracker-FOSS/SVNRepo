@@ -16,9 +16,9 @@ enum MTConfigType{
 //---------------------------------------------------------------------------
 class MTConfigFile;
 //---------------------------------------------------------------------------
+#include "MTXExtension.h"
 #include "MTFile.h"
 #include "MTStructures.h"
-#include "../Headers/MTXExtension.h"
 //---------------------------------------------------------------------------
 class MTConfigFile{
 public:

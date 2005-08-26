@@ -4,7 +4,7 @@
 #ifndef MTSTRUCTURES_INCLUDED
 #define MTSTRUCTURES_INCLUDED
 //---------------------------------------------------------------------------
-#include "../Headers/MTXExtension.h"
+#include "MTXExtension.h"
 //---------------------------------------------------------------------------
 class MTArray;
 class MTHash;

@@ -4,11 +4,11 @@
 #ifndef MTINTERFACE_INCLUDED
 #define MTINTERFACE_INCLUDED
 
-#include "../Headers/MTXExtension.h"
-#include "../Headers/MTXGUI.h"
-#include "../Headers/MTXSkin.h"
-#include "../Headers/MTXControls.h"
-#include "../Headers/MTXModule.h"
+#include "MTXExtension.h"
+#include "MTXGUI.h"
+#include "MTXSkin.h"
+#include "MTXControls.h"
+#include "MTXModule.h"
 //---------------------------------------------------------------------------
 struct RefreshStruct{
 	int id;

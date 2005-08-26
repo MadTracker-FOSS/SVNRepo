@@ -28,8 +28,8 @@
 class MTFile;
 class MTFolder;
 //---------------------------------------------------------------------------
+#include "MTXExtension.h"
 #include "MTKernel.h"
-#include "../Headers/MTXExtension.h"
 //---------------------------------------------------------------------------
 class MTFileHook{
 public:
@@ -49,7 +49,7 @@ public:
 	virtual ~MTFile(){ };
 	virtual int MTCT read(void *buffer,int size) = 0;
 	virtual int MTCT readln(char *buffer,int maxsize) = 0;
-	virtual int MTCT reads(char *buffer,int maxsize) = 0;
+//	virtual int MTCT reads(char *buffer,int maxsize) = 0;
 	virtual int MTCT write(const void *buffer,int size) = 0;
 	virtual int MTCT seek(int pos,int origin) = 0;
 	virtual void* MTCT getpointer(int offset,int size) = 0;
@@ -58,8 +58,8 @@ public:
 	virtual int MTCT pos() = 0;
 	virtual bool MTCT eof() = 0;
 	virtual bool MTCT seteof() = 0;
-	virtual bool MTCT gettime(int *create,int *access,int *write) = 0;
-	virtual bool MTCT settime(int *create,int *access,int *write) = 0;
+	virtual bool MTCT gettime(int *modified,int *accessed) = 0;
+	virtual bool MTCT settime(int *modified,int *accessed) = 0;
 	virtual MTFile* MTCT subclass(int start,int length,int access) = 0;
 };
 

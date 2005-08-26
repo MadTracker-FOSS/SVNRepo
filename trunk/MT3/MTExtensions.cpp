@@ -2,7 +2,7 @@
 //
 //  MadTracker Extensions Manager
 //
-//		Platforms:	Win32
+//		Platforms:	Win32,Linux
 //		Processors: All
 //
 //	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
@@ -10,14 +10,21 @@
 //	$Id$
 //
 //---------------------------------------------------------------------------
-#include <windows.h>
+#ifdef _WIN32
+	#include <windows.h>
+#else
+	#include <dlfcn.h>
+	#include <errno.h>
+	#include <sys/stat.h>
+	#include <dirent.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include "MTExtensions.h"
 #include "MTData.h"
 #include "MTInterface.h"
 #include "MTConsole.h"
-#include "../Headers/MTXModule.h"
+#include "MTXModule.h"
 #include "../../debug/Interface/MT3RES.h"
 //---------------------------------------------------------------------------
 static const char *mt3name = {"MadTracker"};
@@ -577,14 +584,21 @@ void delextension(MTExtension *dext)
 
 bool loadExtension(const char *file)
 {
-	HINSTANCE hi;
 	MTXMainCall *mtxmain;
 	MTXInterfaces *xis;
 	int x;
 	
-	hi = LoadLibrary(file);
+	#ifdef _WIN32
+		HINSTANCE hi = LoadLibrary(file);
+	#else
+		void *hi = dlopen(file,RTLD_LAZY);
+	#endif
 	if (hi){
-		mtxmain = (MTXMainCall*)GetProcAddress(hi,"MTXMain");
+		#ifdef _WIN32
+			mtxmain = (MTXMainCall*)GetProcAddress(hi,"MTXMain");
+		#else
+			mtxmain = (MTXMainCall*)dlsym(hi,"MTXMain");
+		#endif
 		if (mtxmain){
 			MTExtension *cext = addextension();
 			cext->library = (void*)hi;
@@ -626,15 +640,28 @@ bool loadExtension(const char *file)
 		}
 		else{
 			char buf[1024];
-			FreeLibrary(hi);
-			sprintf(buf,"Cannot initialize %s!"NL"Error %d",file,GetLastError());
-			MessageBox(0,buf,"Error",MB_ICONERROR|MB_OK);
+			#ifdef _WIN32
+				sprintf(buf,"Cannot initialize %s!"NL"Error %d",file,GetLastError());
+				FreeLibrary(hi);
+				MessageBox(0,buf,"Error",MB_ICONERROR|MB_OK);
+			#else
+				sprintf(buf,"Cannot initialize %s!"NL"%s",file,dlerror());
+				dlclose(hi);
+				fprintf(stderr,buf);
+				fprintf(stderr,NL);
+			#endif
 		};
 	}
 	else{
 		char buf[1024];
-		sprintf(buf,"Cannot load %s!"NL"Error %d",file,GetLastError());
-		MessageBox(0,buf,"Error",MB_ICONERROR|MB_OK);
+		#ifdef _WIN32
+			sprintf(buf,"Cannot load %s!"NL"Error %d",file,GetLastError());
+			MessageBox(0,buf,"Error",MB_ICONERROR|MB_OK);
+		#else
+			sprintf(buf,"Cannot load %s!"NL"%s",file,dlerror());
+			fprintf(stderr,buf);
+			fprintf(stderr,NL);
+		#endif
 	};
 	return false;
 }
@@ -643,48 +670,86 @@ void loadDirectory(const char *dir)
 {
 	char find[512];
 	char *e,*ext;
+#ifdef _WIN32
 	WIN32_FIND_DATA fd;
 	HANDLE fh;
 	bool ok;
+#else
+	DIR *d;
+	struct dirent *de;
+	struct stat s;
+#endif
 	
 	strcpy(find,dir);
 	e = strchr(find,0);
-	strcat(find,"*.*");
-	fh = FindFirstFile(find,&fd);
-	ok = (fh!=INVALID_HANDLE_VALUE);
-	while (ok){
-		if (fd.cFileName[0]!='.'){
-			strcpy(e,fd.cFileName);
-			if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
-				strcat(e,"\\");
-				loadDirectory(find);
-			}
-			else{
-				ext = strrchr(fd.cFileName,'.');
-				if (stricmp(ext,".mtx")==0){
-					loadExtension(find);
+	#ifdef _WIN32
+		strcat(find,"*.*");
+		fh = FindFirstFile(find,&fd);
+		ok = (fh!=INVALID_HANDLE_VALUE);
+		while (ok){
+			if (fd.cFileName[0]!='.'){
+				strcpy(e,fd.cFileName);
+				if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
+					strcat(e,"\\");
+					loadDirectory(find);
+				}
+				else{
+					ext = strrchr(fd.cFileName,'.');
+					if (stricmp(ext,".mtx")==0){
+						loadExtension(find);
+					};
+				};
+			};
+			ok = FindNextFile(fh,&fd)!=0;
+		};
+		FindClose(fh);
+	#else
+		if (*(e-1)!='/'){
+			*e++ = '/';
+			*e = 0;
+		};
+		d = opendir(find);
+		while ((de = readdir(d))){
+			if (de->d_name[0]!='.'){
+				strcpy(e,de->d_name);
+				stat(find,&s);
+				if ((s.st_mode & S_IFMT)==S_IFDIR){
+					loadDirectory(find);
+				}
+				else{
+					ext = strrchr(de->d_name,'.');
+					if (stricmp(ext,".mtx")==0) loadExtension(find);
 				};
 			};
 		};
-		ok = FindNextFile(fh,&fd)!=0;
-	};
-	FindClose(fh);
+		closedir(d);
+	#endif
 }
 
 void loadExtensions()
 {
+#ifdef _WIN32
 	int oldmode;
+#endif
 
 	mi = new MT3Interface();
-	oldmode = SetErrorMode(SEM_NOOPENFILEERRORBOX|SEM_FAILCRITICALERRORS);
-  loadDirectory(prefs.syspath[SP_EXTENSIONS]);
-	SetErrorMode(oldmode);
+	#ifdef _WIN32
+		oldmode = SetErrorMode(SEM_NOOPENFILEERRORBOX|SEM_FAILCRITICALERRORS);
+	#endif
+	loadDirectory(prefs.syspath[SP_EXTENSIONS]);
+	#ifdef _WIN32
+		SetErrorMode(oldmode);
+	#endif
 }
 
 void unloadExtensions()
 {
 	while (next>0){
-		FreeLibrary((HINSTANCE)ext[0]->library);
+		#ifdef _WIN32
+			FreeLibrary((HINSTANCE)ext[0]->library);
+		#else
+			dlclose(ext[0]->library);
+		#endif
 		free(ext[0]->filename);
 		delextension(ext[0]);
 	};
@@ -986,7 +1051,11 @@ bool initSystem()
 		if (si) return si->init();
 	}
 	catch(...){
-		MessageBox(0,"Exception while initializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
+		#ifdef _WIN32
+			MessageBox(0,"Exception while initializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
+		#else
+			fprintf(stderr,"Exception while initializing MTSystem!"NL);
+		#endif
 	};
 	return false;
 }
@@ -997,7 +1066,11 @@ void uninitSystem()
 		if ((si) && (si->status & MTX_INITIALIZED)) si->uninit();
 	}
 	catch(...){
-		MessageBox(0,"Exception while uninitializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
+		#ifdef _WIN32
+			MessageBox(0,"Exception while uninitializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
+		#else
+			fprintf(stderr,"Exception while uninitializing MTSystem!"NL);
+		#endif
 	};
 }
 //---------------------------------------------------------------------------

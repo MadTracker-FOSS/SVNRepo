@@ -3,23 +3,20 @@
 //---------------------------------------------------------------------------
 #ifndef MTEXTENSIONS_INCLUDED
 #define MTEXTENSIONS_INCLUDED
-
-#ifdef __BORLANDC__
-static const int mt3type = 'XMT3';
-#else
-static const int mt3type = '3TMX';
-#endif
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int mt3type = FOURCC('X','M','T','3');
 
 #define MAX_EXTENSIONS 256
 
-#include "../Headers/MTXExtension.h"
-#include "../Headers/MTXSystem.h"
-#include "../Headers/MTXObjects.h"
-#include "../Headers/MTXDisplay.h"
-#include "../Headers/MTXGUI.h"
-#include "../Headers/MTXControls.h"
-#include "../Headers/MTXAudio.h"
-#include "../Headers/MTXDSP.h"
+#include "MTXSystem.h"
+#include "MTXObjects.h"
+#include "MTXDisplay.h"
+#include "MTXGUI.h"
+#include "MTXControls.h"
+#include "MTXAudio.h"
+#include "MTXDSP.h"
 //---------------------------------------------------------------------------
 struct MTExtension{
 	int id;

@@ -9,9 +9,17 @@ class MTLocalFile;
 class MTLocalFolder;
 //---------------------------------------------------------------------------
 #include "MTFile.h"
-#include <windows.h>
-#include <shlobj.h>
-#include <shellapi.h>
+#ifdef _WIN32
+	#include <windows.h>
+	#include <shlobj.h>
+	#include <shellapi.h>
+#else
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <fcntl.h>
+	#include <stdio.h>
+	#include <dirent.h>
+#endif
 //---------------------------------------------------------------------------
 class MTLocalHook : public MTFileHook{
 public:
@@ -31,7 +39,7 @@ public:
 	~MTLocalFile();
 	int MTCT read(void *buffer,int size);
 	int MTCT readln(char *buffer,int maxsize);
-	int MTCT reads(char *buffer,int maxsize);
+//	int MTCT reads(char *buffer,int maxsize);
 	int MTCT write(const void *buffer,int size);
 	int MTCT seek(int pos,int origin);
 	void* MTCT getpointer(int offset,int size);
@@ -40,16 +48,23 @@ public:
 	int MTCT pos();
 	bool MTCT eof();
 	bool MTCT seteof();
-	bool MTCT gettime(int *create,int *access,int *write);
-	bool MTCT settime(int *create,int *access,int *write);
+	bool MTCT gettime(int *modified,int *accessed);
+	bool MTCT settime(int *modified,int *accessed);
 	MTFile* MTCT subclass(int start,int length,int access);
 private:
+#ifdef _WIN32
+	HANDLE h;
+	HANDLE maph;
+#else
+	FILE *fs;
+	int maplength;
+#endif
+	bool stdhandle;
 	int maccess;
-	HANDLE h,maph;
 	int cpos;
 	int from,to;
 	void *mmap;
-	bool stdhandle;
+	int mapoffset;
 };
 
 class MTLocalFolder : public MTFolder{
@@ -61,8 +76,12 @@ public:
 private:
 	char mpath[512];
 	int id;
+#ifdef _WIN32
 	HANDLE search;
 	WIN32_FIND_DATA data;
+#else
+	DIR *d;
+#endif
 };
 //---------------------------------------------------------------------------
 extern MTLocalHook localhook;

@@ -10,9 +10,11 @@
 //	$Id$
 //
 //---------------------------------------------------------------------------
-#ifdef _DEBUG
-#include <windows.h>
-#include <commdlg.h>
+#ifdef _WIN32
+	#ifdef _DEBUG
+		#include <windows.h>
+		#include <commdlg.h>
+	#endif
 #endif
 #include "MTInterface.h"
 #include "MTExtensions.h"
@@ -21,9 +23,9 @@
 #include "MTWC_Main.h"
 #include "MTWC_Main2.h"
 #include "../MTGUI/MTGUITools.h"
-#include "../Headers/MTXSystem.h"
-#include "../Headers/MTXInput.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem.h"
+#include "MTXInput.h"
+#include "MTXSystem2.h"
 #include "../../debug/Interface/MT3RES.h"
 //---------------------------------------------------------------------------
 void MTCT designmode(MTShortcut*,MTControl*,MTUndo*);
@@ -48,11 +50,11 @@ int logotime = 5;
 MTTimer *logotimer;
 MTArray *refreshprocs;
 #ifdef _DEBUG
-char *help;
-MTShortcut s_openres = {MTSF_CONTROL|MTSF_UICONTROL,'O',0,0,"Load a resources"};
-MTShortcut s_openskin = {MTSF_CONTROL|MTSF_UICONTROL,'K',0,0,"Load a skin"};
-MTShortcut s_playmod = {MTSF_CONTROL|MTSF_UICONTROL,'M',0,0,"Play a module"};
-MTShortcut s_reset = {MTSF_CONTROL|MTSF_UICONTROL,'R',0,0,"Reset"};
+	char *help;
+	MTShortcut s_openres = {MTSF_CONTROL|MTSF_UICONTROL,'O',0,0,"Load a resources"};
+	MTShortcut s_openskin = {MTSF_CONTROL|MTSF_UICONTROL,'K',0,0,"Load a skin"};
+	MTShortcut s_playmod = {MTSF_CONTROL|MTSF_UICONTROL,'M',0,0,"Play a module"};
+	MTShortcut s_reset = {MTSF_CONTROL|MTSF_UICONTROL,'R',0,0,"Reset"};
 #endif
 MTShortcut s_design = {MTSF_CONTROL|MTSF_ALT,'D',0,designmode,"Design mode"};
 //---------------------------------------------------------------------------
@@ -69,83 +71,91 @@ void MTCT designmode(MTShortcut*,MTControl*,MTUndo*)
 #ifdef _DEBUG
 void MTCT openresources(MTShortcut *s,MTControl *c,MTUndo*)
 {
-	MTFile *f;
-	MTResources *res;
-	MTWindow *mtwnd;
-	int x,type,uid,flags;
-	OPENFILENAME open;
-	char filename[512];
-	
-	if (!gi) return;
-	FENTER2("openresources(%.8X,%.8X)",s,c);
-	mtmemzero(&open,sizeof(open));
-	open.lStructSize = sizeof(open);
-	open.hwndOwner = (HWND)wnd;
-	open.lpstrFilter = "MadTracker Resource (*.mtr)\0*.mtr\0\0";
-	open.lpstrFile = (char*)si->memalloc(1024,MTM_ZERO);
-	open.nMaxFile = 1024;
-	open.Flags = OFN_ENABLESIZING|OFN_EXPLORER|OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
-	open.lpstrDefExt = ".mtr";
-	open.lpstrInitialDir = prefs.syspath[SP_INTERFACE];
-	if (GetOpenFileName(&open)){
-		strcpy(filename,open.lpstrFile);
-		flags = MTF_READ|MTF_SHAREREAD;
-		if (candesign) flags |= MTF_WRITE;
-		f = si->fileopen(filename,flags);
-		if (f){
-			res = si->resopen(f,false);
-			if (res){
-				x = res->getnumresources();
-				while (--x>=0){
-					res->getresourceinfo(x,&type,&uid,0);
-					if (type==MTR_WINDOW){
-						mtwnd = gi->loadwindow(res,uid,mtdsk);
-						if (mtwnd){
-							mtwnd->switchflags(MTCF_HIDDEN,false);
+	#ifdef __linux
+		return;
+	#else
+		MTFile *f;
+		MTResources *res;
+		MTWindow *mtwnd;
+		int x,type,uid,flags;
+		OPENFILENAME open;
+		char filename[512];
+		
+		if (!gi) return;
+		FENTER2("openresources(%.8X,%.8X)",s,c);
+		mtmemzero(&open,sizeof(open));
+		open.lStructSize = sizeof(open);
+		open.hwndOwner = (HWND)wnd;
+		open.lpstrFilter = "MadTracker Resource (*.mtr)\0*.mtr\0\0";
+		open.lpstrFile = (char*)si->memalloc(1024,MTM_ZERO);
+		open.nMaxFile = 1024;
+		open.Flags = OFN_ENABLESIZING|OFN_EXPLORER|OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
+		open.lpstrDefExt = ".mtr";
+		open.lpstrInitialDir = prefs.syspath[SP_INTERFACE];
+		if (GetOpenFileName(&open)){
+			strcpy(filename,open.lpstrFile);
+			flags = MTF_READ|MTF_SHAREREAD;
+			if (candesign) flags |= MTF_WRITE;
+			f = si->fileopen(filename,flags);
+			if (f){
+				res = si->resopen(f,false);
+				if (res){
+					x = res->getnumresources();
+					while (--x>=0){
+						res->getresourceinfo(x,&type,&uid,0);
+						if (type==MTR_WINDOW){
+							mtwnd = gi->loadwindow(res,uid,mtdsk);
+							if (mtwnd){
+								mtwnd->switchflags(MTCF_HIDDEN,false);
+							};
 						};
 					};
+					si->resclose(res);
 				};
-				si->resclose(res);
+				si->fileclose(f);
 			};
-			si->fileclose(f);
 		};
-	};
-	si->memfree(open.lpstrFile);
-	LEAVE();
+		si->memfree(open.lpstrFile);
+		LEAVE();
+	#endif
 }
 
 void MTCT openskin(MTShortcut *s,MTControl *c,MTUndo*)
 {
-	MTFile *sf;
-	MTResources *res;
-	OPENFILENAME open;
-	char filename[512];
-	
-	if (!gi) return;
-	FENTER2("openskin(%.8X,%.8X)",s,c);
-	mtmemzero(&open,sizeof(open));
-	open.lStructSize = sizeof(open);
-	open.hwndOwner = (HWND)wnd;
-	open.lpstrFilter = "MadTracker Resource (*.mtr)\0*.mtr\0\0";
-	open.lpstrFile = (char*)si->memalloc(1024,MTM_ZERO);
-	open.nMaxFile = 1024;
-	open.Flags = OFN_ENABLESIZING|OFN_EXPLORER|OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
-	open.lpstrDefExt = ".mtr";
-	open.lpstrInitialDir = prefs.syspath[SP_SKINS];
-	if (GetOpenFileName(&open)){
-		strcpy(filename,open.lpstrFile);
-		sf = si->fileopen(filename,MTF_READ|MTF_SHAREREAD);
-		if (sf){
-			res = si->resopen(sf,true);
-			if (res){
-				gi->loadskin(res);
-				if (skinres) si->resclose(skinres);
-				skinres = res;
+	#ifdef __linux
+		return;
+	#else
+		MTFile *sf;
+		MTResources *res;
+		OPENFILENAME open;
+		char filename[512];
+		
+		if (!gi) return;
+		FENTER2("openskin(%.8X,%.8X)",s,c);
+		mtmemzero(&open,sizeof(open));
+		open.lStructSize = sizeof(open);
+		open.hwndOwner = (HWND)wnd;
+		open.lpstrFilter = "MadTracker Resource (*.mtr)\0*.mtr\0\0";
+		open.lpstrFile = (char*)si->memalloc(1024,MTM_ZERO);
+		open.nMaxFile = 1024;
+		open.Flags = OFN_ENABLESIZING|OFN_EXPLORER|OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
+		open.lpstrDefExt = ".mtr";
+		open.lpstrInitialDir = prefs.syspath[SP_SKINS];
+		if (GetOpenFileName(&open)){
+			strcpy(filename,open.lpstrFile);
+			sf = si->fileopen(filename,MTF_READ|MTF_SHAREREAD);
+			if (sf){
+				res = si->resopen(sf,true);
+				if (res){
+					gi->loadskin(res);
+					if (skinres) si->resclose(skinres);
+					skinres = res;
+				};
 			};
 		};
-	};
-	si->memfree(open.lpstrFile);
-	LEAVE();
+		si->memfree(open.lpstrFile);
+		LEAVE();
+	#endif
 }
 
 int MTCT loadprocess(MTThread *thread,void *param)
@@ -225,24 +235,28 @@ void loadmodule(const char *filename)
 
 void MTCT playmodule(MTShortcut *s,MTControl *c,MTUndo*)
 {
-	OPENFILENAME open;
-	
-	if (!oi) return;
-	FENTER2("playmodule(%.8X,%.8X)",s,c);
-	mtmemzero(&open,sizeof(open));
-	open.lStructSize = sizeof(open);
-	open.hwndOwner = (HWND)wnd;
-	open.lpstrFilter = "MadTracker 2 Module (*.mt2)\0*.mt2\0\0";
-	open.lpstrFile = (char*)si->memalloc(1024,MTM_ZERO);
-	open.nMaxFile = 1024;
-	open.Flags = OFN_ENABLESIZING|OFN_EXPLORER|OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
-	open.lpstrDefExt = ".mt2";
-//	open.lpstrInitialDir = prefs.syspath[SP_ROOT];
-	if (GetOpenFileName(&open)){
-		loadmodule(open.lpstrFile);
-	};
-	si->memfree(open.lpstrFile);
-	LEAVE();
+	#ifdef __linux
+		return;
+	#else
+		OPENFILENAME open;
+		
+		if (!oi) return;
+		FENTER2("playmodule(%.8X,%.8X)",s,c);
+		mtmemzero(&open,sizeof(open));
+		open.lStructSize = sizeof(open);
+		open.hwndOwner = (HWND)wnd;
+		open.lpstrFilter = "MadTracker 2 Module (*.mt2)\0*.mt2\0\0";
+		open.lpstrFile = (char*)si->memalloc(1024,MTM_ZERO);
+		open.nMaxFile = 1024;
+		open.Flags = OFN_ENABLESIZING|OFN_EXPLORER|OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
+		open.lpstrDefExt = ".mt2";
+//		open.lpstrInitialDir = prefs.syspath[SP_ROOT];
+		if (GetOpenFileName(&open)){
+			loadmodule(open.lpstrFile);
+		};
+		si->memfree(open.lpstrFile);
+		LEAVE();
+	#endif
 }
 
 void MTCT reset(MTShortcut*,MTControl*,MTUndo*)
@@ -264,13 +278,17 @@ void MTCT showall(MTShortcut *s,MTControl *c,MTUndo*)
 
 void MTCT setresolution(MTShortcut *s,MTControl *c,MTUndo*)
 {
-	MTMenuItem *item = (MTMenuItem*)c;
-	static const int res[4][2] = {{640,480},{800,600},{1024,768},{1280,1024}};
+	#ifdef __linux
+		return;
+	#else
+		MTMenuItem *item = (MTMenuItem*)c;
+		static const int res[4][2] = {{640,480},{800,600},{1024,768},{1280,1024}};
 
-	FENTER2("setresolution(%.8X,%.8X)",s,c);
-	if (IsZoomed((HWND)wnd)) ShowWindow((HWND)wnd,SW_RESTORE);
-	SetWindowPos((HWND)wnd,HWND_TOP,64,64,res[(int)item->data][0],res[(int)item->data][1],0);
-	LEAVE();
+		FENTER2("setresolution(%.8X,%.8X)",s,c);
+		if (IsZoomed((HWND)wnd)) ShowWindow((HWND)wnd,SW_RESTORE);
+		SetWindowPos((HWND)wnd,HWND_TOP,64,64,res[(int)item->data][0],res[(int)item->data][1],0);
+		LEAVE();
+	#endif
 }
 #endif
 
@@ -771,7 +789,9 @@ void showInterface()
 		};
 		si->fileclose(outmsg);
 		outmsg = 0;
-		PostQuitMessage(0);
+		#ifdef _WIN32
+			PostQuitMessage(0);
+		#endif
 	}
 	else{
 #ifdef _DEBUG

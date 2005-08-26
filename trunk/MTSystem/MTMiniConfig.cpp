@@ -5,7 +5,7 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	$Id$
 //
@@ -218,7 +218,7 @@ int MTMiniConfig::loadfromstream(MTFile *f,int flags)
 				ikey[0] = ((ikey[0]^ikey[1])^ikey[2])^ikey[3];
 			}
 			else{
-				l += f->reads(key,256);
+				l += f->readln(key,256);
 				key[255] = 0;
 				cp->key = (char*)mtmemalloc(strlen(key)+1);
 				strcpy(cp->key,key);

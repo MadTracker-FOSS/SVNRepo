@@ -5,9 +5,9 @@
 #define MTDATA_INCLUDED
 //---------------------------------------------------------------------------
 #include "MTExtensions.h"
-#include "../Headers/MTXModule.h"
-#include "../Headers/MTXAudio.h"
-#include "../Headers/MTXSystem.H"
+#include "MTXModule.h"
+#include "MTXAudio.h"
+#include "MTXSystem.h"
 //---------------------------------------------------------------------------
 struct _MTConf
 {

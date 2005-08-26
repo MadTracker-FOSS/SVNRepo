@@ -2,51 +2,89 @@
 //
 //	MadTracker System Core
 //
-//		Platforms:	Win32
-//		Processors: All
+//		Platforms:	Win32,Linux
+//		Processors: x86
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	$Id$
 //
 //---------------------------------------------------------------------------
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <time.h>
 #include "MTSystem1.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXExtension.h"
+#include "MTXSystem2.h"
+#include "MTXDisplay.h"
+#include "MTXGUI.h"
+#include "MTXControls.h"
 #include "MTInternet.h"
-#include "../Headers/MTXExtension.h"
-#include "../Headers/MTXDisplay.h"
-#include "../Headers/MTXGUI.h"
-#include "../Headers/MTXControls.h"
 #include "../../debug/Interface/MTSystemRES.h"
-#if defined(_WIN32)
-#include <shellapi.h>
-#include <mmsystem.h>
-#elif defined(__LINUX__)
+#ifdef _WIN32
+	#include <shellapi.h>
+	#include <mmsystem.h>
+#else
+	#include <setjmp.h>
+	#include <signal.h>
+	#include <stdlib.h>
+	#include <dlfcn.h>
 #endif
 //---------------------------------------------------------------------------
 static const char *sysname = {"MadTracker System Core"};
 static const int sysversion = 0x30000;
 static const MTXKey systemkey = {0,0,0,0};
 #ifdef MTSYSTEM_EXPORTS
-MTXInterfaces i;
-MTSystemInterface *si;
+	MTXInterfaces i;
+	MTSystemInterface *si;
 #endif
 MTInterface *mtinterface;
 MTGUIInterface *gi;
 MTDisplayInterface *di;
 MTResources *sysres;
-OSVERSIONINFO osinfo;
-SYSTEM_INFO sysinfo;
-TIMECAPS timecaps;
+#ifdef _WIN32
+	OSVERSIONINFO osinfo;
+	SYSTEM_INFO sysinfo;
+	TIMECAPS timecaps;
+#else
+	struct timespec timerres;
+#endif
 MTWindow *auth;
 bool debugged = false;
 extern char rootn[64];
 char dialog[256];
 char *d_ok,*d_cancel,*d_yes,*d_no;
 #ifdef MTSYSTEM_EXPORTS
+//---------------------------------------------------------------------------
+//  Linux specific
+//---------------------------------------------------------------------------
+#ifndef _WIN32
+bool badtest = false;
+jmp_buf gpbuf;
+
+void __cdecl on_segfault(int n)
+{
+	if (badtest) longjmp(gpbuf,1);
+}
+
+bool IsBadReadPtr(const void* ptr,unsigned long size)
+{
+	void (*prev)(int);
+
+	badtest = true;
+	if (setjmp(gpbuf)) return true;
+	prev = signal(SIGSEGV,on_segfault);
+	asm ( "rep lodsb"
+		:
+		:"S"(ptr),"c"(size)
+		:"eax"
+		);
+	badtest = 0;
+	signal(SIGSEGV,prev);
+	return false;
+}
+#endif
 //---------------------------------------------------------------------------
 //  Logging
 //---------------------------------------------------------------------------
@@ -78,28 +116,33 @@ void startlog()
 		mtlog(si->build);
 		mtlog(NL"Processor:     ");
 		mtlog(si->processor);
-#if defined(_WIN32)
-		MEMORYSTATUS mem;
-		GlobalMemoryStatus(&mem);
-		mtlog(NL"Memory:        Total: ");
-		sprintf(buf,"%d MB (%d MB)",mem.dwTotalPhys/1048576,mem.dwTotalPageFile/1048576);
-		mtlog(buf);
-		mtlog(NL"               Free:  ");
-		sprintf(buf,"%d MB (%d MB)"NL,mem.dwAvailPhys/1048576,mem.dwAvailPageFile/1048576);
-		mtlog(buf);
-		mtlog("Capabilities:  Timer resolution: ");
-		sprintf(buf,"%d msec"NL""NL,timecaps.wPeriodMin);
-		mtlog(buf);
-#elif defined(__LINUX__)
-		MTFile *pf = mtfileopen("/proc/meminfo",MTF_READ);
-		if (pf){
-			char mbuf[2048];
-			pf->read(buf,sizeof(buf));
-			mtfileclose(pf);
+		#ifdef _WIN32
+			MEMORYSTATUS mem;
+			GlobalMemoryStatus(&mem);
+			mtlog(NL"Memory:        Total: ");
+			sprintf(buf,"%d MB (%d MB)",mem.dwTotalPhys/1048576,mem.dwTotalPageFile/1048576);
+			mtlog(buf);
+			mtlog(NL"               Free:  ");
+			sprintf(buf,"%d MB (%d MB)"NL,mem.dwAvailPhys/1048576,mem.dwAvailPageFile/1048576);
+			mtlog(buf);
+			mtlog("Capabilities:  Timer resolution: ");
+			sprintf(buf,"%d msec"NL""NL,timecaps.wPeriodMin);
+			mtlog(buf);
+		#else
+			char mbuf[4096+1];
+			struct timespec ts;
+			int fd,len;
+			mtlog(NL"Memory:"NL);
+			fd = open("/proc/meminfo",O_RDONLY);
+			len = read(fd,mbuf,sizeof(buf)-1);
+			mbuf[len] = 0;
+			close(fd);
 			mtlog(mbuf);
-			mtlog(NL);
-		};
-#endif
+			mtlog(NL);			
+			mtlog("Capabilities:  Timer resolution: ");
+			sprintf(buf,"%d µsec"NL""NL,timerres.tv_nsec);
+			mtlog(buf);
+		#endif
 	};
 }
 
@@ -115,9 +158,9 @@ void stoplog()
 
 void mtlog(const char *log,char date)
 {
-#ifdef _DEBUG
-	bool iserror = false;
-#endif
+	#ifdef _DEBUG
+		bool iserror = false;
+	#endif
 
 	if ((!logging) || (!log) || (log[0]==0)) return;
 	if (!logfile){
@@ -132,11 +175,13 @@ void mtlog(const char *log,char date)
 			logfile->write(logdate,strlen(logdate));
 		};
 		if (strstr(log,"ERROR")){
-#ifdef _DEBUG
-			iserror = true;
-#endif
+			#ifdef _DEBUG
+				iserror = true;
+			#endif
 			waserror = true;
-			if (debugged) DebugBreak();
+			#ifdef _WIN32
+				if (debugged) DebugBreak();
+			#endif
 		};
 		if (checklast){
 			lastcount = 1;
@@ -155,22 +200,30 @@ void mtlog(const char *log,char date)
 				sprintf(logdate,"%.2d:%.2d:%.2d (%.8d)",lts->tm_hour,lts->tm_min,lts->tm_sec,mtsyscounter());
 			};
 			sprintf(logbuf,log,logdate);
-			if (debugged) OutputDebugString(logbuf);
+			#ifdef _WIN32
+				if (debugged) OutputDebugString(logbuf);
+			#else
+				if (debugged) fprintf(stdout,logbuf);
+			#endif
 			logfile->write(logbuf,strlen(logbuf));
 		}
 		else{
-			if (debugged) OutputDebugString(log);
+			#ifdef _WIN32
+				if (debugged) OutputDebugString(log);
+			#else
+				if (debugged) fprintf(stdout,log);
+			#endif
 			logfile->write(log,strlen(log));
 		};
-#ifdef _DEBUG
-		if (iserror){
-			const char *cs = CALLSTACK;
-			if ((cs) && (cs[0])){
-				sprintf(logbuf,"  %s"NL,CALLSTACK);
-				logfile->write(logbuf,strlen(logbuf));
+		#ifdef _DEBUG
+			if (iserror){
+				const char *cs = CALLSTACK;
+				if ((cs) && (cs[0])){
+					sprintf(logbuf,"  %s"NL,CALLSTACK);
+					logfile->write(logbuf,strlen(logbuf));
+				};
 			};
-		};
-#endif
+		#endif
 	};
 }
 
@@ -238,120 +291,122 @@ void mtdump(unsigned char *address,int length,int offset)
 //---------------------------------------------------------------------------
 void mtenter(const char *func)
 {
-#ifdef _DEBUG
-	int l;
-	bool first;
-	char *callstack = (char*)mtgetprivatedata(-5);
-	char *csp = (char*)mtgetprivatedata(-4);
-	int lostcount = (int)mtgetprivatedata(-3);
+	#ifdef _DEBUG
+		int l;
+		bool first;
+		char *callstack = (char*)mtgetprivatedata(-5);
+		char *csp = (char*)mtgetprivatedata(-4);
+		int lostcount = (int)mtgetprivatedata(-3);
 
-	if (!callstack) return;
-	l = strlen(func);
-	first = (csp==&callstack[MAX_STACK-1]);
-	if (!first){
-		if (csp-3-l<callstack){
+		if (!callstack) return;
+		l = strlen(func);
+		first = (csp==&callstack[MAX_STACK-1]);
+		if (!first){
+			if (csp-3-l<callstack){
+				mtsetprivatedata(-3,(void*)(lostcount+1));
+				return;
+			};
+			csp -= 3;
+			memcpy(csp," < ",3);
+		}
+		else if (csp-l<callstack){
 			mtsetprivatedata(-3,(void*)(lostcount+1));
 			return;
 		};
-		csp -= 3;
-		memcpy(csp," < ",3);
-	}
-	else if (csp-l<callstack){
-		mtsetprivatedata(-3,(void*)(lostcount+1));
-		return;
-	};
-	csp -= l;
-	memcpy(csp,func,l);
-	mtsetprivatedata(-4,csp);
-#endif
+		csp -= l;
+		memcpy(csp,func,l);
+		mtsetprivatedata(-4,csp);
+	#endif
 }
 
 void mtfenter(const char *func,...)
 {
-#ifdef _DEBUG
-	int x;
-	bool first;
-	char *callstack = (char*)mtgetprivatedata(-5);
-	char *csp = (char*)mtgetprivatedata(-4);
-	int lostcount = (int)mtgetprivatedata(-3);
-	va_list l;
-	static char buf[256];
+	#ifdef _DEBUG
+		int x;
+		bool first;
+		char *callstack = (char*)mtgetprivatedata(-5);
+		char *csp = (char*)mtgetprivatedata(-4);
+		int lostcount = (int)mtgetprivatedata(-3);
+		va_list l;
+		static char buf[256];
 
-	if (!callstack) return;
-	va_start(l,func);
-	vsprintf(buf,func,l);
-	va_end(l);
-	x = strlen(buf);
-	first = (csp==&callstack[MAX_STACK-1]);
-	if (!first){
-		if (csp-3-x<callstack){
-			mtsetprivatedata(-3,(void*)(lostcount+1));
+		if (!callstack) return;
+		va_start(l,func);
+		vsprintf(buf,func,l);
+		va_end(l);
+		x = strlen(buf);
+		first = (csp==&callstack[MAX_STACK-1]);
+		if (!first){
+			if (csp-3-x<callstack){
+				mtsetprivatedata(-3,(void*)(lostcount+1));
+				return;
+			};
+			csp -= 3;
+			memcpy(csp," < ",3);
+		}
+		else if (csp-x<callstack){
+				mtsetprivatedata(-3,(void*)(lostcount+1));
 			return;
 		};
-		csp -= 3;
-		memcpy(csp," < ",3);
-	}
-	else if (csp-x<callstack){
-			mtsetprivatedata(-3,(void*)(lostcount+1));
-		return;
-	};
-	csp -= x;
-	memcpy(csp,buf,x);
-	mtsetprivatedata(-4,csp);
-#endif
+		csp -= x;
+		memcpy(csp,buf,x);
+		mtsetprivatedata(-4,csp);
+	#endif
 }
 
 void mtleave()
 {
-#ifdef _DEBUG
-	char *e;
-	char *callstack = (char*)mtgetprivatedata(-5);
-	char *csp = (char*)mtgetprivatedata(-4);
-	int lostcount = (int)mtgetprivatedata(-3);
+	#ifdef _DEBUG
+		char *e;
+		char *callstack = (char*)mtgetprivatedata(-5);
+		char *csp = (char*)mtgetprivatedata(-4);
+		int lostcount = (int)mtgetprivatedata(-3);
 
-	if (!callstack) return;
-	if (lostcount){
-		mtsetprivatedata(-3,(void*)(lostcount-1));
-		return;
-	};
-	e = strchr(csp,'<');
-	if (e){
-		csp = e+2;
-	}
-	else{
-		csp = &callstack[MAX_STACK-1];
-	};
-	mtsetprivatedata(-4,csp);
-#endif
+		if (!callstack) return;
+		if (lostcount){
+			mtsetprivatedata(-3,(void*)(lostcount-1));
+			return;
+		};
+		e = strchr(csp,'<');
+		if (e){
+			csp = e+2;
+		}
+		else{
+			csp = &callstack[MAX_STACK-1];
+		};
+		mtsetprivatedata(-4,csp);
+	#endif
 }
 
 const char* mtgetcallstack()
 {
-#ifdef _DEBUG
-	return (const char*)mtgetprivatedata(-4);
-#else
-	return "N/A (Use debug build instead.)";
-#endif
+	#ifdef _DEBUG
+		return (const char*)mtgetprivatedata(-4);
+	#else
+		return "N/A (Use debug build instead.)";
+	#endif
 }
 
 void mtgetlibmemoryrange(void *lib,int flags,void **start,int *length)
 {
-	MEMORY_BASIC_INFORMATION meminfo;
-	void *end;
-
 	if ((!start) || (!length)) return;
 	*start = lib;
 	*length = 0;
-	end = lib;
-	while (VirtualQuery(end,&meminfo,sizeof(meminfo))){
-		if ((meminfo.AllocationBase==0) || (meminfo.State!=MEM_COMMIT)) break;
-		end = (char*)end+meminfo.RegionSize;
-	};
-	*length = (char*)end-(char*)lib;
+	#ifdef _WIN32
+		MEMORY_BASIC_INFORMATION meminfo;
+		void *end;
+		end = lib;
+		while (VirtualQuery(end,&meminfo,sizeof(meminfo))){
+			if ((meminfo.AllocationBase==0) || (meminfo.State!=MEM_COMMIT)) break;
+			end = (char*)end+meminfo.RegionSize;
+		};
+		*length = (char*)end-(char*)lib;
+	#endif
 }
 //---------------------------------------------------------------------------
 //  Exception Handling
 //---------------------------------------------------------------------------
+#ifdef _WIN32
 static struct{
 	unsigned int ecode;
 	char *emessage;
@@ -417,25 +472,28 @@ int WINAPI onexception(EXCEPTION_POINTERS *ep)
 		if ((x==0) && (ep->ExceptionRecord->NumberParameters>=2)){
 			mtflog("Cannot %s memory at address %.8X"NL""NL,false,readwrite[ep->ExceptionRecord->ExceptionInformation[0]],ep->ExceptionRecord->ExceptionInformation[1]);
 		};
-#ifdef _X86_
-		mtflog("EAX: %.8X  ESI: %.8X"NL"\
+		#ifdef _X86_
+			mtflog("EAX: %.8X  ESI: %.8X"NL"\
 EBX: %.8X  EDI: %.8X"NL"\
 ECX: %.8X  ESP: %.8X"NL"\
 EDX: %.8X  EBP: %.8X"NL"\
 EIP: %.8X"NL""NL,false,c.Eax,c.Esi,c.Ebx,c.Edi,c.Ecx,c.Esp,c.Edx,c.Ebp,c.Eip);
-		if (IsBadReadPtr(cip,16)==0){
-			mtlog("Bytes at EIP:"NL);
-			mtflog("%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ",false,cip[0],cip[1],cip[2],cip[3],cip[4],cip[5],cip[6],cip[7]);
-			cip += 8;
-			mtflog("%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"NL""NL,false,cip[0],cip[1],cip[2],cip[3],cip[4],cip[5],cip[6],cip[7]);
-		};
-		mtlog("Stack dump:"NL);
-		mtdump(csp,64);
-		if (!waslogging) stoplog();
-#endif
+			if (IsBadReadPtr(cip,16)==0){
+				mtlog("Bytes at EIP:"NL);
+				mtflog("%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ",false,cip[0],cip[1],cip[2],cip[3],cip[4],cip[5],cip[6],cip[7]);
+				cip += 8;
+				mtflog("%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"NL""NL,false,cip[0],cip[1],cip[2],cip[3],cip[4],cip[5],cip[6],cip[7]);
+			};
+			mtlog("Stack dump:"NL);
+			mtdump(csp,64);
+			if (!waslogging) stoplog();
+		#endif
 	};
 	return (debugged)?EXCEPTION_CONTINUE_SEARCH:EXCEPTION_EXECUTE_HANDLER;
 }
+#else
+//TODO: Linux exceptions
+#endif
 #endif
 //---------------------------------------------------------------------------
 //  Memory Debugging
@@ -454,28 +512,50 @@ MTAlloc *addalloc()
 {
 	if ((!mtalloc) || (nmallocs<=0)){
 		nmallocs = 1024;
-		mtalloc = (MTAlloc*)HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,nmallocs*sizeof(MTAlloc));
+		#ifdef _WIN32
+			mtalloc = (MTAlloc*)HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,nmallocs*sizeof(MTAlloc));
+		#else
+			mtalloc = (MTAlloc*)calloc(1,nmallocs*sizeof(MTAlloc));
+		#endif
 	}
 	else if (nallocs>=nmallocs){
 		nmallocs += 64;
-		mtalloc = (MTAlloc*)HeapReAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,mtalloc,nmallocs*sizeof(MTAlloc));
+		#ifdef _WIN32
+			mtalloc = (MTAlloc*)HeapReAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,mtalloc,nmallocs*sizeof(MTAlloc));
+		#else
+			mtalloc = (MTAlloc*)realloc(mtalloc,nmallocs*sizeof(MTAlloc));
+		#endif
 	};
 	return &mtalloc[nallocs++];
 }
 
 void delalloc(unsigned int id)
 {
-	if (mtalloc[id].callstack) HeapFree(GetProcessHeap(),0,mtalloc[id].callstack);
+	if (mtalloc[id].callstack){
+		#ifdef _WIN32
+			HeapFree(GetProcessHeap(),0,mtalloc[id].callstack);
+		#else
+			free(mtalloc[id].callstack);
+		#endif
+	};
 	if (id!=nallocs-1) memcpy(&mtalloc[id],&mtalloc[nallocs-1],sizeof(MTAlloc));
 	mtmemzero(&mtalloc[nallocs-1],sizeof(MTAlloc));
 	nallocs--;
 	if ((nallocs<nmallocs-64) && (nmallocs>1024)){
 		nmallocs -= 64;
 		if (nmallocs>0){
-			mtalloc = (MTAlloc*)HeapReAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,mtalloc,nmallocs*sizeof(MTAlloc));
+			#ifdef _WIN32
+				mtalloc = (MTAlloc*)HeapReAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,mtalloc,nmallocs*sizeof(MTAlloc));
+			#else
+				mtalloc = (MTAlloc*)realloc(mtalloc,nmallocs*sizeof(MTAlloc));
+			#endif
 		}
 		else{
-			HeapFree(GetProcessHeap(),0,mtalloc);
+			#ifdef _WIN32
+				HeapFree(GetProcessHeap(),0,mtalloc);
+			#else
+				free(mtalloc);
+			#endif
 			mtalloc = 0;
 		};
 	};
@@ -486,100 +566,117 @@ void* mtmemalloc(int size,int flags)
 {
 	void *mem;
 	
-#ifdef _DEBUG
-	if (size>0x2000000){
-		LOGD("%s - [System] ERROR: Too big memory allocation!"NL);
-		return 0;
-	};
-#endif
-	mem = HeapAlloc(GetProcessHeap(),(flags & MTM_ZERO)?HEAP_ZERO_MEMORY:0,size);
-#ifdef _DEBUG
-	if (mem){
-		const char *cs;
-		memlock.lock();
-		totalmemory += size;
-		if (totalmemory>peakmemory) peakmemory = totalmemory;
-		MTAlloc &calloc = *addalloc();
-		calloc.address = mem;
-		calloc.size = size;
-		calloc.caller = *((void**)(((char*)(&size))-4));
-#ifdef MTSYSTEM_EXPORTS
-		cs = mtgetcallstack();
-		if ((cs) && (strlen(cs)>0)){
-			calloc.callstack = (char*)HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,strlen(cs)+1);
-			strcpy(calloc.callstack,cs);
+	#ifdef _DEBUG
+		if (size>0x2000000){
+			LOGD("%s - [System] ERROR: Too big memory allocation!"NL);
+			return 0;
 		};
-#endif
-		memlock.unlock();
-	}
-	else{
-		LOGD("%s - [System] ERROR: Cannot allocate memory!"NL);
-	};
-#endif
+	#endif
+	#ifdef _WIN32
+		mem = HeapAlloc(GetProcessHeap(),(flags & MTM_ZERO)?HEAP_ZERO_MEMORY:0,size);
+	#else
+		if (flags & MTM_ZERO) mem = calloc(1,size);
+		else mem = malloc(size);
+	#endif
+	#ifdef _DEBUG
+		if (mem){
+			const char *cs;
+			memlock.lock();
+			totalmemory += size;
+			if (totalmemory>peakmemory) peakmemory = totalmemory;
+			MTAlloc &calloc = *addalloc();
+			calloc.address = mem;
+			calloc.size = size;
+			calloc.caller = *((void**)(((char*)(&size))-4));
+			#ifdef MTSYSTEM_EXPORTS
+				cs = mtgetcallstack();
+				if ((cs) && (strlen(cs)>0)){
+					#ifdef _WIN32
+						calloc.callstack = (char*)HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,strlen(cs)+1);
+					#else
+						calloc.callstack = (char*)malloc(strlen(cs)+1);
+					#endif
+					strcpy(calloc.callstack,cs);
+				};
+			#endif
+			memlock.unlock();
+		}
+		else{
+			LOGD("%s - [System] ERROR: Cannot allocate memory!"NL);
+		};
+	#endif
 	return mem;
 }
 
 bool mtmemfree(void *mem)
 {
 	if (mem){
-#ifdef _DEBUG
-		bool ok = false;
-		unsigned int x;
-		memlock.lock();
-		for (x=0;x<nallocs;x++){
-			if (mtalloc[x].address==mem){
-				totalmemory -= mtalloc[x].size;
-				ok = true;
-				delalloc(x);
-				break;
+		#ifdef _DEBUG
+			bool ok = false;
+			unsigned int x;
+			memlock.lock();
+			for (x=0;x<nallocs;x++){
+				if (mtalloc[x].address==mem){
+					totalmemory -= mtalloc[x].size;
+					ok = true;
+					delalloc(x);
+					break;
+				};
 			};
-		};
-		memlock.unlock();
-		if (!ok){
-			LOGD("%s - [System] ERROR: Invalid memory pointer!"NL);
-			return false;
-		};
-#endif
-		return (HeapFree(GetProcessHeap(),0,mem)==0);
+			memlock.unlock();
+			if (!ok){
+				LOGD("%s - [System] ERROR: Invalid memory pointer!"NL);
+				return false;
+			};
+		#endif
+		#ifdef _WIN32
+			return (HeapFree(GetProcessHeap(),0,mem)==0);
+		#else
+			free(mem);
+		#endif
 	};
 	return true;
 }
 
 void* mtmemrealloc(void *mem,int size)
 {
-	HANDLE ph;
 	void* newmem;
-	int csize;
 	
 	if (!mem) return mtmemalloc(size,MTM_ZERO);
-	ph = GetProcessHeap();
-	csize = HeapSize(ph,0,mem);
-	if (size<=csize) return mem;
-	newmem = HeapReAlloc(ph,HEAP_ZERO_MEMORY,mem,size);
+	#ifdef _WIN32
+		HANDLE ph = GetProcessHeap();
+		int csize = HeapSize(ph,0,mem);
+		if (size<=csize) return mem;
+		newmem = HeapReAlloc(ph,HEAP_ZERO_MEMORY,mem,size);
+	#else
+		newmem = realloc(mem,size);
+	#endif
 	if (!newmem){
 		mtshowlastoserror();
-		newmem = HeapAlloc(ph,HEAP_ZERO_MEMORY,size);
-		if (!newmem) mtshowlastoserror();
-		else{
-			memcpy(newmem,mem,HeapSize(ph,0,mem));
-			HeapFree(ph,0,mem);
-		};
+		#ifdef _WIN32
+			newmem = HeapAlloc(ph,HEAP_ZERO_MEMORY,size);
+			if (!newmem) mtshowlastoserror();
+			else{
+				memcpy(newmem,mem,HeapSize(ph,0,mem));
+				HeapFree(ph,0,mem);
+			};
+		#endif
 	};
-#ifdef _DEBUG
-	unsigned int x;
-	memlock.lock();
-	for (x=0;x<nallocs;x++){
-		if (mtalloc[x].address==mem){
-			totalmemory -= mtalloc[x].size;
-			mtalloc[x].address = newmem;
-			mtalloc[x].size = size;
-			totalmemory += size;
-			if (totalmemory>peakmemory) peakmemory = totalmemory;
-			break;
+	#ifdef _DEBUG
+		unsigned int x;
+		memlock.lock();
+		for (x=0;x<nallocs;x++){
+			if (mtalloc[x].address==mem){
+				totalmemory -= mtalloc[x].size;
+				mtalloc[x].address = newmem;
+				mtalloc[x].size = size;
+				totalmemory += size;
+				if (totalmemory>peakmemory) peakmemory = totalmemory;
+				break;
+			};
 		};
-	};
-	memlock.unlock();
-#endif
+		memlock.unlock();
+	#endif
 	return (void*)newmem;
 }
 //---------------------------------------------------------------------------
@@ -605,7 +702,7 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 	char buf[128];
 	
 	if ((sysres) && ((dsk = (MTDesktop*)di->getdefaultdesktop())) && ((dsk->flags & MTCF_HIDDEN)==0)){
-		MTFile *wf = sysres->getresourcefile('NWTM',MTW_dialog,&size);
+		MTFile *wf = sysres->getresourcefile(MTR_WINDOW,MTW_dialog,&size);
 		if (wf){
 			MTLabel *c;
 			MTIcon *i;
@@ -740,44 +837,49 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 	}
 	else if ((int)buttons>=256) return MTDR_NULL;
 	else{
-		int wflags = 0;
-		int res;
-		switch ((int)buttons){
-		case (int)MTD_OK:
-			wflags = MB_OK;
-			break;
-		case (int)MTD_OKCANCEL:
-			wflags = MB_OKCANCEL;
-			break;
-		case (int)MTD_YESNO:
-			wflags = MB_YESNO;
-			break;
-		case (int)MTD_YESNOCANCEL:
-			wflags = MB_YESNOCANCEL;
-			break;
-		};
-		switch (flags & MTD_ICONMASK){
-		case MTD_INFORMATION:
-			wflags |= MB_ICONINFORMATION;
-			break;
-		case MTD_QUESTION:
-			wflags |= MB_ICONQUESTION;
-			break;
-		case MTD_EXCLAMATION:
-			wflags |= MB_ICONEXCLAMATION;
-			break;
-		case MTD_ERROR:
-			wflags |= MB_ICONERROR;
-			break;
-		};
-		if (flags & MTD_BUTTONMASK){
-			wflags |= (flags & MTD_BUTTONMASK)<<4;
-		};
-		res = MessageBox(0,message,caption,wflags);
-		if ((res==IDOK) || (res==IDYES) || (res==IDABORT)) return 0;
-		if (res==IDNO) return 1;
-		if (buttons==MTD_YESNOCANCEL) return 2;
-		return 1;
+		#ifdef _WIN32
+			int wflags = 0;
+			int res;
+			switch ((int)buttons){
+			case (int)MTD_OK:
+				wflags = MB_OK;
+				break;
+			case (int)MTD_OKCANCEL:
+				wflags = MB_OKCANCEL;
+				break;
+			case (int)MTD_YESNO:
+				wflags = MB_YESNO;
+				break;
+			case (int)MTD_YESNOCANCEL:
+				wflags = MB_YESNOCANCEL;
+				break;
+			};
+			switch (flags & MTD_ICONMASK){
+			case MTD_INFORMATION:
+				wflags |= MB_ICONINFORMATION;
+				break;
+			case MTD_QUESTION:
+				wflags |= MB_ICONQUESTION;
+				break;
+			case MTD_EXCLAMATION:
+				wflags |= MB_ICONEXCLAMATION;
+				break;
+			case MTD_ERROR:
+				wflags |= MB_ICONERROR;
+				break;
+			};
+			if (flags & MTD_BUTTONMASK){
+				wflags |= (flags & MTD_BUTTONMASK)<<4;
+			};
+			res = MessageBox(0,message,caption,wflags);
+			if ((res==IDOK) || (res==IDYES) || (res==IDABORT)) return 0;
+			if (res==IDNO) return 1;
+			if (buttons==MTD_YESNOCANCEL) return 2;
+			return 1;
+		#else
+//TODO
+			return MTDR_NULL;
+		#endif
 	};
 }
 
@@ -807,7 +909,7 @@ int mtauthdialog(char *message,char *login,char *password)
 	
 	if (!auth){
 		if ((sysres) && ((dsk = (MTDesktop*)di->getdefaultdesktop()))){
-			MTFile *wf = sysres->getresourcefile('NWTM',MTW_auth,&size);
+			MTFile *wf = sysres->getresourcefile(MTR_WINDOW,MTW_auth,&size);
 			if (wf){
 				auth = gi->loadwindowfromfile(wf,size,dsk);
 				if ((int)auth<=0) return -1;
@@ -837,8 +939,12 @@ int mtauthdialog(char *message,char *login,char *password)
 void mtshowoserror(int error)
 {
 	char *message;
-	
-	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,0,error,0,(char*)&message,16,0);
+
+	#ifdef _WIN32
+		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,0,error,0,(char*)&message,16,0);
+	#else
+		message = strerror(error);
+	#endif
 	LOGD("%s - [System] ERROR: ");
 	LOG(message);
 	LOG(NL);
@@ -847,17 +953,47 @@ void mtshowoserror(int error)
 
 void mtshowlastoserror()
 {
-	mtshowoserror(GetLastError());
+	#ifdef _WIN32
+		mtshowoserror(GetLastError());
+	#else
+		mtshowoserror(errno);
+	#endif
 }
 //---------------------------------------------------------------------------
 int mtsync_inc(int *value)
 {
-	return InterlockedIncrement((long*)value);
+	#ifdef _WIN32
+		return InterlockedIncrement((long*)value);
+	#else
+		asm ("\
+			movl %[value],%%ecx\n\
+			movl 1,%%eax\n\
+			lock xaddl %%eax,(%%ecx)\n\
+			incl %%eax\n\
+			"
+			:
+			:[value]"m"(value)
+			:"ecx"
+			);
+	#endif
 }
 
 int mtsync_dec(int *value)
 {
-	return InterlockedDecrement((long*)value);
+	#ifdef _WIN32
+		return InterlockedDecrement((long*)value);
+	#else
+		asm ("\
+			movl %[value],%%ecx\n\
+			mov $-1,%%eax\n\
+			lock xaddl %%eax,(%%ecx)\n\
+			dec %%eax\n\
+			"
+			:
+			:[value]"m"(value)
+			:"ecx"
+			);
+	#endif
 }
 //---------------------------------------------------------------------------
 #ifdef MTSYSTEM_EXPORTS
@@ -948,157 +1084,250 @@ bool MTSystemInterface::init()
 	char buf[256],proctype[256];
 	static const int cpu_wait = 3000;
 	static const double cpu_div = 3000000.0;
-	
-	SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)::onexception);
-	HMODULE hkernel = GetModuleHandle("KERNEL32.DLL");
-	if (hkernel){
-		BOOL (*isdebugger)();
-		*(int*)&isdebugger = (int)GetProcAddress(hkernel,"IsDebuggerPresent");
-		if (isdebugger){
-			debugged = (isdebugger()!=0);
-			if (GetAsyncKeyState(VK_SHIFT)>=0){
-				if (debugged) sysflags |= MTS_DEBUGGED;
+	int fd,len;
+
+	#ifdef _WIN32
+		SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)::onexception);
+		HMODULE hkernel = GetModuleHandle("KERNEL32.DLL");
+		if (hkernel){
+			BOOL (*isdebugger)();
+			*(int*)&isdebugger = (int)GetProcAddress(hkernel,"IsDebuggerPresent");
+			if (isdebugger){
+				debugged = (isdebugger()!=0);
+				if (GetAsyncKeyState(VK_SHIFT)>=0){
+					if (debugged) sysflags |= MTS_DEBUGGED;
+				};
 			};
 		};
-	};
+	#else
+		//TODO signal + exceptions
+		debugged = true;
+	#endif
 	initFiles();
 	if (mtinterface){
 		platform = (char*)mtmemalloc(512);
 		build = (char*)mtmemalloc(512);
 		processor = (char*)mtmemalloc(512);
-		osinfo.dwOSVersionInfoSize = sizeof(osinfo);
-		GetVersionEx(&osinfo);
-		GetSystemInfo(&sysinfo);
-		ncpu = sysinfo.dwNumberOfProcessors;
-		strcpy(platform,"Windows ");
-		if (osinfo.dwPlatformId==VER_PLATFORM_WIN32_NT){
-			sysflags |= MTS_WINNT;
-			if (osinfo.dwMajorVersion>=5){
-				switch (osinfo.dwMinorVersion){
-				case 0:
-					strcat(platform,"2000 ");
+		#ifdef _WIN32
+			osinfo.dwOSVersionInfoSize = sizeof(osinfo);
+			GetVersionEx(&osinfo);
+			GetSystemInfo(&sysinfo);
+			ncpu = sysinfo.dwNumberOfProcessors;
+			strcpy(platform,"Windows ");
+			if (osinfo.dwPlatformId==VER_PLATFORM_WIN32_NT){
+				sysflags |= MTS_WINNT;
+				if (osinfo.dwMajorVersion>=5){
+					switch (osinfo.dwMinorVersion){
+					case 0:
+						strcat(platform,"2000 ");
+						break;
+					case 1:
+						strcat(platform,"XP ");
+						break;
+					default:
+						strcat(platform,"NT ");
+						break;
+					};
+				}
+				else{
+					strcat(platform,"NT ");
+				};
+			}
+			else{
+				osinfo.dwBuildNumber &= 0xFFFF;
+				if (osinfo.dwMinorVersion>=90){
+					strcat(platform,"ME ");
+				}
+				else if (osinfo.dwMinorVersion>=10){
+					strcat(platform,"98 ");
+				}
+				else{
+					strcat(platform,"95 ");
+				};
+			};
+			e = strchr(platform,0);
+			sprintf(e,"Version %d.%d",osinfo.dwMajorVersion,osinfo.dwMinorVersion);
+			if (osinfo.szCSDVersion[0]) sprintf(build,"Build %d (%s)",osinfo.dwBuildNumber,osinfo.szCSDVersion);
+			else sprintf(build,"Build %d",osinfo.dwBuildNumber);
+			sprintf(processor,"%d x ",sysinfo.dwNumberOfProcessors);
+			switch (sysinfo.wProcessorArchitecture){
+			case PROCESSOR_ARCHITECTURE_INTEL:
+				strcpy(proctype,"x86 ");
+				break;
+			case PROCESSOR_ARCHITECTURE_MIPS:
+				strcpy(proctype,"MIPS ");
+				break;
+			case PROCESSOR_ARCHITECTURE_ALPHA:
+				strcpy(proctype,"Alpha ");
+				break;
+			case PROCESSOR_ARCHITECTURE_PPC:
+				strcpy(proctype,"PPC ");
+				break;
+			default:
+				strcpy(proctype,"Unknown ");
+				break;
+			};
+			__asm{
+				push	ebx
+				mov		eax,0x80000000
+				cpuid
+				cmp		eax,0x80000004
+				jb		_noname
+				mov		eax,0x80000002
+				cpuid
+				mov		dword ptr buf[0],eax
+				mov		dword ptr buf[4],ebx
+				mov		dword ptr buf[8],ecx
+				mov		dword ptr buf[12],edx
+				mov		eax,0x80000003
+				cpuid
+				mov		dword ptr buf[16],eax
+				mov		dword ptr buf[20],ebx
+				mov		dword ptr buf[24],ecx
+				mov		dword ptr buf[28],edx
+				mov		eax,0x80000004
+				cpuid
+				mov		dword ptr buf[32],eax
+				mov		dword ptr buf[36],ebx
+				mov		dword ptr buf[40],ecx
+				mov		dword ptr buf[44],edx
+				mov		byte ptr buf[48],0
+				xor		eax,eax
+				cpuid
+				jmp		_nameok
+			_noname:
+				xor		eax,eax
+				cpuid
+				mov		dword ptr buf[0],ebx
+				mov		dword ptr buf[4],edx
+				mov		dword ptr buf[8],ecx
+				mov		byte ptr buf[12],0
+			_nameok:
+				test	eax,eax
+				jz		_nommx
+				mov		eax,1
+				cpuid
+				mov		cpuver,eax
+				mov		cpuflags,edx
+			_nommx:
+				pop		ebx
+			};
+			strcat(proctype,buf);
+			e = strchr(proctype,0);
+			if (sysflags & MTS_WINNT){
+				sprintf(e," Level %d ",sysinfo.wProcessorLevel);
+				e = strchr(proctype,0);
+				lorev = (char)sysinfo.wProcessorRevision;
+				hirev = sysinfo.wProcessorRevision>>8;
+				switch (sysinfo.wProcessorArchitecture){
+				case PROCESSOR_ARCHITECTURE_INTEL:
+					sprintf(e,"Model %d Stepping %d",hirev,lorev);
 					break;
-				case 1:
-					strcat(platform,"XP ");
+				case PROCESSOR_ARCHITECTURE_ALPHA:
+					sprintf(e,"Model %c Pass %d",hirev+'A',lorev);
+					break;
+				case PROCESSOR_ARCHITECTURE_PPC:
+					sprintf(e,"Version %d.%d",hirev,lorev);
 					break;
 				default:
-					strcat(platform,"NT ");
+					sprintf(e,"Revision %d",sysinfo.wProcessorRevision);
 					break;
 				};
 			}
 			else{
-				strcat(platform,"NT ");
+				lorev = cpuver & 0xF;
+				cpuver >>= 4;
+				hirev = cpuver & 0xF;
+				cpuver >>= 4;
+				cpuver &= 0xF;
+				sprintf(e," Level %d Model %d Stepping %d",cpuver,hirev,lorev);
 			};
-		}
-		else{
-			osinfo.dwBuildNumber &= 0xFFFF;
-			if (osinfo.dwMinorVersion>=90){
-				strcat(platform,"ME ");
-			}
-			else if (osinfo.dwMinorVersion>=10){
-				strcat(platform,"98 ");
-			}
-			else{
-				strcat(platform,"95 ");
-			};
-		};
-		e = strchr(platform,0);
-		sprintf(e,"Version %d.%d",osinfo.dwMajorVersion,osinfo.dwMinorVersion);
-		if (osinfo.szCSDVersion[0]) sprintf(build,"Build %d (%s)",osinfo.dwBuildNumber,osinfo.szCSDVersion);
-		else sprintf(build,"Build %d",osinfo.dwBuildNumber);
-		sprintf(processor,"%d x ",sysinfo.dwNumberOfProcessors);
-		switch (sysinfo.wProcessorArchitecture){
-		case PROCESSOR_ARCHITECTURE_INTEL:
-			strcpy(proctype,"x86 ");
-			break;
-		case PROCESSOR_ARCHITECTURE_MIPS:
-			strcpy(proctype,"MIPS ");
-			break;
-		case PROCESSOR_ARCHITECTURE_ALPHA:
-			strcpy(proctype,"Alpha ");
-			break;
-		case PROCESSOR_ARCHITECTURE_PPC:
-			strcpy(proctype,"PPC ");
-			break;
-		default:
-			strcpy(proctype,"Unknown ");
-			break;
-		};
-		__asm{
-			push	ebx
-			mov		eax,0x80000000
-			cpuid
-			cmp		eax,0x80000004
-			jb		_noname
-			mov		eax,0x80000002
-			cpuid
-			mov		dword ptr buf[0],eax
-			mov		dword ptr buf[4],ebx
-			mov		dword ptr buf[8],ecx
-			mov		dword ptr buf[12],edx
-			mov		eax,0x80000003
-			cpuid
-			mov		dword ptr buf[16],eax
-			mov		dword ptr buf[20],ebx
-			mov		dword ptr buf[24],ecx
-			mov		dword ptr buf[28],edx
-			mov		eax,0x80000004
-			cpuid
-			mov		dword ptr buf[32],eax
-			mov		dword ptr buf[36],ebx
-			mov		dword ptr buf[40],ecx
-			mov		dword ptr buf[44],edx
-			mov		byte ptr buf[48],0
-			xor		eax,eax
-			cpuid
-			jmp		_nameok
-_noname:
-			xor		eax,eax
-			cpuid
-			mov		dword ptr buf[0],ebx
-			mov		dword ptr buf[4],edx
-			mov		dword ptr buf[8],ecx
-			mov		byte ptr buf[12],0
-_nameok:
-			test	eax,eax
-			jz		_nommx
-			mov		eax,1
-			cpuid
-			mov		cpuver,eax
-			mov		cpuflags,edx
-			pop		ebx
-_nommx:
-		};
-		strcat(proctype,buf);
-		e = strchr(proctype,0);
-		if (sysflags & MTS_WINNT){
-			sprintf(e," Level %d ",sysinfo.wProcessorLevel);
+		#else
+			e = platform;
+			fd = open("/proc/sys/kernel/ostype",O_RDONLY);
+			len = read(fd,e,128);
+			close(fd);
+			if (len==-1) goto procerror;
+			e[len] = 0;
+			e = strchr(platform,'\r');
+			if (!e) e = strchr(platform,0);
+			*e++ = ' ';
+			fd = open("/proc/sys/kernel/osrelease",O_RDONLY);
+			len = read(fd,e,128);
+			close(fd);
+			if (len==-1) goto procerror;
+			e[len] = 0;
+			e = strchr(e,'\r');
+			if (!e) *e = 0;
+			e = build;
+			fd = open("/proc/sys/kernel/version",O_RDONLY);
+			len = read(fd,e,128);
+			close(fd);
+			if (len==-1) goto procerror;
+			e[len] = 0;
+			e = strchr(e,'\r');
+			if (e) *e = 0;
+		procerror:
+			strcat(proctype,"x86 ");
+			char *_buf = (char*)calloc(1,256);
+			asm (
+				"\
+				movl	$0x80000000,%%eax\n\
+				cpuid\n\
+				cmpl	$0x80000004,%%eax\n\
+				jb		_noname\n\
+				movl	$0x80000002,%%eax\n\
+				cpuid\n\
+				movl	%%eax,(%%esi)\n\
+				movl	%%ebx,4(%%esi)\n\
+				movl	%%ecx,8(%%esi)\n\
+				movl	%%edx,12(%%esi)\n\
+				movl	$0x80000003,%%eax\n\
+				cpuid\n\
+				movl	%%eax,16(%%esi)\n\
+				movl	%%ebx,20(%%esi)\n\
+				movl	%%ecx,24(%%esi)\n\
+				movl	%%edx,28(%%esi)\n\
+				movl	$0x80000004,%%eax\n\
+				cpuid\n\
+				movl	%%eax,32(%%esi)\n\
+				movl	%%ebx,36(%%esi)\n\
+				movl	%%ecx,40(%%esi)\n\
+				movl	%%edx,44(%%esi)\n\
+				movb	$0,48(%%esi)\n\
+				xorl	%%eax,%%eax\n\
+				cpuid\n\
+				jmp		_nameok\n\
+			_noname:\n\
+				xorl	%%eax,%%eax\n\
+				cpuid\n\
+				movl	%%ebx,(%%esi)\n\
+				movl	%%edx,4(%%esi)\n\
+				movl	%%ecx,8(%%esi)\n\
+				movb	$0,12(%%esi)\n\
+			_nameok:\n\
+				testl	%%eax,%%eax\n\
+				jz		_nommx\n\
+				movl	$1,%%eax\n\
+				cpuid\n\
+				movl	%%eax,%[cpuver]\n\
+				movl	%%edx,%[cpuflags]\n\
+			_nommx:\n\
+				"
+				:"=S"(_buf),[cpuver]"=m"(cpuver),[cpuflags]"=m"(cpuflags)
+				:
+				:"eax","ebx","ecx","edx"
+			);
+			strcat(proctype,_buf);
+			free(_buf);
 			e = strchr(proctype,0);
-			lorev = (char)sysinfo.wProcessorRevision;
-			hirev = sysinfo.wProcessorRevision>>8;
-			switch (sysinfo.wProcessorArchitecture){
-			case PROCESSOR_ARCHITECTURE_INTEL:
-				sprintf(e,"Model %d Stepping %d",hirev,lorev);
-				break;
-			case PROCESSOR_ARCHITECTURE_ALPHA:
-				sprintf(e,"Model %c Pass %d",hirev+'A',lorev);
-				break;
-			case PROCESSOR_ARCHITECTURE_PPC:
-				sprintf(e,"Version %d.%d",hirev,lorev);
-				break;
-			default:
-				sprintf(e,"Revision %d",sysinfo.wProcessorRevision);
-				break;
-			};
-		}
-		else{
 			lorev = cpuver & 0xF;
 			cpuver >>= 4;
 			hirev = cpuver & 0xF;
 			cpuver >>= 4;
 			cpuver &= 0xF;
 			sprintf(e," Level %d Model %d Stepping %d",cpuver,hirev,lorev);
-		};
+		#endif
 		if ((conf = (MTConfigFile*)mtinterface->getconf("Global",false))){
 			if (conf->setsection("MTSystem")){
 				if (conf->getparameter("CPUType",&buf,MTCT_STRING,sizeof(buf))){
@@ -1111,29 +1340,60 @@ _nommx:
 			};
 		};
 		if (cpufrequ==0){
-			__asm{
-				rdtsc
-				push	edx
-				push	eax
-			};
+			#ifdef _WIN32
+				__asm{
+					rdtsc
+					push	edx
+					push	eax
+				};
+			#else
+				asm (
+					"\
+					rdtsc\n\
+					push	%%edx\n\
+					push	%%eax\n\
+					"
+					:
+					:
+					:"eax","edx"
+					);
+			#endif
 			mtsyswait(cpu_wait);
-			__asm{
-				rdtsc
-				sub		dword ptr [esp],eax
-				sbb		dword ptr [esp+4],edx
-				fild	qword ptr [esp]
-				fchs
-				fdiv	cpu_div;
-				mov		eax,this
-#if __BORLANDC__
-				fistp	dword ptr [eax].cpufrequ
-#elif __MWERKS__
-				fistp	dword ptr [eax+MTSystemInterface.cpufrequ]
-#else
-				fistp	dword ptr [eax]this.cpufrequ
-#endif
-				add		esp,8
-			};
+			#ifdef _WIN32
+				__asm{
+					rdtsc
+					sub		dword ptr [esp],eax
+					sbb		dword ptr [esp+4],edx
+					fild	qword ptr [esp]
+					fchs
+					fdiv	cpu_div
+					mov		eax,this
+					#if __BORLANDC__
+						fistp	dword ptr [eax].cpufrequ
+					#elif __MWERKS__
+						fistp	dword ptr [eax+MTSystemInterface.cpufrequ]
+					#else
+						fistp	dword ptr [eax]this.cpufrequ
+					#endif
+					add		esp,8
+				};
+			#else
+				asm (
+					"\
+					   rdtsc\n\
+					   subl		%%eax,(%%esp)\n\
+					   sbbl		%%edx,4(%%esp)\n\
+					   fildq	(%%esp)\n\
+					   fchs\n\
+					   fdiv		%[cpu_div]\n\
+					   fistp	%[cpufrequ]\n\
+					   addl		8,%%esp\n\
+					"
+					:[cpufrequ]"=m"(cpufrequ)
+					:[cpu_div]"m"(cpu_div)
+					:"eax","edx"
+					);
+			#endif
 			cpufrequ = (cpufrequ/3)*3;
 		};
 		if (conf){
@@ -1149,12 +1409,16 @@ _nommx:
 		if (cpuflags & 0x1000000) sysflags |= MTS_SIMD;
 		e = strchr(processor,0);
 		sprintf(e,"%d MHz (%s)",cpufrequ,proctype);
+#ifdef _WIN32
 		timeGetDevCaps(&timecaps,sizeof(TIMECAPS));
+#else
+		clock_getres(CLOCK_REALTIME,&timerres);
+#endif
 		di = (MTDisplayInterface*)mtinterface->getinterface(displaytype);
 		gi = (MTGUIInterface*)mtinterface->getinterface(guitype);
 		strcpy(buf,mtinterface->getprefs()->syspath[SP_INTERFACE]);
 		strcat(buf,"MTSystem.mtr");
-		if ((gi) && (di) && (mtinterface->type!='EIUG')){
+		if ((gi) && (di) && (mtinterface->type!=FOURCC('G','U','I','E'))){
 			f = mtfileopen(buf,MTF_READ|MTF_SHAREREAD);
 			if (f) sysres = new MTResources(f,true);
 		};
@@ -1168,9 +1432,9 @@ _nommx:
 		lts = localtime(&lt);
 		sprintf(e,"%.4d-%.2d-%.2d",lts->tm_year+1900,lts->tm_mon+1,lts->tm_mday);
 		strcat(logpath,".txt");
-#ifdef _DEBUG
-		startlog();
-#endif
+		#ifdef _DEBUG
+			startlog();
+		#endif
 		if (sysres) sysres->loadstring(MTT_storage,rootn,sizeof(rootn));
 	};
 	initInternet();
@@ -1181,10 +1445,10 @@ _nommx:
 
 void MTSystemInterface::uninit()
 {
-#ifdef _DEBUG
-	unsigned int na;
-	char buf[256];
-#endif
+	#ifdef _DEBUG
+		unsigned int na;
+		char buf[256];
+	#endif
 	
 	status &= (~MTX_INITIALIZED);
 	mtmemfree(platform);
@@ -1202,47 +1466,51 @@ void MTSystemInterface::uninit()
 		mtmemfree(logfile->url);
 		logfile->url = 0;
 	};
-#ifdef _DEBUG
-	if (nallocs!=0){
-		int x = 0;
+	#ifdef _DEBUG
+		if (nallocs!=0){
+			int x = 0;
 
-		na = nallocs;
-		LOG("ERROR: Remaining memory allocations:"NL);
-		while (nallocs>0){
-			FLOG4(NL"%.8x: %d bytes allocated by %.8X"NL"Callstack:"NL"%s"NL,mtalloc[0].address,mtalloc[0].size,mtalloc[0].caller,mtalloc[0].callstack);
-			if (x<16){
-				mtdump((unsigned char*)mtalloc[0].address,64);
-				x++;
+			na = nallocs;
+			LOG("ERROR: Remaining memory allocations:"NL);
+			while (nallocs>0){
+				FLOG4(NL"%.8x: %d bytes allocated by %.8X"NL"Callstack:"NL"%s"NL,mtalloc[0].address,mtalloc[0].size,mtalloc[0].caller,mtalloc[0].callstack);
+				if (x<16){
+					mtdump((unsigned char*)mtalloc[0].address,64);
+					x++;
+				};
+				mtmemfree(mtalloc[0].address);
 			};
-			mtmemfree(mtalloc[0].address);
+			sprintf(buf,"%d remaining memory allocation(s)!",na);
+			mtdialog(buf,"Memory",MTD_OK,MTD_EXCLAMATION,5000);
 		};
-		sprintf(buf,"%d remaining memory allocation(s)!",na);
-		mtdialog(buf,"Memory",MTD_OK,MTD_EXCLAMATION,5000);
-	};
-	FLOG1("Memory usage peak: %d bytes"NL,peakmemory);
-#endif
+		FLOG1("Memory usage peak: %d bytes"NL,peakmemory);
+	#endif
 	stoplog();
 	if (waserror){
-		if (mtdialog("One or more errors occured!"NL"Do you want to see the log file?","Errors",MTD_YESNO,MTD_QUESTION,5000)==0){
-			ShellExecute(0,"open",logpath,"","",SW_SHOWNORMAL);
-		};
+		#ifdef _WIN32
+			if (mtdialog("One or more errors occured!"NL"Do you want to see the log file?","Errors",MTD_YESNO,MTD_QUESTION,5000)==0){
+				ShellExecute(0,"open",logpath,"","",SW_SHOWNORMAL);
+			};
+		#else
+			mtdialog("One or more errors occured!"NL"A log file is available in your home directory.","Errors",MTD_YESNO,MTD_QUESTION,5000);
+		#endif
 	};
 }
 
 void MTSystemInterface::start()
 {
-#ifdef _DEBUG
-	MTMiniConfig *mc = new MTMiniConfig();
-	MTFile *mf = mtfileopen("mem://",MTF_CREATE|MTF_READ|MTF_WRITE);
-	int test = 43234;
-	char buf[256];
-	mc->setparameter("Test",&test,MTCT_UINTEGER,4);
-	mc->setparameter("Bla.Test","Hello there",MTCT_STRING,-1);
-	mc->getparameter("Bla",buf,MTCT_STRING,sizeof(buf));
-	mc->savetostream(mf);
-	mtfileclose(mf);
-	delete mc;
-#endif
+	#ifdef _DEBUG
+		MTMiniConfig *mc = new MTMiniConfig();
+		MTFile *mf = mtfileopen("mem://",MTF_CREATE|MTF_READ|MTF_WRITE);
+		int test = 43234;
+		char buf[256];
+		mc->setparameter("Test",&test,MTCT_UINTEGER,4);
+		mc->setparameter("Bla.Test","Hello there",MTCT_STRING,-1);
+		mc->getparameter("Bla",buf,MTCT_STRING,sizeof(buf));
+		mc->savetostream(mf);
+		mtfileclose(mf);
+		delete mc;
+	#endif
 }
 
 void MTSystemInterface::stop()
@@ -1281,7 +1549,11 @@ void MTSystemInterface::setlasterror(int error)
 
 int MTSystemInterface::onexception(void *data)
 {
-	return ::onexception((EXCEPTION_POINTERS*)data);
+	#ifdef _WIN32
+		return ::onexception((EXCEPTION_POINTERS*)data);
+	#else
+		return 0;
+	#endif
 }
 
 void MTSystemInterface::addfilehook(char *type,MTFileHook *hook)
