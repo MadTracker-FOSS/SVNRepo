@@ -2,7 +2,7 @@
 //
 //	MadTracker 3 Public Extension Header
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	http://www.madtracker.org/
 //	info@madtracker.org
@@ -12,14 +12,11 @@
 //---------------------------------------------------------------------------
 #ifndef MTXOBJECTS_INCLUDED
 #define MTXOBJECTS_INCLUDED
-
-#ifdef __BORLANDC__
-static const int objectstype = 'XOBJ';
-#else
-static const int objectstype = 'JBOX';
-#endif
 //---------------------------------------------------------------------------
 #include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int objectstype = FOURCC('X','O','B','J');
+//---------------------------------------------------------------------------
 #include "MTXObject.h"
 //---------------------------------------------------------------------------
 struct MTObjectsPreferences{

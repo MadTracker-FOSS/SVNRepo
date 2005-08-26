@@ -120,6 +120,9 @@ public:
 	int nsequ[MAX_LAYERS];
 	Sequence sequ[MAX_LAYERS][MAX_SEQUENCES];
 
+	MTModule(int i);
+	virtual ~MTModule();
+
 	virtual void MTCT getdisplayname(char *buffer,int cb) = 0;
 	virtual void MTCT setstatus() = 0;
 	virtual void MTCT updatelength() = 0;

@@ -1,12 +1,10 @@
 //---------------------------------------------------------------------------
 #ifndef MTDSP1_INCLUDED
 #define MTDSP1_INCLUDED
-
-#ifdef __BORLANDC__
-static const int dsptype = 'XDSP';
-#else
-static const int dsptype = 'PSDX';
-#endif
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int dsptype = FOURCC('X','D','S','P');
 
 #define RESAMPLE_8BIT   0x00
 #define RESAMPLE_16BIT  0x01
@@ -28,8 +26,7 @@ struct FilterStatus;
 struct DSPFunctions;
 class MTDSPInterface;
 //---------------------------------------------------------------------------
-#include "../Headers/MTXExtension.h"
-#include "../Headers/MTXSystem.h"
+#include "MTXSystem.h"
 //---------------------------------------------------------------------------
 struct ChannelStatus{
 	int posi;
@@ -55,7 +52,8 @@ struct FilterStatus{
 	float resonance2;
 };
 
-typedef void (__stdcall *MTResampleProc)(sample *dest,sample *source,int count,ChannelStatus &status,int pitchi,unsigned int pitchd);
+typedef void (MTACT *MTFilterProc)(sample *dest,sample *source,FilterStatus &status,int count,int frequency);
+typedef void (MTACT *MTResampleProc)(sample *dest,sample *source,int count,ChannelStatus &status,int pitchi,unsigned int pitchd);
 
 class MTDSPInterface : public MTXInterface{
 public:
@@ -69,8 +67,8 @@ public:
 	void (MTACT *addbufferslide2)(sample *dest1,sample *dest2,sample *source,double mul1,double mul2,double inc1,double inc2,int count);
 	void (MTACT *ampbuffer)(sample *dest,double mul,int count);
 	void (MTACT *modulatebuffer)(sample *dest,sample *source,int count);
-	void (MTACT *filter[16])(sample *dest,sample *source,FilterStatus &status,int count,int frequency);
-	void (MTACT *resample[32])(char *dest,char *source,int count,ChannelStatus &status,int pitchi,unsigned int pitchd);
+	MTFilterProc filter[16];
+	MTResampleProc resample[32];
 	void (MTACT *splinereplace)(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt);
 	void (MTACT *splinemodulate)(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt);
 

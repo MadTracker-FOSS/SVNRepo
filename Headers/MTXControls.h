@@ -2,7 +2,7 @@
 //
 //	MadTracker 3 Public Extension Header
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	http://www.madtracker.org/
 //	info@madtracker.org
@@ -12,7 +12,9 @@
 //---------------------------------------------------------------------------
 #ifndef MTXCONTROLS_INCLUDED
 #define MTXCONTROLS_INCLUDED
-
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
 #define MTC_CONTROL            0x0001
 #define MTC_CUSTOMCTRL        0x10001
 #define  MTC_WINCONTROL        0x0003
@@ -181,7 +183,6 @@ class MTPanel;
 class MTOSWindow;
 class MTTabControl;
 //---------------------------------------------------------------------------
-#include "MTXExtension.h"
 #include "MTXGUI.h"
 #include "MTXDisplay.h"
 #include "MTXSystem.h"

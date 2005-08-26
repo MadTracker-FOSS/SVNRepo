@@ -2,7 +2,7 @@
 //
 //	MadTracker 3 Public Extension Header
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	http://www.madtracker.org/
 //	info@madtracker.org
@@ -12,14 +12,10 @@
 //---------------------------------------------------------------------------
 #ifndef MTXGUI_INCLUDED
 #define MTXGUI_INCLUDED
-
-#ifdef __BORLANDC__
-static const int guitype = 'XGUI';
-static const int guietype = 'GUIE';
-#else
-static const int guitype = 'IUGX';
-static const int guietype = 'EIUG';
-#endif
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int guitype = FOURCC('X','G','U','I');
 //---------------------------------------------------------------------------
 enum{
 	DB_LEFT = 1,
@@ -87,7 +83,6 @@ class MTControl;
 typedef void (MTCT *MTCommand)(MTShortcut*,MTControl*,MTUndo*);
 //---------------------------------------------------------------------------
 #include "MTXGUITypes.h"
-#include "MTXExtension.h"
 #include "MTXSystem.h"
 #include "MTXDisplay.h"
 #include "MTXControls.h"

@@ -106,7 +106,7 @@ int MTWindow::loadfromstream(MTFile *f,int size,int flags)
 		align = MTCA_CLIENT;
 	};
 	f->read(&style,4);
-	f->reads(cap,256);
+	f->readln(cap,256);
 	cap[255] = 0;
 	l = strlen(cap)+1;
 	MTWinControl *oldp = parent;

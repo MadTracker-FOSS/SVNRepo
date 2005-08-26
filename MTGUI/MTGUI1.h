@@ -1,14 +1,11 @@
 //---------------------------------------------------------------------------
 #ifndef MTGUI1_INCLUDED
 #define MTGUI1_INCLUDED
-
-#ifdef __BORLANDC__
-static const int guitype = 'XGUI';
-static const int guietype = 'GUIE';
-#else
-static const int guitype = 'IUGX';
-static const int guietype = 'EIUG';
-#endif
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int guitype = FOURCC('X','G','U','I');
+static const int guietype = FOURCC('G','U','I','E');
 
 enum{
 	DB_LEFT = 1,
@@ -71,9 +68,7 @@ enum{
 #define MTSF_CONTROL   0x20
 #define MTSF_ALT       0x40
 #define MTSF_UICONTROL 0x80
-//---------------------------------------------------------------------------
-#include "../Headers/MTXExtension.h"
-//---------------------------------------------------------------------------
+
 struct MTUndo;
 struct MTShortcut;
 class MTControl;
@@ -84,9 +79,9 @@ class MTDesktop;
 typedef void (MTCT *MTCommand)(MTShortcut*,MTControl*,MTUndo*);
 //---------------------------------------------------------------------------
 #include "MTGUITools.h"
-#include "../Headers/MTXSystem.h"
-#include "../Headers/MTXDisplay.h"
-#include "../Headers/MTXSkin.h"
+#include "MTXSystem.h"
+#include "MTXDisplay.h"
+#include "MTXSkin.h"
 //---------------------------------------------------------------------------
 struct MTGUIPreferences{
 	char skin[256];

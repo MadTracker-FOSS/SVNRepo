@@ -1,20 +1,17 @@
 //---------------------------------------------------------------------------
 #ifndef MTAUDIO1_INCLUDED
 #define MTAUDIO1_INCLUDED
-
-#ifdef __BORLANDC__
-static const int audiotype = 'XAUD';
-#else
-static const int audiotype = 'DUAX';
-#endif
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int audiotype = FOURCC('X','A','U','D');
 
 #define MAX_AUDIODEVICES 64
 #define PRIVATE_BUFFER   4096
 
-#include "../Headers/MTXSystem.h"
-#include "../Headers/MTXExtension.h"
-#include "../Headers/MTXObjects.h"
-#include "../Headers/MTXTrack.h"
+#include "MTXSystem.h"
+#include "MTXObjects.h"
+#include "MTXTrack.h"
 #include "MTAudioDevice.h"
 //---------------------------------------------------------------------------
 struct WaveDevice{

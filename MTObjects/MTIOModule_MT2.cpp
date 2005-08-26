@@ -100,7 +100,15 @@ struct _MT2InstrSynth{	// if (_MT2Instrument.flags!=0)
 	unsigned char effectid;
 	unsigned short cutoff;
 	unsigned char resonance,attack,decay;
-	char reserved[25];
+	unsigned char channel;
+	signed char device;
+	unsigned char volume;
+	signed char pitch;
+	signed char transpose;
+	unsigned char midich;
+	unsigned char midipr;
+	unsigned char prog;
+	char reserved[16];
 };
 
 struct _MT2Sample{
@@ -125,6 +133,19 @@ struct _MT2Group{
 	unsigned char vol;
 	short pitch;
 	char reserved[4];
+};
+
+struct _MT2VST{
+	char dll[64];
+	char programname[28];
+	mt_uint32 fxid;
+	mt_uint32 fxversion;
+	mt_int32 programnr;
+	bool usechunks;
+	unsigned char track;
+	signed char pan;
+	char res[17];
+	mt_uint32 n;
 };
 
 #if defined(WIN32) || defined(__FLAT__)
@@ -229,7 +250,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 	MTModule &module = *(MTModule*)object;
 	MTFile *f;
 	MTProcess *p = (MTProcess*)process;
-	int x,y,z,tmpl,incl,size,csize,pc,ac,dc,max;
+	int x,y,z,tmpl,incl,size,csize,pc,ac,dc,max,nvst;
 	_MT2Header header;
 	_MT2DrumsData drums;
 	char tmpb,*tmpc,*tmpc2;
@@ -251,6 +272,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 	if (strncmp(header.id,"MT20",4)) goto error;
 	module.access.creatorid = header.userid;
 	memcpy(module.name,header.title,64);
+	FLOG3("Loading \"%s\" Author: %08X Software: %s"NL,header.title,header.userid,header.tracker);
 	if (header.ticks<1) header.ticks = 6;
 	if (header.lpb<1) header.lpb = 4;
 	D(module.tempo,Tempo)[0].bpm = 44100.0*60.0/(header.ticks*header.lpb*header.spt);
@@ -267,6 +289,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 	if (p){
 		p->setprogress((float)f->seek(0,MTF_CURRENT)/max);
 	};
+	nvst = 0;
 // Advanced Data
 	f->read(&size,4);
 	incl = 0;
@@ -276,6 +299,12 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 		z = f->pos();
 		incl += csize+8;
 		switch (tmpl){
+		case '+MPB':
+			f->read(&tmpd,8);
+			D(module.tempo,Tempo)[0].bpm = 44100.0*60.0/(header.ticks*header.lpb*tmpd);
+			break;
+		case 'MXFT':
+			break;
 		case 'SKRT':
 			f->read(&tmpw,2);
 			A(module.master,Track)[0]->vol = (float)tmpw/131072;
@@ -350,10 +379,23 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 			};
 			module.needupdaterouting();
 			break;
+		case 'LKRT':
+			tmpc = (char*)si->memalloc(csize);
+			for (x=0;x<header.ntracks+ndtracks;x++){
+				Track &ctrk = *A(module.trk,Track)[x];
+				f->readln(tmpc,csize);
+				if (tmpc[0]) ctrk.setname(tmpc);
+			};
+			si->memfree(tmpc);
+			break;
+		case 'NTAP':
+			break;
 		case '\0GSM':
 			f->read(&module.showmessage,1);
 			module.message = (char*)si->memalloc(csize);
 			f->read(module.message,csize-1);
+			break;
+		case 'TCIP':
 			break;
 		case '\0MUS':
 			for (x=0;x<6;x++){
@@ -372,17 +414,15 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 			};
 			si->memfree(tmpc2);
 			break;
-		case 'LKRT':
-			tmpc = (char*)si->memalloc(csize);
-			for (x=0;x<header.ntracks+ndtracks;x++){
-				Track &ctrk = *A(module.trk,Track)[x];
-				f->readln(tmpc,csize);
-				if (tmpc[0]) ctrk.setname(tmpc);
-			};
-			si->memfree(tmpc);
+		case 'PAMT':
 			break;
-		default:
-			f->seek(csize,MTF_CURRENT);
+		case 'IDIM':
+			break;
+		case 'QERT':
+			break;
+		case '2TSV':
+			f->read(&nvst,4);
+			break;
 		};
 		f->seek(z+csize,MTF_BEGIN);
 	};
@@ -435,8 +475,24 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 			module.apatt->a[x] = new Automation(&module,x);
 			y = 0;
 			ok = false;
-			while (y<MAX_TRACKS+1){
+			while (true){
 				TrackAuto &ctrkauto = A(module.apatt,Automation)[x]->trkauto[y];
+				if (y>MAX_TRACKS+1){
+					_MT2Automation203 cauto;
+					f->read(&cauto,sizeof(cauto));
+					if (cauto.flags){
+						tmpl = cauto.flags;
+						z = 0;
+						while (tmpl!=0){
+							_MT2EnvPoint tmpp[64];
+							if (tmpl & 1){
+								f->seek(4+sizeof(_MT2EnvPoint)*64,MTF_CURRENT);
+							};
+							tmpl >>= 1;
+						};
+					};
+					goto autoskip;
+				};
 				if (header.version>=0x203){
 					_MT2Automation203 cauto;
 					f->read(&cauto,sizeof(cauto));
@@ -468,7 +524,15 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 					};
 					ok = true;
 				};
-				if (++y==header.ntracks+ndtracks) y = MAX_TRACKS;
+autoskip:
+				y++;
+				if (y==header.ntracks+ndtracks){
+					y = MAX_TRACKS;
+				}
+				else if (y==MAX_TRACKS+1){
+					if (header.version<0x250) break;
+				}
+				else if (y==MAX_TRACKS+1+nvst) break;
 			};
 			if (!ok){
 				delete A(module.apatt,Automation)[x];

@@ -37,6 +37,9 @@ struct TrackAuto{
 
 class Automation : public MTObject{
 public:
+	Automation(MTModule *parent,int i);
+	virtual ~Automation();
+
 	TrackAuto trkauto[MAX_TRACKS+MAX_MTRACKS];
 };
 //---------------------------------------------------------------------------

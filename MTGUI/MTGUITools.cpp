@@ -10,14 +10,16 @@
 //---------------------------------------------------------------------------
 #include "MTGUITools.h"
 #ifdef _DEBUG
-#include <assert.h>
+	#include <assert.h>
 #endif
-#include "../Headers/MTXSystem.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 static buffer[4096];
-RGNDATA *rgndata = (RGNDATA*)buffer;
-void *lastrgn;
+#ifdef _WIN32
+	RGNDATA *rgndata = (RGNDATA*)buffer;
+	void *lastrgn;
+#endif
 //---------------------------------------------------------------------------
 extern MTSystemInterface *si;
 //---------------------------------------------------------------------------
@@ -48,6 +50,7 @@ void pminmax(MTPoint &min,MTPoint &max)
 	};
 }
 
+#ifdef _WIN32
 int rgngetnrects(void *rgn)
 {
 	if (lastrgn!=rgn){
@@ -110,6 +113,7 @@ void deletefont(void *font)
 {
 	DeleteObject((HFONT)font);
 }
+#endif
 
 int calccolor(int source,int dest,float f)
 {

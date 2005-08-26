@@ -1,21 +1,19 @@
 //---------------------------------------------------------------------------
 #ifndef MTDISPLAY1_INCLUDED
 #define MTDISPLAY1_INCLUDED
-
-#ifdef __BORLANDC__
-static const int displaytype = 'XDIS';
-#else
-static const int displaytype = 'SIDX';
-#endif
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int displaytype = FOURCC('X','D','I','S');
 
 #define MAX_DISPLAYDEVICES 16
 
 class MTWinControl;
 
 #include "MTDisplayDevice.h"
-#include "../Headers/MTXExtension.h"
-#include "../Headers/MTXGUI.h"
-#include "../Headers/MTXSkin.h"
+#include "MTXExtension.h"
+#include "MTXGUI.h"
+#include "MTXSkin.h"
 //---------------------------------------------------------------------------
 struct MTDisplayPreferences{
 	int device;
