@@ -13,8 +13,8 @@
 //	Needed includes and variables
 //---------------------------------------------------------------------------
 #include "MTWC_Main2.h"
-#include "../Headers/MTXGUI.h"
-#include "../Headers/MTXSkin.h"
+#include "MTXGUI.h"
+#include "MTXSkin.h"
 #include "../../debug/Interface/MT3RES.h"
 //---------------------------------------------------------------------------
 extern MTGUIInterface *gi;

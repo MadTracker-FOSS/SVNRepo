@@ -38,14 +38,14 @@ int MTConsole::readln(char *buffer,int maxsize)
 
 	return read;
 }
-
+/*
 int MTConsole::reads(char *buffer,int maxsize)
 {
 	int read = 0;
 
 	return read;
 }
-
+*/
 int MTConsole::write(const void *buffer,int size)
 {
 	size = 0;
@@ -87,12 +87,12 @@ bool MTConsole::seteof()
 	return false;
 }
 
-bool MTConsole::gettime(int *create,int *access,int *write)
+bool MTConsole::gettime(int *modified,int *accessed)
 {
 	return false;
 }
 
-bool MTConsole::settime(int *create,int *access,int *write)
+bool MTConsole::settime(int *modified,int *accessed)
 {
 	return false;
 }

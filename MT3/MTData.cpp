@@ -2,7 +2,7 @@
 //
 //	MadTracker Data
 //
-//		Platforms:	Win32
+//		Platforms:	Win32,Linux
 //		Processors: All
 //
 //	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
@@ -10,14 +10,16 @@
 //	$Id$
 //
 //---------------------------------------------------------------------------
-#include <windows.h>
+#ifdef _WIN32
+	#include <windows.h>
+	#include <iostream.h>
+#endif
 #include <string.h>
 #include <malloc.h>
 #include <math.h>
 #include <stdio.h>
-#include <iostream.h>
 #include "MTData.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 MTPreferences prefs;
 MTModule *module[16];
@@ -64,7 +66,7 @@ void startbackup(char *filename,bool save,int &time)
 			LEAVE();
 			return;
 		};
-		f->gettime(&time,0,0);
+		f->gettime(&time,0);
 		si->fileclose(f);
 		if (si->fileexists(backup)){
 			if (save){
@@ -107,7 +109,7 @@ void finishbackup(char *filename,bool revert,int &time)
 		LEAVE();
 		return;
 	};
-	f->settime(&time,0,0);
+	f->settime(&time,0);
 	si->fileclose(f);
 	LEAVE();
 }
@@ -120,7 +122,7 @@ bool processCommandline(char *cmd)
 	int x,y;
 	bool showhelp = false;
 	const char *usage1 = {
-"MadTracker 3 - Copyright (C) 1998-2003 Yannick Delwiche."NL\
+"MadTracker 3 - Copyright (C) 1998-2006 Yannick Delwiche."NL\
 ""NL\
 "Usage: mt3.exe [OPTION]... [FILE]..."NL\
 ""NL\
@@ -222,36 +224,43 @@ bool init()
 	prefs.path[UP_TEMP] = (char*)malloc(512);
 	prefs.path[UP_CACHE] = (char*)malloc(512);
 
-	cmd = GetCommandLine();
-	if (*cmd=='"'){
-		cmd++;
-		quote = true;
-	};
-	if ((cmd[0]!='/') && (cmd[0]!='\\') && (cmd[1]!=':')){
-		e = applpath+GetCurrentDirectory(sizeof(applpath),applpath);
-		*e++ = '\\';
-		strcpy(e,cmd);
-	}
-	else{
-		strcpy(applpath,cmd);
-	};
-	if (quote){
-		cmd = strchr(applpath,'"');
-		if (cmd) cmd++;
-	}
-	else{
-		cmd = strchr(applpath,' ');
-	};
-	e = strchr(applpath,':');
-	if (e!=strrchr(applpath,':')){
-		e++;
-		e = strchr(e,':');
-	}
-	else{
-		e = strchr(applpath,0);
-	};
-	if ((cmd) && (e>=cmd)) e = cmd-1;
-	while ((e>applpath) && (*e!='\\') && (*e!='/')) *e-- = 0;
+	#ifdef _WIN32
+		cmd = GetCommandLine();
+		if (*cmd=='"'){
+			cmd++;
+			quote = true;
+		};
+		if ((cmd[0]!='/') && (cmd[0]!='\\') && (cmd[1]!=':')){
+			e = applpath+GetCurrentDirectory(sizeof(applpath),applpath);
+			*e++ = '\\';
+			strcpy(e,cmd);
+		}
+		else{
+			strcpy(applpath,cmd);
+		};
+		if (quote){
+			cmd = strchr(applpath,'"');
+			if (cmd) cmd++;
+		}
+		else{
+			cmd = strchr(applpath,' ');
+		};
+		e = strchr(applpath,':');
+		if (e!=strrchr(applpath,':')){
+			e++;
+			e = strchr(e,':');
+		}
+		else{
+			e = strchr(applpath,0);
+		};
+		if ((cmd) && (e>=cmd)) e = cmd-1;
+		while ((e>applpath) && (*e!='\\') && (*e!='/')) *e-- = 0;
+	#else
+		extern const char **cargv;
+		strcpy(applpath,cargv[0]);
+		e = strchr(applpath,0)-1;
+		while (*e!='/') *e-- = 0;
+	#endif
 	strcpy(prefs.syspath[SP_ROOT],applpath);
 	strcpy(prefs.syspath[SP_CONFIG],applpath);
 	strcpy(prefs.syspath[SP_USERCONFIG],applpath);
@@ -275,7 +284,11 @@ bool init()
 
 	loadExtensions();
 	if (!initSystem()){
-		MessageBox(0,"Cannot initialize the MTSystem extension!","System Error",MB_ICONEXCLAMATION|MB_OK);
+		#ifdef _WIN32
+			MessageBox(0,"Cannot initialize the MTSystem extension!","System Error",MB_ICONEXCLAMATION|MB_OK);
+		#else
+			fprintf(stderr,"Cannot initialize the MTSystem extension!"NL);
+		#endif
 		return false;
 	};
 	confs = si->hashcreate(4);

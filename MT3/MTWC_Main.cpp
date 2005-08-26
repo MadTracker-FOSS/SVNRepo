@@ -13,7 +13,7 @@
 //	Needed includes and variables
 //---------------------------------------------------------------------------
 #include "MTWC_Main.h"
-#include "../Headers/MTXGUI.h"
+#include "MTXGUI.h"
 #include "../../debug/Interface/MT3RES.h"
 //---------------------------------------------------------------------------
 extern MTGUIInterface *gi;
@@ -23,7 +23,7 @@ MTWC_main *w_main;
 //---------------------------------------------------------------------------
 #include "MTExtensions.h"
 #include "MTInterface.h"
-#include <math.h>
+#include <stdlib.h>
 //---------------------------------------------------------------------------
 extern MT3Interface *mi;
 //---------------------------------------------------------------------------
@@ -120,7 +120,7 @@ bool MTWC_main::onmessage(MTCMessage &msg)
 				else return true;
 			};
 			gi->windowmove(wthis->dsk->mwnd,mwo.left+mo2.x,mwo.top+mo2.y,false);
-			Sleep(10);
+			si->syswait(10);
 			return true;
 		};
 		break;

@@ -4,28 +4,19 @@
 #ifndef MTRESOURCES_INCLUDED
 #define MTRESOURCES_INCLUDED
 //---------------------------------------------------------------------------
-#ifndef __BORLANDC__
-#define MTR_WINDOW   'NWTM'
-#define MTR_SKIN     'KSTM'
-#define MTR_TEXT     'XTTM'
-#define MTR_SHORTCUT 'CSTM'
-#define MTR_BITMAP   'MBTM'
-#define MTR_HTML     'THTM'
-#define MTR_SAMPLE   'PSTM'
-#else
-#define MTR_WINDOW   'MTWN'
-#define MTR_SKIN     'MTSK'
-#define MTR_TEXT     'MTTX'
-#define MTR_SHORTCUT 'MTSC'
-#define MTR_BITMAP   'MTBM'
-#define MTR_HTML     'MTHT'
-#define MTR_SAMPLE   'MTSP'
-#endif
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+#define MTR_WINDOW   FOURCC('M','T','W','N')
+#define MTR_SKIN     FOURCC('M','T','S','K')
+#define MTR_TEXT     FOURCC('M','T','T','X')
+#define MTR_SHORTCUT FOURCC('M','T','S','C')
+#define MTR_BITMAP   FOURCC('M','T','B','M')
+#define MTR_HTML     FOURCC('M','T','H','T')
+#define MTR_SAMPLE   FOURCC('M','T','S','P')
 //---------------------------------------------------------------------------
 class MTResources;
 //---------------------------------------------------------------------------
 #include "MTFile.h"
-#include "../Headers/MTXExtension.h"
 //---------------------------------------------------------------------------
 class MTResources{
 public:

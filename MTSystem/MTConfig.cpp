@@ -5,13 +5,14 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	$Id$
 //
 //---------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "MTConfig.h"
 //---------------------------------------------------------------------------
 struct NP{

@@ -5,7 +5,7 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	$Id$
 //
@@ -33,10 +33,10 @@ bool initHTTP()
 		};
 		mtinterface->releaseconf(conf);
 	};
-#ifdef _DEBUG
-	MTHTTPFile *test = new MTHTTPFile("http://195.95.38.138",MTF_READ);
-	if (test) delete test;
-#endif
+	#ifdef _DEBUG
+		MTHTTPFile *test = new MTHTTPFile("http://195.95.38.138",MTF_READ);
+		if (test) delete test;
+	#endif
 	return true;
 }
 
@@ -143,14 +143,14 @@ int MTHTTPFile::readln(char *buffer,int maxsize)
 
 	return read;
 }
-
+/*
 int MTHTTPFile::reads(char *buffer,int maxsize)
 {
 	int read = 0;
 
 	return read;
 }
-
+*/
 int MTHTTPFile::write(const void *buffer,int size)
 {
 	return 0;
@@ -200,13 +200,13 @@ bool MTHTTPFile::seteof()
 	return false;
 }
 
-bool MTHTTPFile::gettime(int *create,int *access,int *write)
+bool MTHTTPFile::gettime(int *modified,int *accessed)
 {
 
 	return false;
 }
 
-bool MTHTTPFile::settime(int *create,int *access,int *write)
+bool MTHTTPFile::settime(int *modified,int *accessed)
 {
 	return false;
 }

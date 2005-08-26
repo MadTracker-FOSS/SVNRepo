@@ -5,12 +5,12 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	$Id$
 //
 //---------------------------------------------------------------------------
-#include <stdlib.h>
+#include <stdio.h>
 #include "MTFile.h"
 #include "MTLocalFile.h"
 #include "MTMemoryFile.h"
@@ -174,8 +174,12 @@ void mtfilemaketemp(char *filename,int length)
 	char *e;
 	char ext[8];
 	char path[512];
-	
-	GetTempPath(260,path);
+
+	#ifdef _WIN32
+		GetTempPath(260,path);
+	#else
+		strcpy(path,"/tmp/");
+	#endif
 	strcat(path,filename);
 	x = y = '0';
 	strcpy(ext,".tmp");
@@ -202,11 +206,16 @@ MTFile *mttempfile(int access)
 	char *e;
 	char path[512];
 	
-	GetTempPath(260,path);
+	#ifdef _WIN32
+		GetTempPath(260,path);
+	#else
+		strcpy(path,"/tmp/");
+	#endif
 	strcat(path,"mttmp");
 	e = strchr(path,0);
 	do{
-		itoa(tmpid++,e,10);
+		sprintf(e,"%d",tmpid++);
+//		itoa(tmpid++,e,10);
 		strcat(path,".tmp");
 	} while (mtfileexists(path));
 	f = mtfileopen(path,access|MTF_CREATE|MTF_TEMP);

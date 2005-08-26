@@ -13,8 +13,6 @@
 #ifndef MTXEXTENSION_INCLUDED
 #define MTXEXTENSION_INCLUDED
 
-#define FOURCC(a,b,c,d) ((((long)a)<<24) | (((long)b)<<16) | (((long)c)<<8) | (((long)d)<<0))
-
 //
 //	Calling Convention
 //
@@ -69,6 +67,12 @@ enum{
 //
 
 //#define MT3_64BIT
+
+#ifdef BIG_ENDIAN
+	#define FOURCC(a,b,c,d) ((((long)a)<<24) | (((long)b)<<16) | (((long)c)<<8) | (((long)d)<<0))
+#else
+	#define FOURCC(a,b,c,d) ((((long)d)<<24) | (((long)c)<<16) | (((long)b)<<8) | (((long)a)<<0))
+#endif
 
 //
 //	Data types
@@ -309,7 +313,7 @@ typedef MTXInterfaces* MTACT MTXMainCall(MTInterface *mti);
 #endif
 inline short swap_word(short a)
 {
-#ifdef WIN32
+#ifndef __GNUG__
 	__asm{
 		mov		ax,a
 		xchg	al,ah
@@ -321,25 +325,25 @@ inline short swap_word(short a)
 
 inline long swap_dword(long a)
 {
-#ifdef WIN32
+#ifndef __GNUG__
 	__asm{
 		mov		eax,a
 		bswap	eax
 	};
 #else
-	asm ("bswap %eax"::"a"(a):"%eax");
+	asm ("bswap %0"::"r"(a):"%eax");
 #endif
 }
 
 inline void int64todouble(void *int64,double *d)
 {
-#ifdef WIN32
+#ifndef __GNUG__
 	__asm{
 		fild	qword ptr int64;
 		fst		qword ptr d
 	};
 #else
-	asm ("fild qword ptr %1; fst qword ptr %0":"=m"(d):"m"(int64));
+	asm ("fildq %1; fstq %0":"=m"(d):"m"(int64));
 #endif
 }
 #ifdef WIN32
@@ -360,6 +364,28 @@ inline void __fastcall int64todouble(void *int64,double *d)
 {
 	*d = ((double)(*(int*)int64))*4294967296.0+(double)(*(((int*)int64)+1));
 }
+#endif
+//---------------------------------------------------------------------------
+//	Some functions that are not part of the C++ standard library
+//---------------------------------------------------------------------------
+#ifndef _WIN32
+#include <ctype.h>
+
+inline char* strupr(char* str)
+{
+	char* orig = str;
+	for (;*str!='\0';str++) *str = toupper(*str);
+	return orig;
+}
+
+inline char* strlwr(char* str)
+{
+	char* orig = str;
+	for (;*str!='\0';str++) *str = tolower(*str);
+	return orig;
+}
+
+#define stricmp strcasecmp
 #endif
 //---------------------------------------------------------------------------
 #endif

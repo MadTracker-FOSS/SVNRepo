@@ -35,7 +35,7 @@ enum MTProcessType{
 
 #define MAX_STACK 1024
 //---------------------------------------------------------------------------
-#include "../Headers/MTXExtension.h"
+#include "MTXExtension.h"
 //---------------------------------------------------------------------------
 class MTLock;
 class MTEvent;
@@ -48,17 +48,39 @@ typedef void (MTCT *ProcessProc)(MTProcess *process,void *param,float p);
 typedef void (MTCT *TimerProc)(MTTimer *timer,int param);
 //---------------------------------------------------------------------------
 #include "MTSystem1.h"
+#ifdef _WIN32
 #include <windows.h>
-#include "../Headers/MTXGUI.h"
+#else
+#include <pthread.h>
+#include <signal.h>
+#endif
+#include "MTXGUI.h"
 //---------------------------------------------------------------------------
 class MTLock{
 public:
 	MTLock();
+	virtual ~MTLock();
 	virtual bool MTCT lock(int timeout = -1);
 	virtual void MTCT unlock();
 private:
+#ifdef _WIN32
 	CRITICAL_SECTION critical;
+#else
+	pthread_mutex_t mutex;
+#endif
 };
+
+#ifndef _WIN32
+struct _mutex_cond{
+	pthread_mutex_t i_mutex;
+	pthread_cond_t i_cv;
+};
+struct _le{
+	struct _le *next;
+	struct _le *prev;
+	struct _mutex_cond *i_mutex_cond;
+};
+#endif
 
 class MTEvent{
 public:
@@ -69,16 +91,24 @@ public:
 	virtual bool MTCT set();
 	virtual bool MTCT reset();
 	virtual bool MTCT wait(int timeout);
-	virtual void* MTCT gethandle();
 protected:
 	friend int MTCT mtsyswaitmultiple(int count,MTEvent **events,bool all,int timeout);
+	friend class MTTimer;
+#ifdef _WIN32
 	HANDLE event;
 	int timer;
+#else
+	bool signaled,needreset;
+	pthread_mutex_t i_mutex;
+	_le *start,*end;
+	void _add(_le *list);
+	void _del(_le *list);
+#endif
 };
 
 class MTThread : public MTEvent{
 public:
-	unsigned int id;
+	mt_uint32 id;
 	int type;
 	int result;
 	bool terminated;
@@ -92,11 +122,15 @@ public:
 	virtual void MTCT start();
 	virtual bool MTCT getmessage(int &msg,int &param1,int &param2,bool wait = false);
 	virtual void MTCT postmessage(int msg,int param1,int param2);
-	virtual void MTCT suspend();
-	virtual void MTCT resume();
 	virtual void MTCT terminate();
 protected:
+#ifdef _WIN32
 	static DWORD WINAPI SysThread(MTThread*);
+#else
+	static void* SysThread(void*);
+	int _p[2];
+	pthread_attr_t attr;
+#endif
 	ThreadProc mproc;
 	char *mname;
 	void *mparam;
@@ -129,7 +163,11 @@ public:
 	MTTimer(int interval,int resolution,bool periodic,MTEvent *event,bool pulse = false);
 	virtual ~MTTimer();
 private:
+#ifdef _WIN32
 	static void CALLBACK WinTimerProc(UINT,UINT,DWORD,DWORD,DWORD);
+#else
+	static void LinuxTimerProc(sigval);
+#endif
 	int id;
 	int res;
 	int mparam;

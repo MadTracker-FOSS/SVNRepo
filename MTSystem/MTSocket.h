@@ -17,42 +17,42 @@ class MTSocket;
 class MTServer;
 class MTClient;
 //---------------------------------------------------------------------------
-#include "../Headers/MTXExtension.h"
-#if defined(_WIN32)
-#include <winsock2.h>
+#include "MTXExtension.h"
+#ifdef _WIN32
+	#include <winsock2.h>
 #else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#define SOCKET int
-#define INVALID_SOCKET -1
-#define WSAEWOULDBLOCK EWOULDBLOCK
-#define SD_SEND SHUT_WR
-#define SD_BOTH SHUT_RDWR
-#define mtaccept accept
-#define mtbind bind
-#define mtclosesocket close
-#define mtconnect connect
-#define mtgethostbyaddr gethostbyaddr
-#define mtgethostbyname gethostbyname
-#define mtgethostname gethostname
-#define mthtons htons
-#define mtinet_addr inet_addr
-#define mtinet_ntoa inet_ntoa
-#define mtioctlsocket fcntl
-#define mtsetsockopt setsockopt
-#define mtlisten listen
-#define mtrecv recv
-#define mtsend send
-#define mtrecvfrom recvfrom
-#define mtsendto sendto
-#define mtshutdown shutdown
-#define mtsocket socket
-#define wsgetlasterror() errno;
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <netdb.h>
+	#include <unistd.h>
+	#include <fcntl.h>
+	#include <errno.h>
+	#define SOCKET int
+	#define INVALID_SOCKET -1
+	#define WSAEWOULDBLOCK EWOULDBLOCK
+	#define SD_SEND SHUT_WR
+	#define SD_BOTH SHUT_RDWR
+	#define mtaccept accept
+	#define mtbind bind
+	#define mtclosesocket close
+	#define mtconnect connect
+	#define mtgethostbyaddr gethostbyaddr
+	#define mtgethostbyname gethostbyname
+	#define mtgethostname gethostname
+	#define mthtons htons
+	#define mtinet_addr inet_addr
+	#define mtinet_ntoa inet_ntoa
+	#define mtioctlsocket fcntl
+	#define mtsetsockopt setsockopt
+	#define mtlisten listen
+	#define mtrecv recv
+	#define mtsend send
+	#define mtrecvfrom recvfrom
+	#define mtsendto sendto
+	#define mtshutdown shutdown
+	#define mtsocket socket
+	#define wsgetlasterror() errno;
 #endif
 #include "MTSystem1.h"
 //---------------------------------------------------------------------------

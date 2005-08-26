@@ -5,7 +5,7 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	$Id$
 //
@@ -157,7 +157,7 @@ done:
 	c += read;
 	return read;
 }
-
+/*
 int MTMemoryFile::reads(char *buffer,int maxsize)
 {
 	int read = 0;
@@ -184,7 +184,7 @@ done:
 	c += read;
 	return read;
 }
-
+*/
 int MTMemoryFile::write(const void *buffer,int size)
 {
 	if ((maccess & MTF_WRITE)==0) return 0;
@@ -267,12 +267,12 @@ bool MTMemoryFile::seteof()
 	return false;
 }
 
-bool MTMemoryFile::gettime(int *create,int *access,int *write)
+bool MTMemoryFile::gettime(int *modified,int *accessed)
 {
 	return false;
 }
 
-bool MTMemoryFile::settime(int *create,int *access,int *write)
+bool MTMemoryFile::settime(int *modified,int *accessed)
 {
 	return false;
 }

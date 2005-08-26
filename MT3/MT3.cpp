@@ -10,11 +10,19 @@
 //	$Id$
 //
 //---------------------------------------------------------------------------
-#include <windows.h>
+#ifdef _WIN32
+	#include <windows.h>
+#else
+	#include <sys/types.h>
+	#include <stdio.h>
+	#include <unistd.h>
+#endif
 #include "MTData.h"
-#include "MTInterface.h"
 //---------------------------------------------------------------------------
 void *instance;
+//---------------------------------------------------------------------------
+#ifdef _WIN32
+#include "MTInterface.h"
 //---------------------------------------------------------------------------
 int APIENTRY WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nCmdShow)
 //
@@ -47,4 +55,17 @@ Otherwise, click on \"Cancel\" to exit gracefully.","MadTracker - Fatal Error",M
 	uninit();
 	return 0;
 }
+#else
+const char **cargv;
+int main(int argc,const char* argv[])
+{
+	instance = (void*)getpid();
+	cargv = argv;
+	if (init()){
+
+	};
+	uninit();
+	return 0;
+}
+#endif
 //---------------------------------------------------------------------------

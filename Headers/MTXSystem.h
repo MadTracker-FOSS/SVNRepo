@@ -2,7 +2,7 @@
 //
 //	MadTracker 3 Public Extension Header
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	http://www.madtracker.org/
 //	info@madtracker.org
@@ -12,37 +12,26 @@
 //---------------------------------------------------------------------------
 #ifndef MTXSYSTEM_INCLUDED
 #define MTXSYSTEM_INCLUDED
-
-#include <windows.h>
-
-#ifdef __BORLANDC__
-static const int systemtype = 'XSYS';
-#else
-static const int systemtype = 'SYSX';
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+#ifdef _WIN32
+	#include <windows.h>
 #endif
+//---------------------------------------------------------------------------
+static const int systemtype = FOURCC('X','S','Y','S');
 
 #define MTS_WINNT    0x00001
 #define MTS_MMX      0x00002
 #define MTS_SIMD     0x00004
 #define MTS_DEBUGGED 0x10000
 
-#ifndef __BORLANDC__
-#define MTR_WINDOW   'NWTM'
-#define MTR_SKIN     'KSTM'
-#define MTR_TEXT     'XTTM'
-#define MTR_SHORTCUT 'CSTM'
-#define MTR_BITMAP   'MBTM'
-#define MTR_HTML     'THTM'
-#define MTR_SAMPLE   'PSTM'
-#else
-#define MTR_WINDOW   'MTWN'
-#define MTR_SKIN     'MTSK'
-#define MTR_TEXT     'MTTX'
-#define MTR_SHORTCUT 'MTSC'
-#define MTR_BITMAP   'MTBM'
-#define MTR_HTML     'MTHT'
-#define MTR_SAMPLE   'MTSP'
-#endif
+#define MTR_WINDOW   FOURCC('M','T','W','N')
+#define MTR_SKIN     FOURCC('M','T','S','K')
+#define MTR_TEXT     FOURCC('M','T','T','X')
+#define MTR_SHORTCUT FOURCC('M','T','S','C')
+#define MTR_BITMAP   FOURCC('M','T','B','M')
+#define MTR_HTML     FOURCC('M','T','H','T')
+#define MTR_SAMPLE   FOURCC('M','T','S','P')
 
 #define MTM_ZERO     1
 #define MTM_PHYSICAL 2
@@ -55,7 +44,7 @@ static const int systemtype = 'SYSX';
 #define MTT_HIGH     2
 #define MTT_REALTIME 15
 
-enum  MTProcessType{
+enum MTProcessType{
 	MTP_LOADMODULE = 0x10000,
 	MTP_SAVEMODULE,
 	MTP_LOADINSTRUMENT,
@@ -137,69 +126,68 @@ enum MTConfigType{
 #define MTMC_HEADER    8
 
 #ifdef _DEBUG
-#define LOG(T)												si->log(T,0)
-#define LOGD(T)												si->log(T,1)
-#define FLOG1(T,P1)										si->flog(T,0,P1)
-#define FLOG2(T,P1,P2)								si->flog(T,0,P1,P2)
-#define FLOG3(T,P1,P2,P3)							si->flog(T,0,P1,P2,P3)
-#define FLOG4(T,P1,P2,P3,P4)					si->flog(T,0,P1,P2,P3,P4)
-#define FLOG5(T,P1,P2,P3,P4,P5)				si->flog(T,0,P1,P2,P3,P4,P5)
-#define FLOGD1(T,P1)									si->flog(T,1,P1)
-#define FLOGD2(T,P1,P2)								si->flog(T,1,P1,P2)
-#define FLOGD3(T,P1,P2,P3)						si->flog(T,1,P1,P2,P3)
-#define FLOGD4(T,P1,P2,P3,P4)					si->flog(T,1,P1,P2,P3,P4)
-#define FLOGD5(T,P1,P2,P3,P4,P5)			si->flog(T,1,P1,P2,P3,P4,P5)
-#define DUMP(V,L,O)										si->dump((unsigned char*)V,L,O)
-#define ENTER(F)											si->enter(F)
-#define FENTER1(F,P1)									si->fenter(F,P1)
-#define FENTER2(F,P1,P2)							si->fenter(F,P1,P2)
-#define FENTER3(F,P1,P2,P3)						si->fenter(F,P1,P2,P3)
-#define FENTER4(F,P1,P2,P3,P4)				si->fenter(F,P1,P2,P3,P4)
-#define FENTER5(F,P1,P2,P3,P4,P5)			si->fenter(F,P1,P2,P3,P4,P5)
-#define FENTER6(F,P1,P2,P3,P4,P5,P6)	si->fenter(F,P1,P2,P3,P4,P5,P6)
-#define LEAVE()												si->leave()
-#define CALLSTACK											si->getcallstack()
+	#define LOG(T)												si->log(T,0)
+	#define LOGD(T)												si->log(T,1)
+	#define FLOG1(T,P1)										si->flog(T,0,P1)
+	#define FLOG2(T,P1,P2)								si->flog(T,0,P1,P2)
+	#define FLOG3(T,P1,P2,P3)							si->flog(T,0,P1,P2,P3)
+	#define FLOG4(T,P1,P2,P3,P4)					si->flog(T,0,P1,P2,P3,P4)
+	#define FLOG5(T,P1,P2,P3,P4,P5)				si->flog(T,0,P1,P2,P3,P4,P5)
+	#define FLOGD1(T,P1)									si->flog(T,1,P1)
+	#define FLOGD2(T,P1,P2)								si->flog(T,1,P1,P2)
+	#define FLOGD3(T,P1,P2,P3)						si->flog(T,1,P1,P2,P3)
+	#define FLOGD4(T,P1,P2,P3,P4)					si->flog(T,1,P1,P2,P3,P4)
+	#define FLOGD5(T,P1,P2,P3,P4,P5)			si->flog(T,1,P1,P2,P3,P4,P5)
+	#define DUMP(V,L,O)										si->dump((unsigned char*)V,L,O)
+	#define ENTER(F)											si->enter(F)
+	#define FENTER1(F,P1)									si->fenter(F,P1)
+	#define FENTER2(F,P1,P2)							si->fenter(F,P1,P2)
+	#define FENTER3(F,P1,P2,P3)						si->fenter(F,P1,P2,P3)
+	#define FENTER4(F,P1,P2,P3,P4)				si->fenter(F,P1,P2,P3,P4)
+	#define FENTER5(F,P1,P2,P3,P4,P5)			si->fenter(F,P1,P2,P3,P4,P5)
+	#define FENTER6(F,P1,P2,P3,P4,P5,P6)	si->fenter(F,P1,P2,P3,P4,P5,P6)
+	#define LEAVE()												si->leave()
+	#define CALLSTACK											si->getcallstack()
 #else
-#define LOG(T)
-#define LOGD(T)
-#define FLOG1(T,P1)
-#define FLOG2(T,P1,P2)
-#define FLOG3(T,P1,P2,P3)
-#define FLOG4(T,P1,P2,P3,P4)
-#define FLOGD1(T,P1)
-#define FLOGD2(T,P1,P2)
-#define FLOGD3(T,P1,P2,P3)
-#define FLOGD4(T,P1,P2,P3,P4)
-#define DUMP(V,L,O)
-#define ENTER(F)
-#define FENTER1(F,P1)
-#define FENTER2(F,P1,P2)
-#define FENTER3(F,P1,P2,P3)
-#define FENTER4(F,P1,P2,P3,P4)
-#define FENTER5(F,P1,P2,P3,P4,P5)
-#define FENTER6(F,P1,P2,P3,P4,P5,P6)
-#define LEAVE()
-#define CALLSTACK
+	#define LOG(T)
+	#define LOGD(T)
+	#define FLOG1(T,P1)
+	#define FLOG2(T,P1,P2)
+	#define FLOG3(T,P1,P2,P3)
+	#define FLOG4(T,P1,P2,P3,P4)
+	#define FLOGD1(T,P1)
+	#define FLOGD2(T,P1,P2)
+	#define FLOGD3(T,P1,P2,P3)
+	#define FLOGD4(T,P1,P2,P3,P4)
+	#define DUMP(V,L,O)
+	#define ENTER(F)
+	#define FENTER1(F,P1)
+	#define FENTER2(F,P1,P2)
+	#define FENTER3(F,P1,P2,P3)
+	#define FENTER4(F,P1,P2,P3,P4)
+	#define FENTER5(F,P1,P2,P3,P4,P5)
+	#define FENTER6(F,P1,P2,P3,P4,P5,P6)
+	#define LEAVE()
+	#define CALLSTACK
 #endif
 #define mtnew(T) (T*)si->memalloc(sizeof(T),MTM_ZERO)
 #define A(_A,_T) ((_T**)_A->a)
 #define D(_A,_T) ((_T*)_A->d)
 
-#ifdef MTSYSTEM_EXPORTS
-#define MTTRY   __try
-#define MTCATCH __except(si->onexception(GetExceptionInformation()))
+#if defined(MTSYSTEM_EXPORTS) && defined(_WIN32)
+	#define MTTRY   __try
+	#define MTCATCH __except(si->onexception(GetExceptionInformation()))
 #else
-#define MTTRY   try
-#define MTCATCH catch(...)
+	#define MTTRY   try
+	#define MTCATCH catch(...)
 #endif
-//---------------------------------------------------------------------------
-#include "MTXExtension.h"
 //---------------------------------------------------------------------------
 class MTThread;
 class MTProcess;
 
 class MTLock{
 public:
+	virtual ~MTLock() = 0;
 	virtual bool MTCT lock(int timeout = -1) = 0;
 	virtual void MTCT unlock() = 0;
 };
@@ -211,7 +199,6 @@ public:
 	virtual bool MTCT set() = 0;
 	virtual bool MTCT reset() = 0;
 	virtual bool MTCT wait(int timeout) = 0;
-	virtual void* MTCT gethandle() = 0;
 protected:
 	void *event;
 	int timer;
@@ -275,7 +262,7 @@ public:
 	virtual ~MTFile(){ };
 	virtual int MTCT read(void *buffer,int size) = 0;
 	virtual int MTCT readln(char *buffer,int maxsize) = 0;
-	virtual int MTCT reads(char *buffer,int maxsize) = 0;
+//	virtual int MTCT reads(char *buffer,int maxsize) = 0;
 	virtual int MTCT write(const void *buffer,int size) = 0;
 	virtual int MTCT seek(int pos,int origin) = 0;
 	virtual void* MTCT getpointer(int offset,int size) = 0;
@@ -284,8 +271,8 @@ public:
 	virtual int MTCT pos() = 0;
 	virtual bool MTCT eof() = 0;
 	virtual bool MTCT seteof() = 0;
-	virtual bool MTCT gettime(int *create,int *access,int *write) = 0;
-	virtual bool MTCT settime(int *create,int *access,int *write) = 0;
+	virtual bool MTCT gettime(int *modified,int *accessed) = 0;
+	virtual bool MTCT settime(int *modified,int *accessed) = 0;
 	virtual MTFile* MTCT subclass(int start,int length,int access) = 0;
 };
 

@@ -3,17 +3,23 @@
 //  MadTracker System Core
 //
 //		Platforms:	All
-//		Processors:	x86
+//		Processors:	x86,All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //---------------------------------------------------------------------------
 #ifndef MTXSYSTEM2_INCLUDED
 #define MTXSYSTEM2_INCLUDED
 //---------------------------------------------------------------------------
-#ifndef __BORLANDC__
+#ifdef __BORLANDC__
+#include "MTXSystem2.cpp"
+#else
+#ifdef __GNUG__
+#include <string.h>
+#endif
 inline void mtmemzero(void *mem,int count)
 {
+#ifndef __GNUG__
 	__asm{
 		push	edi
 		mov		ecx,count
@@ -34,14 +40,14 @@ part2:
 lexit:
 		pop		edi
 	};
-}
 #else
-void mtmemzero(void *mem,int count);
+	memset(mem,0,count);
 #endif
+}
 
-#ifndef __BORLANDC__
 inline void mtmemzero64(void *mem,int count)
 {
+#ifndef __GNUG__
 	__asm{
 		push	edi
 		mov		ecx,count
@@ -51,13 +57,10 @@ inline void mtmemzero64(void *mem,int count)
 		rep		stosd
 		pop		edi
 	};
-}
 #else
-void mtmemzero64(void *mem,int count);
+	memset(mem,0,count*8);
 #endif
-//---------------------------------------------------------------------------
-#ifdef __BORLANDC__
-#include "MTXSystem2.cpp"
+}
 #endif
 //---------------------------------------------------------------------------
 #endif

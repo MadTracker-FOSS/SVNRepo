@@ -92,7 +92,7 @@
 #define A(_A,_T) ((_T**)_A->a)
 #define D(_A,_T) ((_T*)_A->d)
 
-#ifdef MTSYSTEM_EXPORTS
+#if defined(MTSYSTEM_EXPORTS) && defined(_WIN32)
 #define MTTRY   __try
 #define MTCATCH __except(si->onexception(GetExceptionInformation()))
 #else
@@ -113,6 +113,9 @@ class MTResources;
 class MTArray;
 class MTHash;
 //---------------------------------------------------------------------------
+#include "MTXExtension.h"
+#include "MTXGUI.h"
+#include "MTXDisplay.h"
 #include "MTSocket.h"
 #include "MTConfig.h"
 #include "MTMiniConfig.h"
@@ -120,11 +123,11 @@ class MTHash;
 #include "MTKernel.h"
 #include "MTResources.h"
 #include "MTStructures.h"
-#include "../Headers/MTXExtension.h"
-#include "../Headers/MTXGUI.h"
-#include "../Headers/MTXDisplay.h"
 //---------------------------------------------------------------------------
+#ifdef _WIN32
 #include <windows.h>
+#else
+#endif
 //---------------------------------------------------------------------------
 static const int systemtype = FOURCC('X','S','Y','S');
 
@@ -249,6 +252,8 @@ extern MTInterface *mtinterface;
 extern MTGUIInterface *gi;
 extern MTDisplayInterface *di;
 extern MTResources *sysres;
+#ifdef _WIN32
 extern SYSTEM_INFO sysinfo;
+#endif
 //---------------------------------------------------------------------------
 #endif
