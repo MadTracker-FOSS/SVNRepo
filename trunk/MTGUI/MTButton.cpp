@@ -66,7 +66,7 @@ int MTButton::loadfromstream(MTFile *f,int size,int flags)
 	int l,x;
 	char newcap[256];
 
-	f->reads(newcap,256);
+	f->readln(newcap,256);
 	newcap[255] = 0;
 	l = strlen(newcap)+1;
 	x = (4-(l & 3)) & 3;

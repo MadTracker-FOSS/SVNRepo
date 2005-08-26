@@ -1,14 +1,10 @@
 //---------------------------------------------------------------------------
 #ifndef MTOBJECTS1_INCLUDED
 #define MTOBJECTS1_INCLUDED
-
-#ifdef __BORLANDC__
-static const int objectstype = 'XOBJ';
-#else
-static const int objectstype = 'JBOX';
-#endif
 //---------------------------------------------------------------------------
-#include "../Headers/MTXExtension.h"
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int objectstype = FOURCC('X','O','B','J');
 //---------------------------------------------------------------------------
 class MTObject;
 class MTModule;
@@ -21,10 +17,10 @@ public:
 };
 //---------------------------------------------------------------------------
 #include "MTObject.h"
-#include "../Headers/MTXAudio.h"
-#include "../Headers/MTXDSP.h"
-#include "../Headers/MTXGUI.h"
-#include "../Headers/MTXSkin.h"
+#include "MTXAudio.h"
+#include "MTXDSP.h"
+#include "MTXGUI.h"
+#include "MTXSkin.h"
 //---------------------------------------------------------------------------
 struct MTObjectsPreferences{
 	bool hexadecimal;

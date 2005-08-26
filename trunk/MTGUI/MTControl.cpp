@@ -71,7 +71,7 @@ int MTControl::loadfromstream(MTFile *f,int size,int flags)
 	char buf[64];
 	
 	f->read(&guiid,8);
-	f->reads(buf,64);
+	f->readln(buf,64);
 	buf[63] = 0;
 	l = strlen(buf)+1;
 	if (name) strcpy(name,buf);

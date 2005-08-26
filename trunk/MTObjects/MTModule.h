@@ -106,7 +106,7 @@ public:
 	Sequence sequ[MAX_LAYERS][MAX_SEQUENCES];
 	
 	MTModule(int i);
-	~MTModule();
+	virtual ~MTModule();
 	
 	void MTCT setmodified(int value,int flags);
 	void MTCT notify(MTObject *source,int message,int param1,void *param2);

@@ -2,7 +2,7 @@
 //
 //	MadTracker 3 Public Extension Header
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	http://www.madtracker.org/
 //	info@madtracker.org
@@ -12,12 +12,10 @@
 //---------------------------------------------------------------------------
 #ifndef MTXDISPLAY_INCLUDED
 #define MTXDISPLAY_INCLUDED
-
-#ifdef __BORLANDC__
-static const int displaytype = 'XDIS';
-#else
-static const int displaytype = 'SIDX';
-#endif
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int displaytype = FOURCC('X','D','I','S');
 
 #define MTB_DRAW         0x00000001
 #define MTB_SCREEN       0x00000002
@@ -42,7 +40,6 @@ class MTBitmap;
 class MTMask;
 class MTDisplayDevice;
 //---------------------------------------------------------------------------
-#include "MTXExtension.h"
 #include "MTXControls.h"
 //---------------------------------------------------------------------------
 #ifndef MTGUITypes

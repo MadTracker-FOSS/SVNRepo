@@ -23,7 +23,8 @@ int MTCT engineproc(MTThread *thread,void *param)
 
 	while (!thread->terminated){
 		if (thread->getmessage(msg,*(int*)&module,lng,true)){
-			if (msg==4096){
+			if (msg==-1) break;
+			else if (msg==4096){
 				if ((!module) || (module->lockread)) continue;
 				module->subprocess(0,(int)param,lng);
 			};

@@ -115,7 +115,7 @@ bool loadWAV(MTObject *object,char *filename,void *process)
 			f->seek(size,MTF_CURRENT);
 		};
 	};
-	f->gettime(0,0,&sample.time);
+	f->gettime(&sample.time,0);
 	si->fileclose(f);
 	return true;
 error:

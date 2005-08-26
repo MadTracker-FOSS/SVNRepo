@@ -20,11 +20,13 @@ class Track;
 // Track class
 class Track : public Node{
 public:
+	Track(MTModule *parent,int i,int sub = 0);
+	virtual ~Track();
 	bool muted;
 	bool solo;
 	bool empty;
 	double vol;
-  float panx,pany,panz;
+	float panx,pany,panz;
 	sample *buffer[8];
 	int nsamples;
 	int offset;

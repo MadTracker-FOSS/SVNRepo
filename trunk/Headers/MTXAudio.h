@@ -2,7 +2,7 @@
 //
 //	MadTracker 3 Public Extension Header
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	http://www.madtracker.org/
 //	info@madtracker.org
@@ -12,12 +12,10 @@
 //---------------------------------------------------------------------------
 #ifndef MTXAUDIO_INCLUDED
 #define MTXAUDIO_INCLUDED
-
-#ifdef __BORLANDC__
-static const int audiotype = 'XAUD';
-#else
-static const int audiotype = 'DUAX';
-#endif
+//---------------------------------------------------------------------------
+#include "MTXExtension.h"
+//---------------------------------------------------------------------------
+static const int audiotype = FOURCC('X','A','U','D');
 
 #define MAX_AUDIODEVICES 64
 #define PRIVATE_BUFFER   1024
@@ -28,7 +26,6 @@ class MTAudioDevice;
 class MTAudioDeviceManager;
 class MTAudioInterface;
 //---------------------------------------------------------------------------
-#include "MTXExtension.h"
 #include "MTXSystem.h"
 #include "MTXObject.h"
 #include "MTXTrack.h"

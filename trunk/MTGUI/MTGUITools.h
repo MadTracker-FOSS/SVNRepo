@@ -21,15 +21,19 @@ struct MTBounds{
 #endif
 
 #ifdef _DEBUG
-#define DUMPRGN(R) dumprgn(R)
+	#define DUMPRGN(R) dumprgn(R)
 #else
-#define DUMPRGN
+	#define DUMPRGN
 #endif
 
-#include <windows.h>
+#ifdef _WIN32
+	#include <windows.h>
+#endif
 //---------------------------------------------------------------------------
-extern RGNDATA *rgndata;
-extern void *lastrgn;
+#ifdef _WIN32
+	extern RGNDATA *rgndata;
+	extern void *lastrgn;
+#endif
 //---------------------------------------------------------------------------
 void minmax(int &min,int &max);
 void pminmax(MTPoint &min,MTPoint &max);
@@ -52,22 +56,24 @@ inline bool intersectrect(MTRect &sel,MTRect &clip)
 	if ((sel.right<clip.left) || (sel.bottom<clip.top) || (sel.left>clip.right) || (sel.top>clip.bottom)) return false;
 	return true;
 };
-inline bool rectinrgn(MTRect &r,void *rgn) {return (RectInRegion((HRGN)rgn,(RECT*)&r)!=0);};
-inline void *recttorgn(MTRect &r) {return CreateRectRgnIndirect((RECT*)&r);};
-inline void rgntorect(void *rgn,MTRect &r) {GetRgnBox((HRGN)rgn,(RECT*)&r);};
-inline void offsetrgn(void *rgn,int ox,int oy) {OffsetRgn((HRGN)rgn,ox,oy);lastrgn=0;};
-inline void *copyrgn(void *rgn) {HRGN tmp = CreateRectRgn(0,0,1,1);CombineRgn((HRGN)tmp,(HRGN)rgn,(HRGN)rgn,RGN_COPY);return tmp;};
-inline bool isemptyrgn(void *rgn) {return (GetRegionData((HRGN)rgn,0,0)==sizeof(RGNDATAHEADER));};
-inline void deletergn(void *rgn) {DeleteObject((HRGN)rgn);lastrgn=0;};
-inline void intersectrgn(void *rgn,void *operand) {CombineRgn((HRGN)rgn,(HRGN)rgn,(HRGN)operand,RGN_AND);lastrgn=0;};
-inline void addrgn(void *rgn,void *operand) {CombineRgn((HRGN)rgn,(HRGN)rgn,(HRGN)operand,RGN_OR);lastrgn=0;};
-inline void subtractrgn(void *rgn,void *operand) {CombineRgn((HRGN)rgn,(HRGN)rgn,(HRGN)operand,RGN_DIFF);lastrgn=0;};
-inline int calcpitch(int width,int bitcount,int granbits) {return (width*((bitcount+7)>>3)>>granbits)<<granbits;};
-int rgngetnrects(void *rgn);
-void rgngetrect(void *rgn,int id,MTRect *r);
-void dumprgn(void *rgn);
-void *createfont(const char *face,int size,bool bold);
-void deletefont(void *font);
+#ifdef _WIN32
+	inline bool rectinrgn(MTRect &r,void *rgn) {return (RectInRegion((HRGN)rgn,(RECT*)&r)!=0);};
+	inline void *recttorgn(MTRect &r) {return CreateRectRgnIndirect((RECT*)&r);};
+	inline void rgntorect(void *rgn,MTRect &r) {GetRgnBox((HRGN)rgn,(RECT*)&r);};
+	inline void offsetrgn(void *rgn,int ox,int oy) {OffsetRgn((HRGN)rgn,ox,oy);lastrgn=0;};
+	inline void *copyrgn(void *rgn) {HRGN tmp = CreateRectRgn(0,0,1,1);CombineRgn((HRGN)tmp,(HRGN)rgn,(HRGN)rgn,RGN_COPY);return tmp;};
+	inline bool isemptyrgn(void *rgn) {return (GetRegionData((HRGN)rgn,0,0)==sizeof(RGNDATAHEADER));};
+	inline void deletergn(void *rgn) {DeleteObject((HRGN)rgn);lastrgn=0;};
+	inline void intersectrgn(void *rgn,void *operand) {CombineRgn((HRGN)rgn,(HRGN)rgn,(HRGN)operand,RGN_AND);lastrgn=0;};
+	inline void addrgn(void *rgn,void *operand) {CombineRgn((HRGN)rgn,(HRGN)rgn,(HRGN)operand,RGN_OR);lastrgn=0;};
+	inline void subtractrgn(void *rgn,void *operand) {CombineRgn((HRGN)rgn,(HRGN)rgn,(HRGN)operand,RGN_DIFF);lastrgn=0;};
+	inline int calcpitch(int width,int bitcount,int granbits) {return (width*((bitcount+7)>>3)>>granbits)<<granbits;};
+	int rgngetnrects(void *rgn);
+	void rgngetrect(void *rgn,int id,MTRect *r);
+	void dumprgn(void *rgn);
+	void *createfont(const char *face,int size,bool bold);
+	void deletefont(void *font);
+#endif
 int calccolor(int source,int dest,float f);
 //---------------------------------------------------------------------------
 #endif

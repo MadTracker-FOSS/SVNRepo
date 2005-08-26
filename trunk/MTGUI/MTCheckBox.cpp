@@ -48,7 +48,7 @@ int MTCheckBox::loadfromstream(MTFile *f,int size,int flags)
 	int csize = MTControl::loadfromstream(f,size,flags);
 	int l,x;
 
-	f->reads(caption,256);
+	f->readln(caption,256);
 	caption[255] = 0;
 	l = strlen(caption)+1;
 	x = (4-(l & 3)) & 3;

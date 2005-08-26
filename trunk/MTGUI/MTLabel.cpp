@@ -52,7 +52,7 @@ int MTLabel::loadfromstream(MTFile *f,int size,int flags)
 	c = caption;
 	r = alength;
 	while (true){
-		x = f->reads(c,r);
+		x = f->readln(c,r);
 		l += x;
 		if (x==alength){
 			alength += 64;

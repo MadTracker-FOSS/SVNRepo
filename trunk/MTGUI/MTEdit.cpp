@@ -111,7 +111,7 @@ int MTEdit::loadfromstream(MTFile *f,int size,int flags)
 	int csize = MTControl::loadfromstream(f,size,flags);
 	int l,x;
 
-	f->reads(text,1024);
+	f->readln(text,1024);
 	text[1023] = 0;
 	l = strlen(text)+1;
 	x = (4-(l & 3)) & 3;
