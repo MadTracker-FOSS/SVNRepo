@@ -223,14 +223,14 @@ bool MTSampleInstance::seek(double offset,int origin,int units)
 bool MTSampleInstance::process(int offset,int count,bool &silence)
 {
 	MTSample &cparent = *(MTSample*)parent;
-	int x,e,m,ls,le;
+	int x,e,ls,le;
 	int ccount,coffset,cmax;
 	int flags;
 
 	silence = true;
 	if (!dspi) return false;
-	m = cparent.depth-1;
-	flags = m;
+//	m = cparent.depth-1;
+	flags = cparent.depth-1;
 	if (cparent.loop){
 		ls = cparent.loops;
 		le = cparent.loope;
@@ -314,7 +314,7 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 				a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,ccount,cstatus.reverse);
 			}
 			else{
-				dspi->resample[flags]((char*)(outputs[cstatus.tc]+coffset),(char*)(cparent.data[cstatus.sc])+(cstatus.posi<<m),ccount,cstatus,pitchi,pitchd);
+				dspi->resample[flags](outputs[cstatus.tc]+coffset,(sample*)cparent.data[cstatus.sc]+cstatus.posi,ccount,cstatus,pitchi,pitchd);
 				silence = false;
 			};
 			if (!cparent.loop) break;
