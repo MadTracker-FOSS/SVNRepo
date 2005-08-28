@@ -2,7 +2,7 @@
 //
 //	MadTracker System Core
 //
-//		Platforms:	Win32
+//		Platforms:	Win32,Linux
 //		Processors: All
 //
 //	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
