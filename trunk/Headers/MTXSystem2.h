@@ -1,11 +1,13 @@
 //---------------------------------------------------------------------------
 //
-//  MadTracker System Core
-//
-//		Platforms:	All
-//		Processors:	x86,All
+//	MadTracker 3 Public Extension Header
 //
 //	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	http://www.madtracker.org/
+//	info@madtracker.org
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #ifndef MTXSYSTEM2_INCLUDED

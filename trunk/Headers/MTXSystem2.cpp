@@ -1,11 +1,13 @@
 //---------------------------------------------------------------------------
 //
-//  MadTracker System Core
+//	MadTracker 3 Public Extension File
 //
-//		Platforms:	All
-//		Processors:	x86
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	http://www.madtracker.org/
+//	info@madtracker.org
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #ifdef __BORLANDC__
