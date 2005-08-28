@@ -200,8 +200,13 @@ public:
 	virtual bool MTCT reset() = 0;
 	virtual bool MTCT wait(int timeout) = 0;
 protected:
-	void *event;
-	int timer;
+#ifdef _WIN32
+	void *d1;
+	int d2;
+#else
+	bool d1,d2;
+	void *d3,*d4,*d5;
+#endif
 };
 
 typedef int (MTCT *ThreadProc)(MTThread *thread,void *param);
@@ -209,18 +214,21 @@ typedef void (MTCT *ProcessProc)(MTProcess *process,void *param,float p);
 
 class MTThread : public MTEvent{
 public:
-	unsigned int id;
+	mt_uint32 id;
 	int type;
 	int result;
 	bool terminated;
 
+	virtual ~MTThread() = 0;
 	virtual void MTCT start() = 0;
 	virtual bool MTCT getmessage(int &msg,int &param1,int &param2,bool wait = false) = 0;
 	virtual void MTCT postmessage(int msg,int param1,int param2) = 0;
-	virtual bool MTCT suspend() = 0;
-	virtual bool MTCT resume() = 0;
 	virtual void MTCT terminate() = 0;
 protected:
+#ifndef _WIN32
+	int d1,d2;
+	void *d3;
+#endif
 	ThreadProc mproc;
 	char *mname;
 	void *mparam;

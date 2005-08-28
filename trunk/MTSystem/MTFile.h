@@ -1,5 +1,14 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker System Core
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
 //	$Id$
+//
 //---------------------------------------------------------------------------
 #ifndef MTFILE_INCLUDED
 #define MTFILE_INCLUDED

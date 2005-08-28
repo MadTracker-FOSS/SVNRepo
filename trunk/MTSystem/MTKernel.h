@@ -1,5 +1,14 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker System Core
+//
+//		Platforms:	Win32,Linux
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
 //	$Id$
+//
 //---------------------------------------------------------------------------
 #ifndef MTKERNEL_INCLUDED
 #define MTKERNEL_INCLUDED
@@ -99,7 +108,7 @@ protected:
 	int timer;
 #else
 	bool signaled,needreset;
-	pthread_mutex_t i_mutex;
+	pthread_mutex_t *e_mutex;
 	_le *start,*end;
 	void _add(_le *list);
 	void _del(_le *list);
@@ -115,7 +124,7 @@ public:
 
 	MTThread(ThreadProc proc,bool autofree,bool autostart,void *param,int priority,char *name);
 	MTThread();
-	~MTThread();
+	virtual ~MTThread();
 	bool MTCT pulse();
 	bool MTCT set();
 	bool MTCT reset();
@@ -129,7 +138,7 @@ protected:
 #else
 	static void* SysThread(void*);
 	int _p[2];
-	pthread_attr_t attr;
+	pthread_attr_t *attr;
 #endif
 	ThreadProc mproc;
 	char *mname;
