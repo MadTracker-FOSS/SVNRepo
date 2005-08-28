@@ -25,13 +25,13 @@
 #define MTO_TYPEMASK    0x7F000000
 #define MTO_DEVELOPMENT 0x80000000
 
-enum{
+enum MTObjectLock{
 	MTOL_READ = 1,
 	MTOL_WRITE = 2,
 	MTOL_LOCK = 3
 };
 
-enum{
+enum MTObjectAccess{
 	MTOA_CANREAD = 1,
 	MTOA_CANWRITE = 2,
 	MTOA_CANCOPY = 4,
@@ -40,7 +40,7 @@ enum{
 	MTOA_CANALL = 255
 };
 
-enum{
+enum MTObjectNotify{
 	MTN_NEW = 1,
 	MTN_DELETE,
 	MTN_MODIFY,
