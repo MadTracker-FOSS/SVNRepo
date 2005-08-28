@@ -17,7 +17,7 @@ class MTPattern;
 class MTPattManager;
 //---------------------------------------------------------------------------
 #include "MTPattern.h"
-#include "../Headers/MTXControls.h"
+#include "MTXControls.h"
 //---------------------------------------------------------------------------
 class MTPattManager : public MTCustomWinBehaviours{
 public:
