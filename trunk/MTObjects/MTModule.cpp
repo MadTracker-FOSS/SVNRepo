@@ -5,7 +5,9 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <stdio.h>
@@ -16,7 +18,7 @@
 #include "MTObjects2.h"
 #include "MTObjectsASM.h"
 #include "../../debug/Interface/MTObjectsRES.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 #include "MTGraphs.h"
 //---------------------------------------------------------------------------
 // Routing instruction structure
@@ -1172,7 +1174,11 @@ void MTModule::updaterouting()
 #endif
 
 #ifdef _DEBUG
-	if (GetKeyState(VK_SHIFT)<0) log = true;
+	#ifdef _WIN32
+		if (GetKeyState(VK_SHIFT)<0) log = true;
+	#else
+		//TODO
+	#endif
 #endif
 	ENTER("MTModule::updaterouting");
 	needupdate = false;

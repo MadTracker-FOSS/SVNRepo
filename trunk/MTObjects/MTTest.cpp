@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #include "MTModule.h"
 #include "MTDelay.h"
 #include "MTGenerator.h"

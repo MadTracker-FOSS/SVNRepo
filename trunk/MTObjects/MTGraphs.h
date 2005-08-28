@@ -1,8 +1,19 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTGRAPHS_INCLUDED
 #define MTGRAPHS_INCLUDED
 //---------------------------------------------------------------------------
-#include "../Headers/MTXControls.h"
+#include "MTXControls.h"
 //---------------------------------------------------------------------------
 class MTCPUGraph : public MTCustomBehaviours{
 public:

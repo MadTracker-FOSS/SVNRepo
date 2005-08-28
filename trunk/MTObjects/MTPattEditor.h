@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTPATTEDITOR_INCLUDED
 #define MTPATTEDITOR_INCLUDED
 //---------------------------------------------------------------------------

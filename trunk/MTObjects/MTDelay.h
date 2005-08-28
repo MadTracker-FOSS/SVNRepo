@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTDELAY_INCLUDED
 #define MTDELAY_INCLUDED
 //---------------------------------------------------------------------------
@@ -15,7 +26,7 @@ class MTDelayInstance;
 #define DF_DELAYF  0x0F
 //---------------------------------------------------------------------------
 #include "MTEffect.h"
-#include "../Headers/MTXDSP.h"
+#include "MTXDSP.h"
 //---------------------------------------------------------------------------
 class DelayType : public ObjectType{
 public:

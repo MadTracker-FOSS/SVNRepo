@@ -5,7 +5,9 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <stdio.h>
@@ -14,8 +16,8 @@
 #include "MTObjects1.h"
 #include "MTAutomation.h"
 #include "../MTGUI/MTGUITools.h"
-#include "../Headers/MTXSkin.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSkin.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 const char *autoc = ("Automation");
 const char *layerc = ("Layer %d");

@@ -1,9 +1,20 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: x86
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTOBJECTSASM_INCLUDED
 #define MTOBJECTSASM_INCLUDED
 //---------------------------------------------------------------------------
 #include <math.h>
-#include "../Headers/MTXExtension.h"
+#include "MTXExtension.h"
 //---------------------------------------------------------------------------
 bool MTACT a_floattofixed(double f,int &i,unsigned int &d);
 void MTACT a_changesign(char *buffer,int count);

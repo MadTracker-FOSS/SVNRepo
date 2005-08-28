@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTMODULE_INCLUDED
 #define MTMODULE_INCLUDED
 
@@ -42,7 +53,7 @@ class InstrumentInstance;
 class Track;
 
 #include "MTObject.h"
-#include "../Headers/MTXAudio.h"
+#include "MTXAudio.h"
 //---------------------------------------------------------------------------
 // Sequence
 struct Sequence{
