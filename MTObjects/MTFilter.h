@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTFILTER_INCLUDED
 #define MTFILTER_INCLUDED
 //---------------------------------------------------------------------------
@@ -6,7 +17,7 @@ class MTFilter;
 class MTFilterInstance;
 //---------------------------------------------------------------------------
 #include "MTEffect.h"
-#include "../Headers/MTXDSP.h"
+#include "MTXDSP.h"
 //---------------------------------------------------------------------------
 class MTFilter : public Effect{
 public:

@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker 3 Public Extension Header
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	http://www.madtracker.org/
+//	info@madtracker.org
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTXEFFECT_INCLUDED
 #define MTXEFFECT_INCLUDED
 //---------------------------------------------------------------------------

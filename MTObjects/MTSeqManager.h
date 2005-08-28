@@ -1,9 +1,20 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTSEQMANAGER_INCLUDED
 #define MTSEQMANAGER_INCLUDED
 //---------------------------------------------------------------------------
 #include "MTModule.h"
-#include "../Headers/MTXControls.h"
+#include "MTXControls.h"
 //---------------------------------------------------------------------------
 class MTSeqManager : public MTCustomWinBehaviours{
 public:

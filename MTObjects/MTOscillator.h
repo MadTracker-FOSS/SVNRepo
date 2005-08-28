@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTOSCILLATOR_INCLUDED
 #define MTOSCILLATOR_INCLUDED
 
@@ -12,7 +23,7 @@ class OscillatorInstance;
 #include "MTInstrument.h"
 #include "MTObjectsASM.h"
 #include "MTObjects1.h"
-#include "../Headers/MTXDSP.h"
+#include "MTXDSP.h"
 //---------------------------------------------------------------------------
 class Oscillator : public MTObject{
 public:

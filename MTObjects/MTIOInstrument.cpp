@@ -5,14 +5,16 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <string.h>
 #include "MTInstrument.h"
 #include "MTRIFF.h"
 #include "MTObjects1.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 struct SHDR{
 	char samplename[20];
@@ -76,7 +78,7 @@ bool loadSF2(MTObject *object,char *filename,void* process)
 	if ((f = si->fileopen(filename,MTF_READ|MTF_SHAREREAD))==0) return false;
 	size = f->length();
 	RIFF &criff = *(RIFF*)f->getpointer(-1,sizeof(RIFF));
-	if ((criff.riffid!='FFIR') || (criff.wave.waveid!='kbfs')){
+	if ((criff.riffid!=FOURCC('R','I','F','F')) || (criff.wave.waveid!=FOURCC('s','f','b','k'))){
 		f->releasepointer(&criff);
 		goto error;
 	};
@@ -84,19 +86,19 @@ bool loadSF2(MTObject *object,char *filename,void* process)
 	while (!f->eof()){
 		f->read(&tmpl,4);
 		f->read(&size,4);
-		if (tmpl=='TSIL'){
+		if (tmpl==FOURCC('L','I','S','T')){
 			incl = 0;
 			f->read(&tmpl,4);
 			size -= 4;
 			switch (tmpl){
-			case 'OFNI':
+			case FOURCC('I','N','F','O'):
 				while (incl<size){
 					f->read(&tmpl,4);
 					f->read(&size2,4);
 					if (size2 & 1) size2++;
 					incl += size2+8;
 					switch (tmpl){
-					case 'MANI':
+					case FOURCC('I','N','A','M'):
 						if (size2<32) f->read(instr.name,size2);
 						else{
 							mtmemzero(instr.name,32);
@@ -109,14 +111,14 @@ bool loadSF2(MTObject *object,char *filename,void* process)
 					};
 				};
 				break;
-			case 'atds':
+			case FOURCC('s','d','t','a'):
 				while (incl<size){
 					f->read(&tmpl,4);
 					f->read(&size2,4);
 					if (size2 & 1) size2++;
 					incl += size2+8;
 					switch (tmpl){
-					case 'lpms':
+					case FOURCC('s','m','p','l'):
 						spldata = f->seek(0,MTF_CURRENT);
 						f->seek(size2,MTF_CURRENT);
 						break;
@@ -125,18 +127,18 @@ bool loadSF2(MTObject *object,char *filename,void* process)
 					};
 				};
 				break;
-			case 'atdp':
+			case FOURCC('p','d','t','a'):
 				while (incl<size){
 					f->read(&tmpl,4);
 					f->read(&size2,4);
 					if (size2 & 1) size2++;
 					incl += size2+8;
 					switch (tmpl){
-					case 'tsni':
+					case FOURCC('i','n','s','t'):
 						f->read(instr.name,20);
 						f->seek(size2-20,MTF_CURRENT);
 						break;
-					case 'gabi':
+					case FOURCC('i','b','a','g'):
 						nbags = size2/4;
 						if (size2<=sizeof(bags)){
 							f->read(&bags,size2);
@@ -146,7 +148,7 @@ bool loadSF2(MTObject *object,char *filename,void* process)
 							f->seek(size2-sizeof(bags),MTF_CURRENT);
 						};
 						break;
-					case 'negi':
+					case FOURCC('i','g','e','n'):
 						splmap[0] = 0;
 						mtmemzero(splinfo,sizeof(splmap));
 						size2 += f->seek(0,MTF_CURRENT);
@@ -197,7 +199,7 @@ bool loadSF2(MTObject *object,char *filename,void* process)
 						for (x=0;x<96;x++)
 							instr.range[0][x] = splmap[instr.range[0][x]];
 						break;
-					case 'rdhs':
+					case FOURCC('s','h','d','r'):
 						size2 += f->seek(0,MTF_CURRENT);
 						while (f->seek(0,MTF_CURRENT)<size2){
 							f->read(&shdr,sizeof(SHDR));

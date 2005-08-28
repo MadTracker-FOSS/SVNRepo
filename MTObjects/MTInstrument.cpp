@@ -5,7 +5,9 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <math.h>
@@ -13,7 +15,7 @@
 #include "MTObjects1.h"
 #include "MTObjectsASM.h"
 #include "../../debug/Interface/MTObjectsRES.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 InstrumentType *instrumenttype;
 //---------------------------------------------------------------------------

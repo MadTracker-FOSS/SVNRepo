@@ -1,7 +1,17 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTAUTOMATION_INCLUDED
 #define MTAUTOMATION_INCLUDED
-#define MTXAUTOMATION_INCLUDED
 
 class Automation;
 

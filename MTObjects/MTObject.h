@@ -1,6 +1,24 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTOBJECT_INCLUDED
 #define MTOBJECT_INCLUDED
+
+#define MTXOBJECT_INCLUDED
+#define MTXAUTOMATION_INCLUDED
+#define MTXEFFECT_INCLUDED
+#define MTXMODULE_INCLUDED
+#define MTXNODE_INCLUDED
+#define MTXTRACK_INCLUDED
 
 #define MTO_MODULE      0x01000000
 #define MTO_PATTERN     0x02000000
@@ -19,13 +37,13 @@
 #define MTO_MTSAMPLE     MTO_OSCILLATOR
 #define MTO_MTFILTER     MTO_EFFECT
 
-enum{
+enum MTObjectLock{
 	MTOL_READ = 1,
 	MTOL_WRITE = 2,
 	MTOL_LOCK = 3
 };
 
-enum{
+enum MTObjectAccess{
 	MTOA_CANREAD = 1,
 	MTOA_CANWRITE = 2,
 	MTOA_CANCOPY = 4,
@@ -34,7 +52,7 @@ enum{
 	MTOA_CANALL = 255
 };
 
-enum{
+enum MTObjectNotify{
 	MTN_NEW = 1,
 	MTN_DELETE,
 	MTN_MODIFY,
@@ -59,8 +77,8 @@ enum{
 class MTObject;
 class MTModule;
 
-#include "../Headers/MTXExtension.h"
-#include "../Headers/MTXSystem.h"
+#include "MTXExtension.h"
+#include "MTXSystem.h"
 //---------------------------------------------------------------------------
 struct EnvPoint{
 	float x;

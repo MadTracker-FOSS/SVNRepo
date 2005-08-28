@@ -5,14 +5,16 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <string.h>
 #include "MTOscillator.h"
 #include "MTObjects1.h"
 #include "MTRIFF.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 // Sample Load Functions
 //---------------------------------------------------------------------------
@@ -33,7 +35,7 @@ bool loadWAV(MTObject *object,char *filename,void *process)
 	if ((f = si->fileopen(filename,MTF_READ|MTF_SHAREREAD))==0) return false;
 	size = f->length();
 	RIFF &criff = *(RIFF*)f->getpointer(-1,sizeof(RIFF));
-	if ((criff.riffid!='FFIR') || (criff.wave.waveid!='EVAW')){
+	if ((criff.riffid!=FOURCC('R','I','F','F')) || (criff.wave.waveid!=FOURCC('W','A','V','E'))){
 		f->releasepointer(&criff);
 		goto error;
 	};
@@ -52,7 +54,7 @@ bool loadWAV(MTObject *object,char *filename,void *process)
 		f->read(&tmpl,4);
 		f->read(&size,4);
 		switch (tmpl){
-		case ' tmf':
+		case FOURCC('f','m','t',' '):
 			fmt = (RIFFfmt*)f->getpointer(f->pos()-8,sizeof(RIFFfmt));
 			f->seek(size,MTF_CURRENT);
 			if (fmt->tag!=1){
@@ -68,7 +70,7 @@ bool loadWAV(MTObject *object,char *filename,void *process)
 			sample.loope = 0;
 			f->releasepointer(fmt);
 			break;
-		case 'atad':
+		case FOURCC('d','a','t','a'):
 			if (!sample.splalloc(size/sample.sl)) goto error;
 			sample.fileoffset = f->pos();
 			sample.length = size;
@@ -80,18 +82,18 @@ bool loadWAV(MTObject *object,char *filename,void *process)
 //			f->read(sample.data[0],size);
 			if (sample.depth==1) sample.changesign();
 			break;
-		case 'TSIL':
+		case FOURCC('L','I','S','T'):
 			incl = 0;
 			f->read(&tmpl,4);
 			size -= 4;
-			if (tmpl=='OFNI'){
+			if (tmpl==FOURCC('I','N','F','O')){
 				while (incl<size){
 					f->read(&tmpl,4);
 					f->read(&size2,4);
 					if (size2 & 1) size2++;
 					incl += size2+8;
 					switch (tmpl){
-					case 'MANI':
+					case FOURCC('I','N','A','M'):
 						if (size2<32) f->read(sample.name,size2);
 						else{
 							mtmemzero(sample.name,32);
@@ -106,7 +108,7 @@ bool loadWAV(MTObject *object,char *filename,void *process)
 			}
 			else f->seek(size,MTF_CURRENT);
 			break;
-		case 'lpms':
+		case FOURCC('s','m','p','l'):
 			f->read(&tmpc,size);
 			sample.loops = *(int*)&tmpc[44];
 			sample.loope = *(int*)&tmpc[48];

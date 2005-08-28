@@ -1,11 +1,13 @@
 //---------------------------------------------------------------------------
 //
-//	MadTracker GUI Core
+//	MadTracker Objects
 //
-//		Platforms:	Win32
+//		Platforms:	Win32,Linux (GTK+)
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include "MTGUITools.h"
@@ -15,11 +17,11 @@
 #include "MTXSystem.h"
 #include "MTXSystem2.h"
 //---------------------------------------------------------------------------
-static buffer[4096];
+static char buffer[4096];
 #ifdef _WIN32
 	RGNDATA *rgndata = (RGNDATA*)buffer;
-	void *lastrgn;
 #endif
+void *lastrgn;
 //---------------------------------------------------------------------------
 extern MTSystemInterface *si;
 //---------------------------------------------------------------------------
@@ -113,6 +115,8 @@ void deletefont(void *font)
 {
 	DeleteObject((HFONT)font);
 }
+#else
+//TODO
 #endif
 
 int calccolor(int source,int dest,float f)

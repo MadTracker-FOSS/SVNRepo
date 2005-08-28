@@ -5,7 +5,9 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <string.h>
@@ -13,7 +15,7 @@
 #include "MTAutomation.h"
 #include "MTDelay.h"
 #include "MTObjects1.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 // MadTracker 2 Module
 //---------------------------------------------------------------------------
@@ -299,13 +301,13 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 		z = f->pos();
 		incl += csize+8;
 		switch (tmpl){
-		case '+MPB':
+		case FOURCC('B','P','M','+'):
 			f->read(&tmpd,8);
 			D(module.tempo,Tempo)[0].bpm = 44100.0*60.0/(header.ticks*header.lpb*tmpd);
 			break;
-		case 'MXFT':
+		case FOURCC('T','F','X','M'):
 			break;
-		case 'SKRT':
+		case FOURCC('T','R','K','S'):
 			f->read(&tmpw,2);
 			A(module.master,Track)[0]->vol = (float)tmpw/131072;
 			for (x=0;x<header.ntracks+ndtracks;x++){
@@ -379,7 +381,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 			};
 			module.needupdaterouting();
 			break;
-		case 'LKRT':
+		case FOURCC('T','R','K','L'):
 			tmpc = (char*)si->memalloc(csize);
 			for (x=0;x<header.ntracks+ndtracks;x++){
 				Track &ctrk = *A(module.trk,Track)[x];
@@ -388,16 +390,16 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 			};
 			si->memfree(tmpc);
 			break;
-		case 'NTAP':
+		case FOURCC('P','A','T','N'):
 			break;
-		case '\0GSM':
+		case FOURCC('M','S','G','\0'):
 			f->read(&module.showmessage,1);
 			module.message = (char*)si->memalloc(csize);
 			f->read(module.message,csize-1);
 			break;
-		case 'TCIP':
+		case FOURCC('P','I','C','T'):
 			break;
-		case '\0MUS':
+		case FOURCC('S','U','M','\0'):
 			for (x=0;x<6;x++){
 				f->read(&tmpb,1);
 				if (tmpb) module.summarymask |= (1<<x);
@@ -414,13 +416,13 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 			};
 			si->memfree(tmpc2);
 			break;
-		case 'PAMT':
+		case FOURCC('T','M','A','P'):
 			break;
-		case 'IDIM':
+		case FOURCC('M','I','D','I'):
 			break;
-		case 'QERT':
+		case FOURCC('T','R','E','Q'):
 			break;
-		case '2TSV':
+		case FOURCC('V','S','T','2'):
 			f->read(&nvst,4);
 			break;
 		};

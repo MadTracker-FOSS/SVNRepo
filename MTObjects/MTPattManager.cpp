@@ -5,16 +5,18 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include "MTPattEditor.h"
 #include "MTPattManager.h"
 #include "../MTGUI/MTGUITools.h"
-#include "../Headers/MTXSkin.h"
-#include "../Headers/MTXInput.h"
+#include "MTXSkin.h"
+#include "MTXInput.h"
 #include "../../debug/Interface/MTObjectsRES.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 MTPattManager::MTPattManager(MTCustomWinControl *control):
 MTCustomWinBehaviours(control),
@@ -448,8 +450,8 @@ void MTPattManager::getsel(MTRect &sel)
 {
 	MTRect r = {selstart.x,selstart.y,selend.x,selend.y};
 	
-	minmax((int)r.left,(int)r.right);
-	minmax((int)r.top,(int)r.bottom);
+	minmax(r.left,r.right);
+	minmax(r.top,r.bottom);
 	sel = r;
 }
 

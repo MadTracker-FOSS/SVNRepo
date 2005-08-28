@@ -5,15 +5,17 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include "MTColumns.h"
 #include "MTObjects1.h"
 #include "MTXMCommands.h"
-#include "../Headers/MTXSkin.h"
-#include "../Headers/MTXInput.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSkin.h"
+#include "MTXInput.h"
+#include "MTXSystem2.h"
 #include "../../debug/Interface/MTObjectsRES.h"
 //---------------------------------------------------------------------------
 NoteColumn notecolumn;

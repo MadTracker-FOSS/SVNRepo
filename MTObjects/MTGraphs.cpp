@@ -5,14 +5,16 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <stdio.h>
 #include "MTGraphs.h"
 #include "MTObjects1.h"
 #include "../MTGUI/MTGUITools.h"
-#include "../Headers/MTXSkin.h"
+#include "MTXSkin.h"
 //---------------------------------------------------------------------------
 MTCPUGraph::MTCPUGraph(MTCustomControl *control):
 MTCustomBehaviours(control),

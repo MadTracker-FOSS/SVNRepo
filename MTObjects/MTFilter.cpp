@@ -5,13 +5,15 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <stdio.h>
 #include "MTObject.h"
 #include "MTFilter.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 #include "../../debug/Interface/MTObjectsRES.h"
 //---------------------------------------------------------------------------
 MTFilter::MTFilter(MTModule *module,int i):
@@ -104,7 +106,7 @@ void MTFilter::setparam(int cat,int id,double value,int steps)
 	case 4:
 		break;
 	};
-	if (ei) ei->setparam(id,value,steps);
+	if (ei) ei->setparam(cat,id,value,steps);
 }
 //---------------------------------------------------------------------------
 MTFilterInstance::MTFilterInstance(Effect *p,int no,sample **o,int ni,sample **i,InstrumentInstance *caller):

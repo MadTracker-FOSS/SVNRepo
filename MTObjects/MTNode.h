@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Objects
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTNODE_INCLUDED
 #define MTNODE_INCLUDED
 
@@ -8,8 +19,8 @@ struct Pin;
 class Node;
 //---------------------------------------------------------------------------
 #include "MTObject.h"
-#include "../Headers/MTXSystem.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 extern MTSystemInterface *si;
 //---------------------------------------------------------------------------

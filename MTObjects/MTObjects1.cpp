@@ -5,10 +5,11 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
-#include <windows.h>
 #include <string.h>
 #include <math.h>
 #include "MTModule.h"
@@ -187,11 +188,15 @@ bool MTObjectsInterface::init()
 	ai = (MTAudioInterface*)mtinterface->getinterface(audiotype);
 	dspi = (MTDSPInterface*)mtinterface->getinterface(dsptype);
 	gi = (MTGUIInterface*)mtinterface->getinterface(guitype);
-	if ((!si) || (!dspi)) return false;
+	if ((!si) || (!dspi)){
+		LOGD("%s - [Objects] ERROR: Missing DSP extension!"NL);
+		return false;
+	};
 	ENTER("MTObjectsInterface::init");
 	LOGD("%s - [Objects] Initializing..."NL);
 	res = si->resfind("MTObjects.mtr",false);
 	if (!res){
+		LOGD("%s - [Objects] ERROR: Missing MTObjects.mtr!"NL);
 		LEAVE();
 		return false;
 	};
