@@ -31,12 +31,15 @@ MTConfigFile* mtconfigfind(const char *filename)
 	if (!prefs) return 0;
 	strcpy(path,prefs->syspath[SP_CONFIG]);
 	strcat(path,filename);
-	return new MTConfigFile(path);
+	return mtconfigopen(path);
 }
 
 MTConfigFile* mtconfigopen(const char *filename)
 {
-	return new MTConfigFile(filename);
+	MTConfigFile *cf = new MTConfigFile(filename);
+	if (cf->loaded()) return cf;
+	delete cf;
+	return 0;
 }
 
 void mtconfigclose(MTConfigFile *file)
@@ -478,6 +481,11 @@ exit:
 const char* MTConfigFile::getfilename()
 {
 	return (f)?f->url:"";
+}
+
+bool MTConfigFile::loaded()
+{
+	return (f!=0);
 }
 //---------------------------------------------------------------------------
 

@@ -1,5 +1,14 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker System Core
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
 //	$Id$
+//
 //---------------------------------------------------------------------------
 #ifndef MTCONFIG_INCLUDED
 #define MTCONFIG_INCLUDED
@@ -30,6 +39,7 @@ public:
 	virtual bool MTCT createsection(const char *name);
 	virtual bool MTCT setparameter(const char *paramname,void *value,int type,int size);
 	virtual const char* MTCT getfilename();
+	bool loaded();
 private:
 	MTFile *f;
 	int sectionpos,sectionline,sectionnp,cpos,cline,cnp;

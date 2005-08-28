@@ -30,6 +30,7 @@
 	#include <signal.h>
 	#include <stdlib.h>
 	#include <dlfcn.h>
+	#include <termios.h>
 #endif
 //---------------------------------------------------------------------------
 static const char *sysname = {"MadTracker System Core"};
@@ -130,7 +131,6 @@ void startlog()
 			mtlog(buf);
 		#else
 			char mbuf[4096+1];
-			struct timespec ts;
 			int fd,len;
 			mtlog(NL"Memory:"NL);
 			fd = open("/proc/meminfo",O_RDONLY);
@@ -161,6 +161,7 @@ void mtlog(const char *log,char date)
 	#ifdef _DEBUG
 		bool iserror = false;
 	#endif
+	bool debugbreak = false;
 
 	if ((!logging) || (!log) || (log[0]==0)) return;
 	if (!logfile){
@@ -179,9 +180,7 @@ void mtlog(const char *log,char date)
 				iserror = true;
 			#endif
 			waserror = true;
-			#ifdef _WIN32
-				if (debugged) DebugBreak();
-			#endif
+			if (debugged) debugbreak = true;
 		};
 		if (checklast){
 			lastcount = 1;
@@ -223,6 +222,9 @@ void mtlog(const char *log,char date)
 					logfile->write(logbuf,strlen(logbuf));
 				};
 			};
+		#endif
+		#ifdef _WIN32
+			if (debugbreak) DebugBreak();
 		#endif
 	};
 }
@@ -694,6 +696,22 @@ bool MTCT DialogProc(MTWinControl *window,MTCMessage &msg)
 	return false;
 }
 
+#ifndef _WIN32
+char mtgetchar()
+{
+	struct termios ot,t;
+	int c;
+
+	tcgetattr(fileno(stdin),&ot);
+	t = ot;
+	t.c_lflag &= (~ICANON);
+	tcsetattr(fileno(stdin),TCSANOW,&t);
+	c = fgetc(stdin);
+	tcsetattr(fileno(stdin),TCSANOW,&ot);
+	return (char)c;
+}
+#endif
+
 int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 {
 	MTDesktop *dsk;
@@ -877,8 +895,65 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 			if (buttons==MTD_YESNOCANCEL) return 2;
 			return 1;
 		#else
-//TODO
-			return MTDR_NULL;
+//TODO More than console
+			int c,ret;
+			ret = MTDR_NULL;
+			fprintf(stdout,"-- %s --"NL"%s"NL"--"NL,caption,message);
+			switch ((int)buttons){
+			case (int)MTD_OKCANCEL:
+				fprintf(stdout,"[Ok][Cancel]?");
+				while (true){
+					c = mtgetchar();
+					if ((c=='o') || (c=='O')){
+						ret = 0;
+						break;
+					}
+					else if ((c=='c') || (c=='C')){
+						ret = 1;
+						break;
+					};
+				};
+				break;
+			case (int)MTD_YESNO:
+				fprintf(stdout,"[Yes][No]?");
+				while (true){
+					c = mtgetchar();
+					if ((c=='y') || (c=='Y')){
+						ret = 0;
+						break;
+					}
+					else if ((c=='n') || (c=='N')){
+						ret = 1;
+						break;
+					};
+				};
+				break;
+			case (int)MTD_YESNOCANCEL:
+				fprintf(stdout,"[Yes][No][Cancel]?");
+				while (true){
+					c = mtgetchar();
+					if ((c=='y') || (c=='Y')){
+						ret = 0;
+						break;
+					}
+					else if ((c=='n') || (c=='N')){
+						ret = 1;
+						break;
+					}
+					else{
+						ret = 2;
+						break;
+					};
+				};
+				break;
+			default:
+				fprintf(stdout,"Press any key to continue...");
+				mtgetchar();
+				ret = 0;
+				break;
+			};
+			fprintf(stdout,NL);
+			return ret;
 		#endif
 	};
 }
@@ -965,16 +1040,18 @@ int mtsync_inc(int *value)
 	#ifdef _WIN32
 		return InterlockedIncrement((long*)value);
 	#else
+		int r;
 		asm ("\
 			movl %[value],%%ecx\n\
 			movl 1,%%eax\n\
 			lock xaddl %%eax,(%%ecx)\n\
 			incl %%eax\n\
 			"
-			:
+			:"=a"(r)
 			:[value]"m"(value)
 			:"ecx"
 			);
+		return r;
 	#endif
 }
 
@@ -983,16 +1060,18 @@ int mtsync_dec(int *value)
 	#ifdef _WIN32
 		return InterlockedDecrement((long*)value);
 	#else
+		int r;
 		asm ("\
 			movl %[value],%%ecx\n\
 			mov $-1,%%eax\n\
 			lock xaddl %%eax,(%%ecx)\n\
 			dec %%eax\n\
 			"
-			:
+			:"=a"(r)
 			:[value]"m"(value)
 			:"ecx"
 			);
+		return r;
 	#endif
 }
 //---------------------------------------------------------------------------
@@ -1082,9 +1161,12 @@ bool MTSystemInterface::init()
 	unsigned int cpuflags,cpuver;
 	bool savecpu = true;
 	char buf[256],proctype[256];
-	static const int cpu_wait = 3000;
-	static const double cpu_div = 3000000.0;
+	static int cpu_wait = 500;
+	static double cpu_div = 500000.0;
+#ifdef _WIN32
+#else
 	int fd,len;
+#endif
 
 	#ifdef _WIN32
 		SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)::onexception);
@@ -1103,6 +1185,7 @@ bool MTSystemInterface::init()
 		//TODO signal + exceptions
 		debugged = true;
 	#endif
+	initKernel();
 	initFiles();
 	if (mtinterface){
 		platform = (char*)mtmemalloc(512);
@@ -1243,32 +1326,50 @@ bool MTSystemInterface::init()
 				sprintf(e," Level %d Model %d Stepping %d",cpuver,hirev,lorev);
 			};
 		#else
+			strcpy(processor,"? x ");
+			fd = open("/proc/stat",O_RDONLY);
+			len = read(fd,buf,255);
+			close(fd);
+			if (len==-1) goto staterror;
+			buf[len] = 0;
+			e = strchr(buf,'\n');
+			if (!e) goto staterror;
+			len = 0;
+			while (e){
+				e++;
+				if (strncmp(e,"cpu",3)) break;
+				len++;
+				e = strchr(e,'\n');
+			};
+			if (len==0) len = 1;
+			sprintf(processor,"%d x ",len);
+		staterror:
 			e = platform;
 			fd = open("/proc/sys/kernel/ostype",O_RDONLY);
 			len = read(fd,e,128);
 			close(fd);
-			if (len==-1) goto procerror;
+			if (len==-1) goto oserror;
 			e[len] = 0;
-			e = strchr(platform,'\r');
+			e = strchr(platform,'\n');
 			if (!e) e = strchr(platform,0);
 			*e++ = ' ';
 			fd = open("/proc/sys/kernel/osrelease",O_RDONLY);
 			len = read(fd,e,128);
 			close(fd);
-			if (len==-1) goto procerror;
+			if (len==-1) goto oserror;
 			e[len] = 0;
-			e = strchr(e,'\r');
-			if (!e) *e = 0;
+			e = strchr(platform,'\n');
+			if (e) *e = 0;
 			e = build;
 			fd = open("/proc/sys/kernel/version",O_RDONLY);
 			len = read(fd,e,128);
 			close(fd);
-			if (len==-1) goto procerror;
+			if (len==-1) goto oserror;
 			e[len] = 0;
-			e = strchr(e,'\r');
+			e = strchr(build,'\n');
 			if (e) *e = 0;
-		procerror:
-			strcat(proctype,"x86 ");
+		oserror:
+			strcpy(proctype,"x86 ");
 			char *_buf = (char*)calloc(1,256);
 			asm (
 				"\
@@ -1314,8 +1415,8 @@ bool MTSystemInterface::init()
 				movl	%%edx,%[cpuflags]\n\
 			_nommx:\n\
 				"
-				:"=S"(_buf),[cpuver]"=m"(cpuver),[cpuflags]"=m"(cpuflags)
-				:
+				:[cpuver]"=m"(cpuver),[cpuflags]"=m"(cpuflags)
+				:"S"(_buf)
 				:"eax","ebx","ecx","edx"
 			);
 			strcat(proctype,_buf);
@@ -1339,28 +1440,16 @@ bool MTSystemInterface::init()
 				};
 			};
 		};
+		cpufrequ = 1000;
 		if (cpufrequ==0){
 			#ifdef _WIN32
 				__asm{
 					rdtsc
 					push	edx
 					push	eax
-				};
-			#else
-				asm (
-					"\
-					rdtsc\n\
-					push	%%edx\n\
-					push	%%eax\n\
-					"
-					:
-					:
-					:"eax","edx"
-					);
-			#endif
-			mtsyswait(cpu_wait);
-			#ifdef _WIN32
-				__asm{
+					push	cpu_wait
+					call	mtsyswait
+					add		esp,4
 					rdtsc
 					sub		dword ptr [esp],eax
 					sbb		dword ptr [esp+4],edx
@@ -1380,18 +1469,24 @@ bool MTSystemInterface::init()
 			#else
 				asm (
 					"\
-					   rdtsc\n\
-					   subl		%%eax,(%%esp)\n\
-					   sbbl		%%edx,4(%%esp)\n\
-					   fildq	(%%esp)\n\
-					   fchs\n\
-					   fdiv		%[cpu_div]\n\
-					   fistp	%[cpufrequ]\n\
-					   addl		8,%%esp\n\
+					rdtsc\n\
+					pushl	%%edx\n\
+					pushl	%%eax\n\
+					pushl	%[cpu_wait]\n\
+					call	mtsyswait\n\
+					addl	$4,%%esp\n\
+					rdtsc\n\
+					subl	%%eax,(%%esp)\n\
+					sbbl	%%edx,4(%%esp)\n\
+					fildq	(%%esp)\n\
+					fchs\n\
+					fdivl	%[cpu_div]\n\
+					fistpl	%[cpufrequ]\n\
+					addl	8,%%esp\n\
 					"
 					:[cpufrequ]"=m"(cpufrequ)
-					:[cpu_div]"m"(cpu_div)
-					:"eax","edx"
+					:[cpu_div]"m"(cpu_div),[cpu_wait]"m"(cpu_wait)
+					:"eax","ebx","ecx","edx"
 					);
 			#endif
 			cpufrequ = (cpufrequ/3)*3;
@@ -1409,11 +1504,11 @@ bool MTSystemInterface::init()
 		if (cpuflags & 0x1000000) sysflags |= MTS_SIMD;
 		e = strchr(processor,0);
 		sprintf(e,"%d MHz (%s)",cpufrequ,proctype);
-#ifdef _WIN32
-		timeGetDevCaps(&timecaps,sizeof(TIMECAPS));
-#else
-		clock_getres(CLOCK_REALTIME,&timerres);
-#endif
+		#ifdef _WIN32
+			timeGetDevCaps(&timecaps,sizeof(TIMECAPS));
+		#else
+			clock_getres(CLOCK_REALTIME,&timerres);
+		#endif
 		di = (MTDisplayInterface*)mtinterface->getinterface(displaytype);
 		gi = (MTGUIInterface*)mtinterface->getinterface(guitype);
 		strcpy(buf,mtinterface->getprefs()->syspath[SP_INTERFACE]);
@@ -1422,7 +1517,7 @@ bool MTSystemInterface::init()
 			f = mtfileopen(buf,MTF_READ|MTF_SHAREREAD);
 			if (f) sysres = new MTResources(f,true);
 		};
-		strcpy(logpath,mtinterface->getprefs()->syspath[SP_ROOT]);
+		strcpy(logpath,mtinterface->getprefs()->syspath[SP_USER]);
 		strcat(logpath,"LOG_");
 		e = strrchr(logpath,0);
 		memcpy(e,&mtinterface->type,4);
@@ -1438,7 +1533,6 @@ bool MTSystemInterface::init()
 		if (sysres) sysres->loadstring(MTT_storage,rootn,sizeof(rootn));
 	};
 	initInternet();
-	initKernel();
 	status |= MTX_INITIALIZED;
 	return true;
 }
@@ -1454,7 +1548,6 @@ void MTSystemInterface::uninit()
 	mtmemfree(platform);
 	mtmemfree(build);
 	mtmemfree(processor);
-	uninitKernel();
 	uninitInternet();
 	uninitSocket();
 	if (sysres){
@@ -1462,6 +1555,7 @@ void MTSystemInterface::uninit()
 		sysres = 0;
 	};
 	uninitFiles();
+	uninitKernel();
 	if (logfile){
 		mtmemfree(logfile->url);
 		logfile->url = 0;
@@ -1492,7 +1586,9 @@ void MTSystemInterface::uninit()
 				ShellExecute(0,"open",logpath,"","",SW_SHOWNORMAL);
 			};
 		#else
-			mtdialog("One or more errors occured!"NL"A log file is available in your home directory.","Errors",MTD_YESNO,MTD_QUESTION,5000);
+			if (mtdialog("One or more errors occured!"NL"Do you want to see the log file?","Errors",MTD_YESNO,MTD_INFORMATION,5000)==0){
+				execlp("less","less",logpath,0);
+			};
 		#endif
 	};
 }

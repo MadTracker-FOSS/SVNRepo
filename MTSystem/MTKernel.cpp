@@ -207,7 +207,7 @@ int mtsyswaitmultiple(int count,MTEvent **events,bool all,int timeout)
 		else res = x-WAIT_OBJECT_0;
 		mtmemfree(h);
 	#else
-		struct timespec to_time,delta_time;
+		struct timespec to_time;
 		_mutex_cond *p,*common_mutex_cond;
 		_le *q;
 		_mutex_cond **mutex_cond;
@@ -399,8 +399,8 @@ MTLock::~MTLock()
 bool MTLock::lock(int timeout)
 {
 	#ifdef _WIN32
-		if ((timeout) && (tryenter)){
-			while (--timeout>=0){
+		if ((timeout>0) && (tryenter)){
+			while (--timeout>0){
 				if (tryenter(&critical)) return true;
 				Sleep(1);
 			};
@@ -412,7 +412,7 @@ bool MTLock::lock(int timeout)
 	#else
 		if (timeout){
 			struct timespec ts = {0,1000};
-			while (--timeout>=0){
+			while (--timeout>0){
 				if (pthread_mutex_trylock(&mutex)==0) return true;
 				nanosleep(&ts,0);
 			};
@@ -445,7 +445,8 @@ MTEvent::MTEvent(bool autoreset,int interval,int resolution,bool periodic,bool p
 	#else
 		signaled = false;
 		needreset = autoreset;
-		pthread_mutex_init(&i_mutex,0);
+		e_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+		pthread_mutex_init(e_mutex,0);
 		start = end = 0;
 	#endif
 }
@@ -460,7 +461,8 @@ needreset(false)
 #endif
 {
 	#ifndef _WIN32
-		pthread_mutex_init(&i_mutex,0);
+		e_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+		pthread_mutex_init(e_mutex,0);
 		start = end = 0;
 	#endif
 }
@@ -475,7 +477,8 @@ MTEvent::~MTEvent()
 			CloseHandle(event);
 		};
 	#else
-		pthread_mutex_destroy(&i_mutex);
+		pthread_mutex_destroy(e_mutex);
+		free(e_mutex);
 	#endif
 }
 
@@ -503,6 +506,7 @@ bool MTEvent::pulse()
 			p = p->next;
 		} while (p!=0);
 		signaled = false;
+		return true;
 	#endif
 }
 
@@ -529,6 +533,7 @@ bool MTEvent::set()
 			pthread_mutex_unlock(&p->i_mutex_cond->i_mutex);
 			p = p->next;
 		} while (p!=0);
+		return true;
 	#endif
 }
 
@@ -538,6 +543,7 @@ bool MTEvent::reset()
 		return ResetEvent(event)!=0;
 	#else
 		signaled = false;
+		return true;
 	#endif
 }
 
@@ -565,7 +571,7 @@ bool MTEvent::wait(int timeout)
 #ifndef _WIN32
 void MTEvent::_add(_le *list)
 {
-	pthread_mutex_lock(&i_mutex);
+	pthread_mutex_lock(e_mutex);
 	if (start==0){
 		start = list;
 		list->next = 0;
@@ -578,12 +584,12 @@ void MTEvent::_add(_le *list)
 		list->next = 0;
 		end = list;
 	};
-	pthread_mutex_unlock(&i_mutex);
+	pthread_mutex_unlock(e_mutex);
 }
 
 void MTEvent::_del(_le *list)
 {
-	pthread_mutex_lock(&i_mutex);
+	pthread_mutex_lock(e_mutex);
 	if ((start==list) && (end==list)){
 		start = end = 0;
 	}
@@ -600,7 +606,7 @@ void MTEvent::_del(_le *list)
 		list->next->prev = list->prev;
 	};
 	free(list);
-	pthread_mutex_unlock(&i_mutex);
+	pthread_mutex_unlock(e_mutex);
 }
 #endif
 //---------------------------------------------------------------------------
@@ -611,10 +617,11 @@ result(0),
 terminated(false),
 mproc(proc),
 mname(0),
+mparam(param),
+mpriority(priority),
 mautofree(autofree),
 running(false),
-mparam(param),
-mpriority(priority)
+hasmsg(false)
 {
 	if (name) mname = name;
 	threadlock->lock();
@@ -629,7 +636,8 @@ mpriority(priority)
 	#ifndef _WIN32
 		bool fifo = false;
 		struct sched_param rt_param;
-		pthread_attr_init(&attr);
+		attr = (pthread_attr_t*)malloc(sizeof(pthread_attr_t));
+		pthread_attr_init(attr);
 		memset(&rt_param,0,sizeof(rt_param));
 		switch (priority){
 		case MTT_HIGHER:
@@ -648,8 +656,8 @@ mpriority(priority)
 			rt_param.sched_priority = 0;
 			break;
 		};
-		if (fifo) pthread_attr_setschedpolicy(&attr,SCHED_FIFO);
-		pthread_attr_setschedparam(&attr,&rt_param);
+		if (fifo) pthread_attr_setschedpolicy(attr,SCHED_FIFO);
+		pthread_attr_setschedparam(attr,&rt_param);
 		pipe(_p);
 	#endif
 }
@@ -661,11 +669,11 @@ result(0),
 terminated(false),
 mproc(0),
 mname("User"),
+mparam(0),
+mpriority(0),
 mautofree(false),
 running(false),
-hasmsg(false),
-mparam(0),
-mpriority(0)
+hasmsg(false)
 {
 	systhread = this;
 	#ifdef _WIN32
@@ -673,7 +681,8 @@ mpriority(0)
 		id = GetCurrentThreadId();
 	#else
 		id = (mt_uint32)pthread_self();
-		pthread_attr_init(&attr);
+		attr = (pthread_attr_t*)malloc(sizeof(pthread_attr_t));
+		pthread_attr_init(attr);
 		pipe(_p);
 	#endif
 }
@@ -720,7 +729,8 @@ MTThread::~MTThread()
 	#ifndef _WIN32
 		close(_p[0]);
 		close(_p[1]);
-		pthread_attr_destroy(&attr);
+		pthread_attr_destroy(attr);
+		free(attr);
 	#endif
 }
 
@@ -757,7 +767,8 @@ bool MTThread::getmessage(int &msg,int &param1,int &param2,bool wait)
 		if (wait){
 			hasmsg = true;
 			if (GetMessage(&cmsg,0,0,0)>0){
-				msg = cmsg.message;
+				if (cmsg.message==WM_QUIT) msg = -1;
+				else msg = cmsg.message;
 				param1 = cmsg.wParam;
 				param2 = cmsg.lParam;
 				return true;
@@ -765,7 +776,8 @@ bool MTThread::getmessage(int &msg,int &param1,int &param2,bool wait)
 			return false;
 		};
 		if (PeekMessage(&cmsg,0,0,0,PM_REMOVE)){
-			msg = cmsg.message;
+			if (cmsg.message==WM_QUIT) msg = -1;
+			else msg = cmsg.message;
 			param1 = cmsg.wParam;
 			param2 = cmsg.lParam;
 			return true;
@@ -794,6 +806,7 @@ bool MTThread::getmessage(int &msg,int &param1,int &param2,bool wait)
 void MTThread::postmessage(int msg,int param1,int param2)
 {
 	#ifdef _WIN32
+		if (msg<0) msg = WM_QUIT;
 		PostThreadMessage(id,msg,param1,param2);
 	#else
 		int cmsg[3];
@@ -918,7 +931,7 @@ void* MTThread::SysThread(void* param)
 		if (autofree) delete thread;
 	}
 	else if (autofree) delete thread;
-	return (void*)x;
+	pthread_exit((void*)x);
 }
 #endif
 //---------------------------------------------------------------------------

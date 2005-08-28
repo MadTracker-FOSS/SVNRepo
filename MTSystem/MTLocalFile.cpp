@@ -2,7 +2,7 @@
 //
 //	MadTracker System Core
 //
-//		Platforms:	Win32
+//		Platforms:	Win32,Linux
 //		Processors: All
 //
 //	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
@@ -43,7 +43,7 @@ bool MTLocalHook::filecopy(char *source,char *dest)
 	#else
 		const int BUFSIZE = 4096;
 		char buf[BUFSIZE];
-		int n,ret;
+		int n;
 		int sf,df;
 		sf = open(source,0);
 		if (sf==0) return false;
@@ -95,14 +95,14 @@ void MTLocalHook::filetype(char *url,char *type,int length)
 //---------------------------------------------------------------------------
 MTLocalFile::MTLocalFile(char *path,int access):
 maccess(access),
+stdhandle(true),
 cpos(0),
 from(0),
 to(0x7FFFFFFF),
 #ifdef _WIN32
 maph(0),
 #endif
-mmap(0),
-stdhandle(true)
+mmap(0)
 {
 	char *e;
 
@@ -157,10 +157,11 @@ stdhandle(true)
 				laccess = "w";
 				break;
 			case MTF_READ|MTF_WRITE|MTF_CREATE:
-				laccess = "w+";
+				laccess = "a+";
 				break;
 			};
 			fs = fopen(e,laccess);
+			if (fs) fseek(fs,0,SEEK_SET);
 		#endif
 	};
 	#ifdef _WIN32
@@ -256,10 +257,10 @@ MTLocalFile::~MTLocalFile()
 {
 	#ifdef _WIN32
 		if (maph) CloseHandle(maph);
-		if (!stdhandle) CloseHandle(h);
+		if ((!stdhandle) && (h!=INVALID_HANDLE_VALUE)) CloseHandle(h);
 	#else
 		if (mmap) munmap(mmap,maplength);
-		if (!stdhandle) fclose(fs);
+		if ((!stdhandle) && (fs)) fclose(fs);
 	#endif
 }
 
@@ -437,7 +438,7 @@ void *MTLocalFile::getpointer(int offset,int size)
 		if (allocalign==0) allocalign = sysinfo.dwAllocationGranularity;
 		mapoffset = (offset/allocalign)*allocalign;
 		mapoffset = offset-mapoffset;
-		mmap = (char*)MapViewOfFile(maph,waccess,0,offset-mapoffset,size+mapoffset)+mapoffset;
+		mmap = MapViewOfFile(maph,waccess,0,offset-mapoffset,size+mapoffset);
 	#else
 		if (mmap) return 0;
 		if (offset<0) offset = cpos;
@@ -449,9 +450,10 @@ void *MTLocalFile::getpointer(int offset,int size)
 		mapoffset = (offset/allocalign)*allocalign;
 		mapoffset = offset-mapoffset;
 		maplength = size+mapoffset;
-		mmap = (char*)::mmap(0,maplength,waccess,MAP_PRIVATE,fileno(fs),offset-mapoffset)+mapoffset;
+		mmap = ::mmap(0,maplength,waccess,MAP_PRIVATE,fileno(fs),offset-mapoffset);
 	#endif
-	return mmap;
+	if (!mmap) return 0;
+	return (char*)mmap+mapoffset;
 }
 
 void MTLocalFile::releasepointer(void *mem)
