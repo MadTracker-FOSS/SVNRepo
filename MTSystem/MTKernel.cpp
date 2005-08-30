@@ -15,11 +15,12 @@
 #include "MTXSystem2.h"
 #include "../../debug/Interface/MTSystemRES.h"
 #ifdef _WIN32
-	#include <mmsystem.h>
+#	include <mmsystem.h>
 #else
-	#include <pthread.h>
-	#include <stdlib.h>
-	#include <sys/select.h>
+#	include <stdlib.h>
+#	include <sys/select.h>
+#	include <setjmp.h>
+#	include <pthread.h>
 #endif
 //---------------------------------------------------------------------------
 MTThread *systhread;
@@ -45,11 +46,11 @@ MTThread* mtgetcurrentthread()
 
 bool mtissysthread()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return (GetCurrentThreadId()==systhread->id);
-	#else
+#	else
 		return (pthread_self()==systhread->id);
-	#endif
+#	endif
 }
 
 bool mtsetprivatedata(int id,void *data)
@@ -64,40 +65,40 @@ void* mtgetprivatedata(int id)
 
 int mtlocalalloc()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return TlsAlloc();
-	#else
+#	else
 		pthread_key_t key;
 		if (pthread_key_create(&key,0)) return -1;
 		return (int)key;
-	#endif
+#	endif
 }
 
 bool mtlocalfree(int id)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return TlsFree(id);
-	#else
+#	else
 		return (pthread_key_delete((pthread_key_t)id)==0);
-	#endif
+#	endif
 }
 
 bool mtlocalset(int id,void *value)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return TlsSetValue(id,value);
-	#else
+#	else
 		return (pthread_setspecific((pthread_key_t)id,value)==0);
-	#endif
+#	endif
 }
 
 void* mtlocalget(int id)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return TlsGetValue(id);
-	#else
+#	else
 		return pthread_getspecific((pthread_key_t)id);
-	#endif
+#	endif
 }
 
 MTThread* mtthreadcreate(ThreadProc proc,bool autofree,bool autostart,void *param,int priority,char *name)
@@ -152,18 +153,18 @@ MTCPUMonitor* mtcpumonitorcreate(int ncounters)
 
 int mtsyscounter()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return GetTickCount();
-	#else
+#	else
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC,&ts);
 		return (ts.tv_sec*1000)+(ts.tv_nsec/1000);
-	#endif
+#	endif
 }
 
 bool mtsyscounterex(double *count)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		__int64 c;
 		bool ok;
 		
@@ -176,22 +177,22 @@ bool mtsyscounterex(double *count)
 			*count = (double)GetTickCount()/1000;
 			return true;
 		};
-	#else
+#	else
 		struct timespec ts;
 
 		clock_gettime(CLOCK_MONOTONIC,&ts);
 		return double(ts.tv_sec)+double(ts.tv_nsec)/1000000.0;
-	#endif
+#	endif
 }
 
 void mtsyswait(int ms)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		Sleep(ms);
-	#else
+#	else
 		struct timespec ts = {ms/1000,(ms*1000)%1000000};
 		nanosleep(&ts,0);
-	#endif
+#	endif
 }
 
 int mtsyswaitmultiple(int count,MTEvent **events,bool all,int timeout)
@@ -199,14 +200,14 @@ int mtsyswaitmultiple(int count,MTEvent **events,bool all,int timeout)
 	int x,res;
 
 	if (count<=0) return -1;
-	#ifdef _WIN32
+#	ifdef _WIN32
 		HANDLE *h = (HANDLE*)mtmemalloc(sizeof(HANDLE)*count);
 		for (x=0;x<count;x++) h[x] = events[x]->event;
 		x = WaitForMultipleObjects(count,h,all,timeout);
 		if (x==WAIT_TIMEOUT) res = -1;
 		else res = x-WAIT_OBJECT_0;
 		mtmemfree(h);
-	#else
+#	else
 		struct timespec to_time;
 		_mutex_cond *p,*common_mutex_cond;
 		_le *q;
@@ -288,7 +289,7 @@ int mtsyswaitmultiple(int count,MTEvent **events,bool all,int timeout)
 		};
 		free(mutex_cond);
 		free(le);
-	#endif
+#	endif
 	return res;
 }
 
@@ -302,29 +303,104 @@ void mtsetlasterror(int error)
 	mtsetprivatedata(-7,(void*)error);
 }
 //---------------------------------------------------------------------------
+#ifndef _WIN32
+struct _MTTRY_E{
+	_MTTRY_E *prev;
+	sigjmp_buf jb;
+};
+
+struct _MTTRY{
+	int ne;
+	_MTTRY_E *el;
+};
+
+void mttryinit()
+{
+	_MTTRY *mt = (_MTTRY*)mtmemalloc(sizeof(_MTTRY));
+	mt->ne = 0;
+	mt->el = 0;
+fprintf(stderr,"INIT> Thread: %08X Data: %08X"NL,pthread_self(),mt);
+	mtsetprivatedata(-6,(void*)mt);
+	si->onerror = (void*)mttry;
+}
+
+void mttryuninit()
+{
+	_MTTRY *mt = (_MTTRY*)mtgetprivatedata(-6);
+	if ((!mt) || (mt->ne!=0) || (mt->el!=0)){
+		LOGD("%s - [System] ERROR: Exception stack corrupted! This is bad bad bad!!"NL);
+	};
+	mtmemfree(mt);
+}
+
+void ctxret()
+{
+	asm("movl $1,%eax");
+}
+
+int mttry(bool pop)
+{
+	_MTTRY *mt = (_MTTRY*)mtgetprivatedata(-6);
+	if (!pop){
+		_MTTRY_E *prev = mt->el;
+		mt->el = (_MTTRY_E*)malloc(sizeof(_MTTRY_E));
+		mt->el->prev = prev;
+		mt->ne++;
+		if (sigsetjmp(mt->el->jb,1)==0){
+fprintf(stderr,"TRY> Thread: %08X Data: %08X (%d)"NL,pthread_self(),mtgetprivatedata(-6),mt->ne);
+			return 0;
+		}
+		else{
+fprintf(stderr,"CATCH> Thread: %08X Data: %08X (%d)"NL,pthread_self(),mtgetprivatedata(-6),mt->ne);
+			return 1;
+		};
+	}
+	else{
+		_MTTRY_E *old = mt->el;
+fprintf(stderr,"<RET Thread: %08X Data: %08X (%d)"NL,pthread_self(),mt,mt->ne);
+		mt->el = old->prev;
+		free(old);
+		mt->ne--;
+		return 0;
+	};
+}
+
+void mtsigreturn(int sig)
+{
+	_MTTRY *mt = (_MTTRY*)mtgetprivatedata(-6);
+	if (mt->ne>0){
+fprintf(stderr,"<CRASH> Thread: %08X Data: %08X"NL,pthread_self(),mt);
+		siglongjmp(mt->el->jb,sig);
+	};
+}
+#endif
+//---------------------------------------------------------------------------
 void initKernel()
 {
 	int x;
 
 	for (x=0;x<16;x++) privateid[x] = mtlocalalloc();
-	#ifdef _WIN32
+#	ifdef _WIN32
 		mt_int64 intf;
 		pf = QueryPerformanceFrequency((LARGE_INTEGER*)&intf)!=0;
 		if (pf) sysfrequency = (double)intf;
 		else sysfrequency = 1000;
-	#endif
+#	endif
 	threadlock = new MTLock();
 	mtsetprivatedata(-8,new MTThread());
-	#ifdef _DEBUG
+#	ifndef _WIN32
+		mttryinit();
+#	endif
+#	ifdef _DEBUG
 		char *callstack = (char*)mtmemalloc(MAX_STACK,MTM_ZERO);
 		mtsetprivatedata(-5,callstack);
 		mtsetprivatedata(-4,callstack+MAX_STACK-1);
 		mtsetprivatedata(-3,0);
-	#endif
-	#ifdef _WIN32
+#	endif
+#	ifdef _WIN32
 		HMODULE hkernel = GetModuleHandle("KERNEL32.DLL");
 		*(int*)&tryenter = (int)GetProcAddress(hkernel,"TryEnterCriticalSection");
-	#endif
+#	endif
 }
 
 void uninitKernel()
@@ -335,9 +411,12 @@ void uninitKernel()
 	if (threads) mtmemfree(threads);
 	delete systhread;
 	delete threadlock;
-	#ifdef _DEBUG
+#	ifndef _WIN32
+		mttryuninit();
+#	endif
+#	ifdef _DEBUG
 		mtmemfree(mtgetprivatedata(-5));
-	#endif
+#	endif
 	for (x=0;x<16;x++) mtlocalfree(privateid[x]);
 }
 
@@ -346,7 +425,7 @@ void stopThreads(bool processes)
 	int x,n;
 
 	if (nthreads>0){
-		#ifdef _DEBUG
+#		ifdef _DEBUG
 			char buf[256];
 			if (processes){
 				n = 0;
@@ -362,7 +441,7 @@ void stopThreads(bool processes)
 				sprintf(buf,"%d thread(s) still running!",nthreads);
 				mtdialog(buf,"Threads",MTD_OK,MTD_EXCLAMATION,5000);
 			};
-		#endif
+#		endif
 		if (processes){
 			for (x=0;x<nthreads;x++){
 				if (threads[x]->type){
@@ -379,26 +458,26 @@ void stopThreads(bool processes)
 //---------------------------------------------------------------------------
 MTLock::MTLock()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		mtmemzero(&critical,sizeof(critical));
 		InitializeCriticalSection(&critical);
-	#else
+#	else
 		pthread_mutex_init(&mutex,0);
-	#endif
+#	endif
 }
 
 MTLock::~MTLock()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		DeleteCriticalSection(&critical);
-	#else
+#	else
 		pthread_mutex_destroy(&mutex);
-	#endif
+#	endif
 }
 
 bool MTLock::lock(int timeout)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if ((timeout>0) && (tryenter)){
 			while (--timeout>0){
 				if (tryenter(&critical)) return true;
@@ -409,7 +488,7 @@ bool MTLock::lock(int timeout)
 		};
 		EnterCriticalSection(&critical);
 		return true;
-	#else
+#	else
 		if (timeout){
 			struct timespec ts = {0,1000};
 			while (--timeout>0){
@@ -422,33 +501,33 @@ bool MTLock::lock(int timeout)
 		else{
 			return (pthread_mutex_lock(&mutex)==0);
 		};
-	#endif
+#	endif
 }
 
 void MTLock::unlock()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		LeaveCriticalSection(&critical);
-	#else
+#	else
 		pthread_mutex_unlock(&mutex);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
 MTEvent::MTEvent(bool autoreset,int interval,int resolution,bool periodic,bool pulse)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		event = CreateEvent(0,!autoreset,false,0);
 		if (interval){
 			timer = timeSetEvent(interval,resolution,(LPTIMECALLBACK)event,(int)this,((periodic)?TIME_PERIODIC:TIME_ONESHOT)|((pulse)?TIME_CALLBACK_EVENT_PULSE:TIME_CALLBACK_EVENT_SET));
 		}
 		else timer = 0;
-	#else
+#	else
 		signaled = false;
 		needreset = autoreset;
 		e_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
 		pthread_mutex_init(e_mutex,0);
 		start = end = 0;
-	#endif
+#	endif
 }
 
 MTEvent::MTEvent():
@@ -460,33 +539,33 @@ signaled(false),
 needreset(false)
 #endif
 {
-	#ifndef _WIN32
+#	ifndef _WIN32
 		e_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
 		pthread_mutex_init(e_mutex,0);
 		start = end = 0;
-	#endif
+#	endif
 }
 
 MTEvent::~MTEvent()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (timer){
 			timeKillEvent(timer);
 		};
 		if (event){
 			CloseHandle(event);
 		};
-	#else
+#	else
 		pthread_mutex_destroy(e_mutex);
 		free(e_mutex);
-	#endif
+#	endif
 }
 
 bool MTEvent::pulse()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return PulseEvent(event)!=0;
-	#else
+#	else
 		_le *p;
 		signaled = true;
 		if (start==0) return true;
@@ -507,14 +586,14 @@ bool MTEvent::pulse()
 		} while (p!=0);
 		signaled = false;
 		return true;
-	#endif
+#	endif
 }
 
 bool MTEvent::set()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return SetEvent(event)!=0;
-	#else
+#	else
 		_le *p;
 		signaled = true;
 		if (start==0) return true;
@@ -534,22 +613,22 @@ bool MTEvent::set()
 			p = p->next;
 		} while (p!=0);
 		return true;
-	#endif
+#	endif
 }
 
 bool MTEvent::reset()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return ResetEvent(event)!=0;
-	#else
+#	else
 		signaled = false;
 		return true;
-	#endif
+#	endif
 }
 
 bool MTEvent::wait(int timeout)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (!event) return false;
 		if ((gi) && (mtissysthread())){
 			int now = mtsyscounter();
@@ -561,11 +640,11 @@ bool MTEvent::wait(int timeout)
 			return false;
 		}
 		else return (WaitForSingleObject(event,timeout)==WAIT_OBJECT_0);
-	#else
+#	else
 		// TODO UI synchronization support
 		MTEvent *self = this;
 		return (mtsyswaitmultiple(1,&self,true,timeout)>=0);
-	#endif
+#	endif
 }
 
 #ifndef _WIN32
@@ -633,7 +712,7 @@ hasmsg(false)
 	threads[nthreads++] = this;
 	if (autostart) start();
 	threadlock->unlock();
-	#ifndef _WIN32
+#	ifndef _WIN32
 		bool fifo = false;
 		struct sched_param rt_param;
 		attr = (pthread_attr_t*)malloc(sizeof(pthread_attr_t));
@@ -659,7 +738,7 @@ hasmsg(false)
 		if (fifo) pthread_attr_setschedpolicy(attr,SCHED_FIFO);
 		pthread_attr_setschedparam(attr,&rt_param);
 		pipe(_p);
-	#endif
+#	endif
 }
 
 MTThread::MTThread():
@@ -676,15 +755,15 @@ running(false),
 hasmsg(false)
 {
 	systhread = this;
-	#ifdef _WIN32
+#	ifdef _WIN32
 		event = GetCurrentThread();
 		id = GetCurrentThreadId();
-	#else
+#	else
 		id = (mt_uint32)pthread_self();
 		attr = (pthread_attr_t*)malloc(sizeof(pthread_attr_t));
 		pthread_attr_init(attr);
 		pipe(_p);
-	#endif
+#	endif
 }
 
 MTThread::~MTThread()
@@ -726,12 +805,12 @@ MTThread::~MTThread()
 		};
 	};
 	threadlock->unlock();
-	#ifndef _WIN32
+#	ifndef _WIN32
 		close(_p[0]);
 		close(_p[1]);
 		pthread_attr_destroy(attr);
 		free(attr);
-	#endif
+#	endif
 }
 
 bool MTThread::pulse()
@@ -741,6 +820,9 @@ bool MTThread::pulse()
 
 bool MTThread::set()
 {
+#	ifndef _WIN32
+		return MTEvent::set();
+#	endif
 	return false;
 }
 
@@ -751,17 +833,17 @@ bool MTThread::reset()
 
 void MTThread::start()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		event = CreateThread(0,0,(LPTHREAD_START_ROUTINE)SysThread,this,0,(LPDWORD)&id);
-	#else
+#	else
 		pthread_create((pthread_t*)&id,0,SysThread,this);
-	#endif
+#	endif
 	running = true;
 }
 
 bool MTThread::getmessage(int &msg,int &param1,int &param2,bool wait)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		MSG cmsg;
 
 		if (wait){
@@ -783,7 +865,7 @@ bool MTThread::getmessage(int &msg,int &param1,int &param2,bool wait)
 			return true;
 		};
 		return false;
-	#else
+#	else
 		int cmsg[3];
 		fd_set rs;
 
@@ -800,22 +882,22 @@ bool MTThread::getmessage(int &msg,int &param1,int &param2,bool wait)
 		param1 = cmsg[1];
 		param2 = cmsg[2];
 		return true;
-	#endif
+#	endif
 }
 
 void MTThread::postmessage(int msg,int param1,int param2)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (msg<0) msg = WM_QUIT;
 		PostThreadMessage(id,msg,param1,param2);
-	#else
+#	else
 		int cmsg[3];
 
 		cmsg[0] = msg;
 		cmsg[1] = param1;
 		cmsg[2] = param2;
 		write(_p[1],&cmsg,sizeof(cmsg));
-	#endif
+#	endif
 }
 
 void MTThread::terminate()
@@ -868,21 +950,22 @@ DWORD WINAPI MTThread::SysThread(MTThread *thread)
 		break;
 	};
 	SetThreadPriority(GetCurrentThread(),x);
-	MTTRY{
-		#ifdef _DEBUG
+	MTTRY
+#		ifdef _DEBUG
 			char *callstack = (char*)mtmemalloc(MAX_STACK,MTM_ZERO);
 			mtsetprivatedata(-5,callstack);
 			mtsetprivatedata(-4,callstack+MAX_STACK-1);
 			mtsetprivatedata(-3,0);
-		#endif
+#		endif
 		x = thread->mproc(thread,thread->mparam);
-		#ifdef _DEBUG
+#		ifdef _DEBUG
 			mtmemfree(mtgetprivatedata(-5));
-		#endif
-	}
-	MTCATCH{
+#		endif
+		LOGD("%s - [System] Process completed."NL);
+	MTCATCH
+		LOGD("%s - [System] ERROR: Exception in process!"NL);
 		x = -1;
-	};
+	MTEND
 	threadlock->lock();
 	autofree = thread->mautofree;
 	if (autofree) thread->mautofree = false;
@@ -890,7 +973,7 @@ DWORD WINAPI MTThread::SysThread(MTThread *thread)
 	threadlock->unlock();
 	if (thread->type){
 		MTProcess *p = (MTProcess*)thread;
-		p->setprogress(-1.0);
+		p->setprogress((x==-1)?-2.0:-1.0);
 		if (autofree) delete thread;
 	}
 	else if (autofree) delete thread;
@@ -904,33 +987,36 @@ void* MTThread::SysThread(void* param)
 	MTThread *thread = (MTThread*)param;
 
 	mtsetprivatedata(-8,thread);
-	MTTRY{
-		#ifdef _DEBUG
+	mttryinit();
+	MTTRY
+#		ifdef _DEBUG
 			char *callstack = (char*)mtmemalloc(MAX_STACK,MTM_ZERO);
 			mtsetprivatedata(-5,callstack);
 			mtsetprivatedata(-4,callstack+MAX_STACK-1);
 			mtsetprivatedata(-3,0);
-		#endif
+#		endif
 		x = thread->mproc(thread,thread->mparam);
-		#ifdef _DEBUG
+#		ifdef _DEBUG
 			mtmemfree(mtgetprivatedata(-5));
-		#endif
-	}
-	MTCATCH{
+#		endif
+		LOGD("%s - [System] Process completed."NL);
+	MTCATCH
+		LOGD("%s - [System] ERROR: Exception in process!"NL);
 		x = -1;
-	};
+	MTEND
+	mttryuninit();
 	threadlock->lock();
 	autofree = thread->mautofree;
 	if (autofree) thread->mautofree = false;
 	thread->running = false;
-	((MTEvent*)thread)->set();
-	threadlock->unlock();
+	thread->set();
 	if (thread->type){
 		MTProcess *p = (MTProcess*)thread;
-		p->setprogress(-1.0);
+		p->setprogress((x==-1)?-2.0:-1.0);
 		if (autofree) delete thread;
 	}
 	else if (autofree) delete thread;
+	threadlock->unlock();
 	pthread_exit((void*)x);
 }
 #endif
@@ -1051,14 +1137,15 @@ void MTProcess::setprogress(float p)
 }
 //---------------------------------------------------------------------------
 MTTimer::MTTimer(int interval,int resolution,bool periodic,int param,TimerProc proc):
+event(0),
 res(resolution),
 mparam(param),
 mproc(proc)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		timeBeginPeriod(res);
 		id = timeSetEvent(interval,res,WinTimerProc,(DWORD)this,(periodic)?TIME_PERIODIC:TIME_ONESHOT);
-	#else
+#	else
 		struct sigevent se;
 		se.sigev_notify = SIGEV_SIGNAL;
 		se.sigev_signo = SIGALRM;
@@ -1066,28 +1153,35 @@ mproc(proc)
 		se.sigev_notify_function = LinuxTimerProc;
 		se.sigev_notify_attributes = 0;
 		timer_create(CLOCK_REALTIME,&se,(timer_t*)&id);
-	#endif
+#	endif
 }
 
 MTTimer::MTTimer(int interval,int resolution,bool periodic,MTEvent *event,bool pulse):
 res(resolution)
 {
-	#ifdef _WIN32
+	this->event = event;
+#	ifdef _WIN32
 		timeBeginPeriod(res);
 		id = timeSetEvent(interval,res,(LPTIMECALLBACK)event->event,0,((periodic)?TIME_PERIODIC:TIME_ONESHOT)|((pulse)?TIME_CALLBACK_EVENT_PULSE:TIME_CALLBACK_EVENT_SET));
-	#else
-		// TODO
-	#endif
+#	else
+		struct sigevent se;
+		se.sigev_notify = SIGEV_SIGNAL;
+		se.sigev_signo = SIGALRM;
+		se.sigev_value.sival_ptr = this;
+		se.sigev_notify_function = LinuxTimerProc;
+		se.sigev_notify_attributes = 0;
+		timer_create(CLOCK_REALTIME,&se,(timer_t*)&id);
+#	endif
 }
 
 MTTimer::~MTTimer()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		timeKillEvent(id);
 		timeEndPeriod(res);
-	#else
+#	else
 		timer_delete((timer_t)id);
-	#endif
+#	endif
 }
 
 #ifdef _WIN32
@@ -1100,7 +1194,8 @@ void CALLBACK MTTimer::WinTimerProc(UINT uID,UINT uMsg,DWORD dwUser,DWORD dw1,DW
 void MTTimer::LinuxTimerProc(sigval timer)
 {
 	MTTimer &ctimer = *(MTTimer*)timer.sival_ptr;
-	ctimer.mproc(&ctimer,ctimer.mparam);
+	if (ctimer.event) ctimer.event->pulse();
+	else ctimer.mproc(&ctimer,ctimer.mparam);
 }
 #endif
 //---------------------------------------------------------------------------

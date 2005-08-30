@@ -45,59 +45,61 @@
 #define MTDR_TIMEOUT    -4
 
 #if defined (_DEBUG) && defined (MTSYSTEM_EXPORTS)
-	#define LOG(T)												si->log(T,0)
-	#define LOGD(T)												si->log(T,1)
-	#define FLOG1(T,P1)										si->flog(T,0,P1)
-	#define FLOG2(T,P1,P2)								si->flog(T,0,P1,P2)
-	#define FLOG3(T,P1,P2,P3)							si->flog(T,0,P1,P2,P3)
-	#define FLOG4(T,P1,P2,P3,P4)					si->flog(T,0,P1,P2,P3,P4)
-	#define FLOG5(T,P1,P2,P3,P4,P5)				si->flog(T,0,P1,P2,P3,P4,P5)
-	#define FLOGD1(T,P1)									si->flog(T,1,P1)
-	#define FLOGD2(T,P1,P2)								si->flog(T,1,P1,P2)
-	#define FLOGD3(T,P1,P2,P3)						si->flog(T,1,P1,P2,P3)
-	#define FLOGD4(T,P1,P2,P3,P4)					si->flog(T,1,P1,P2,P3,P4)
-	#define FLOGD5(T,P1,P2,P3,P4,P5)			si->flog(T,1,P1,P2,P3,P4,P5)
-	#define DUMP(V,L,O)										si->dump((unsigned char*)V,L,O)
-	#define ENTER(F)											si->enter(F)
-	#define FENTER1(F,P1)									si->fenter(F,P1)
-	#define FENTER2(F,P1,P2)							si->fenter(F,P1,P2)
-	#define FENTER3(F,P1,P2,P3)						si->fenter(F,P1,P2,P3)
-	#define FENTER4(F,P1,P2,P3,P4)				si->fenter(F,P1,P2,P3,P4)
-	#define FENTER5(F,P1,P2,P3,P4,P5)			si->fenter(F,P1,P2,P3,P4,P5)
-	#define FENTER6(F,P1,P2,P3,P4,P5,P6)	si->fenter(F,P1,P2,P3,P4,P5,P6)
-	#define LEAVE()												si->leave()
-	#define CALLSTACK											si->getcallstack()
+#	define LOG(T)												si->log(T,0)
+#	define LOGD(T)												si->log(T,1)
+#	define FLOG1(T,P1)										si->flog(T,0,P1)
+#	define FLOG2(T,P1,P2)								si->flog(T,0,P1,P2)
+#	define FLOG3(T,P1,P2,P3)							si->flog(T,0,P1,P2,P3)
+#	define FLOG4(T,P1,P2,P3,P4)					si->flog(T,0,P1,P2,P3,P4)
+#	define FLOG5(T,P1,P2,P3,P4,P5)				si->flog(T,0,P1,P2,P3,P4,P5)
+#	define FLOGD1(T,P1)									si->flog(T,1,P1)
+#	define FLOGD2(T,P1,P2)								si->flog(T,1,P1,P2)
+#	define FLOGD3(T,P1,P2,P3)						si->flog(T,1,P1,P2,P3)
+#	define FLOGD4(T,P1,P2,P3,P4)					si->flog(T,1,P1,P2,P3,P4)
+#	define FLOGD5(T,P1,P2,P3,P4,P5)			si->flog(T,1,P1,P2,P3,P4,P5)
+#	define DUMP(V,L,O)										si->dump((unsigned char*)V,L,O)
+#	define ENTER(F)											si->enter(F)
+#	define FENTER1(F,P1)									si->fenter(F,P1)
+#	define FENTER2(F,P1,P2)							si->fenter(F,P1,P2)
+#	define FENTER3(F,P1,P2,P3)						si->fenter(F,P1,P2,P3)
+#	define FENTER4(F,P1,P2,P3,P4)				si->fenter(F,P1,P2,P3,P4)
+#	define FENTER5(F,P1,P2,P3,P4,P5)			si->fenter(F,P1,P2,P3,P4,P5)
+#	define FENTER6(F,P1,P2,P3,P4,P5,P6)	si->fenter(F,P1,P2,P3,P4,P5,P6)
+#	define LEAVE()												si->leave()
+#	define CALLSTACK											si->getcallstack()
 #else
-	#define LOG(T)
-	#define LOGD(T)
-	#define FLOG1(T,P1)
-	#define FLOG2(T,P1,P2)
-	#define FLOG3(T,P1,P2,P3)
-	#define FLOG4(T,P1,P2,P3,P4)
-	#define FLOGD1(T,P1)
-	#define FLOGD2(T,P1,P2)
-	#define FLOGD3(T,P1,P2,P3)
-	#define FLOGD4(T,P1,P2,P3,P4)
-	#define DUMP(V,L,O)
-	#define ENTER(F)
-	#define FENTER1(F,P1)
-	#define FENTER2(F,P1,P2)
-	#define FENTER3(F,P1,P2,P3)
-	#define FENTER4(F,P1,P2,P3,P4)
-	#define FENTER5(F,P1,P2,P3,P4,P5)
-	#define LEAVE()
-	#define CALLSTACK
+#	define LOG(T)
+#	define LOGD(T)
+#	define FLOG1(T,P1)
+#	define FLOG2(T,P1,P2)
+#	define FLOG3(T,P1,P2,P3)
+#	define FLOG4(T,P1,P2,P3,P4)
+#	define FLOGD1(T,P1)
+#	define FLOGD2(T,P1,P2)
+#	define FLOGD3(T,P1,P2,P3)
+#	define FLOGD4(T,P1,P2,P3,P4)
+#	define DUMP(V,L,O)
+#	define ENTER(F)
+#	define FENTER1(F,P1)
+#	define FENTER2(F,P1,P2)
+#	define FENTER3(F,P1,P2,P3)
+#	define FENTER4(F,P1,P2,P3,P4)
+#	define FENTER5(F,P1,P2,P3,P4,P5)
+#	define LEAVE()
+#	define CALLSTACK
 #endif
 #define mtnew(_T) (_T*)mtmemalloc(sizeof(_T),MTM_ZERO)
 #define A(_A,_T) ((_T**)_A->a)
 #define D(_A,_T) ((_T*)_A->d)
 
 #if defined(MTSYSTEM_EXPORTS) && defined(_WIN32)
-	#define MTTRY   __try
-	#define MTCATCH __except(si->onexception(GetExceptionInformation()))
+#	define MTTRY   __try{
+#	define MTCATCH }__except(LPTOP_LEVEL_EXCEPTION_FILTER(si->onerror)(GetExceptionInformation())){
+#	define MTEND };
 #else
-	#define MTTRY   try
-	#define MTCATCH catch(...)
+#	define MTTRY   try{if (mttry(false)==0){
+#	define MTCATCH }else{throw;}}catch(...){
+#	define MTEND }mttry(true);
 #endif
 //---------------------------------------------------------------------------
 class MTConfigFile;
@@ -125,7 +127,7 @@ class MTHash;
 #include "MTStructures.h"
 //---------------------------------------------------------------------------
 #ifdef _WIN32
-	#include <windows.h>
+#	include <windows.h>
 #endif
 //---------------------------------------------------------------------------
 static const int systemtype = FOURCC('X','S','Y','S');
@@ -140,6 +142,7 @@ public:
 	char *processor;
 	int ncpu;
 	int cpufrequ;
+	void *onerror;
 
 	MTSystemInterface();
 	bool MTCT init();
@@ -151,7 +154,6 @@ public:
 	int MTCT config(int command,int param);
 	virtual int MTCT getlasterror();
 	virtual void MTCT setlasterror(int error);
-	virtual int MTCT onexception(void*);
 	virtual void MTCT addfilehook(char *type,MTFileHook *hook);
 	virtual void MTCT delfilehook(char *type,MTFileHook *hook);
 

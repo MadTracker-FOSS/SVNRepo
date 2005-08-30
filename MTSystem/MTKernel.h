@@ -58,10 +58,10 @@ typedef void (MTCT *TimerProc)(MTTimer *timer,int param);
 //---------------------------------------------------------------------------
 #include "MTSystem1.h"
 #ifdef _WIN32
-#include <windows.h>
+#	include <windows.h>
 #else
-#include <pthread.h>
-#include <signal.h>
+#	include <pthread.h>
+#	include <signal.h>
 #endif
 #include "MTXGUI.h"
 //---------------------------------------------------------------------------
@@ -177,6 +177,7 @@ private:
 #else
 	static void LinuxTimerProc(sigval);
 #endif
+	MTEvent *event;
 	int id;
 	int res;
 	int mparam;
@@ -219,6 +220,10 @@ extern "C"
 void initKernel();
 void uninitKernel();
 void stopThreads(bool processes);
+#ifndef _WIN32
+	int mttry(bool pop);
+	void mtsigreturn(int sig);
+#endif
 //---------------------------------------------------------------------------
 MTThread* MTCT mtgetsysthread();
 MTThread* MTCT mtgetcurrentthread();
