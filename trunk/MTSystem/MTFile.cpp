@@ -15,7 +15,7 @@
 #include "MTLocalFile.h"
 #include "MTMemoryFile.h"
 #include "MTHTTPFile.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 int tmpid = 0;
 MTHash *hooks;
@@ -175,11 +175,11 @@ void mtfilemaketemp(char *filename,int length)
 	char ext[8];
 	char path[512];
 
-	#ifdef _WIN32
+#	ifdef _WIN32
 		GetTempPath(260,path);
-	#else
+#	else
 		strcpy(path,"/tmp/");
-	#endif
+#	endif
 	strcat(path,filename);
 	x = y = '0';
 	strcpy(ext,".tmp");
@@ -206,11 +206,11 @@ MTFile *mttempfile(int access)
 	char *e;
 	char path[512];
 	
-	#ifdef _WIN32
+#	ifdef _WIN32
 		GetTempPath(260,path);
-	#else
+#	else
 		strcpy(path,"/tmp/");
-	#endif
+#	endif
 	strcat(path,"mttmp");
 	e = strchr(path,0);
 	do{

@@ -33,12 +33,10 @@ bool initHTTP()
 		};
 		mtinterface->releaseconf(conf);
 	};
-	#ifdef _DEBUG
-/*
+#	ifdef _DEBUG
 		MTHTTPFile *test = new MTHTTPFile("http://195.95.38.138",MTF_READ);
 		if (test) delete test;
-*/
-	#endif
+#	endif
 	return true;
 }
 

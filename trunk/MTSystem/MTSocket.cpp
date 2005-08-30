@@ -45,7 +45,7 @@
 //---------------------------------------------------------------------------
 void initSocket()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		LOGD("%s - [System] Initializing WinSock..."NL);
 		if (!hws){
 			hws = LoadLibrary("WS2_32.DLL");
@@ -78,18 +78,18 @@ void initSocket()
 			*(int*)&mtsocket = (int)GetProcAddress(hws,"socket");
 		};
 		if (wsstartup(0x101,&wsadata)==0) socketinit = true;
-	#endif
+#	endif
 }
 
 void uninitSocket()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (socketinit){
 			wscleanup();
 			FreeLibrary(hws);
 			socketinit = false;
 		};
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
 MTSocket::MTSocket(bool datagram):
@@ -100,9 +100,9 @@ ip(0),
 port(0),
 s(0)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (!socketinit) initSocket();
-	#endif
+#	endif
 	mtmemzero(&addr,sizeof(addr));
 	addr.sin_family = AF_INET;
 }
@@ -115,9 +115,9 @@ ip(0),
 port(0),
 s(cs)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (!socketinit) initSocket();
-	#endif
+#	endif
 	memcpy(&addr,caddr,sizeof(addr));
 	ip = addr.sin_addr.s_addr;
 	port = mthtons(addr.sin_port);
@@ -194,15 +194,15 @@ int MTSocket::write(const void *buffer,mt_uint32 size)
 
 void MTSocket::setblocking(bool b)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		b ^= true;
 		mtioctlsocket(s,FIONBIO,(unsigned long*)&b);
-	#else
+#	else
 		int state = mtioctlsocket(s,F_GETFL);
 		if (b) state &= (!O_NONBLOCK);
 		else state |= O_NONBLOCK;
 		mtioctlsocket(s,F_SETFL,state);
-	#endif
+#	endif
 }
 
 const char* MTSocket::getname()
@@ -219,11 +219,11 @@ int MTSocket::getip()
 
 int MTSocket::getendip()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return addr.sin_addr.S_un.S_addr;
-	#else
+#	else
 		return addr.sin_addr.s_addr;
-	#endif
+#	endif
 }
 
 int MTSocket::makesocket()
