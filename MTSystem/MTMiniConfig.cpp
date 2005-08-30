@@ -236,9 +236,9 @@ int MTMiniConfig::loadfromstream(MTFile *f,int flags)
 			}
 			else{
 				l += f->read(&cp->value,cp->size);
-#ifdef BIG_ENDIAN
-				*(int*)cp->value = swap_dword(*(int*)cp->value);
-#endif
+#				ifdef BIG_ENDIAN
+					*(int*)cp->value = swap_dword(*(int*)cp->value);
+#				endif
 			};
 		};
 		ep = (MP*)(((flags & MTMC_STRUCTURE)==0)?mp->getitemfromid(x):((flags & MTMC_MD5KEYS)?mp->getitem(ikey[0]):mp->getitem(key)));
@@ -285,12 +285,12 @@ int MTMiniConfig::savetostream(MTFile *f,int flags)
 				l += f->write(cp->value,cp->size);
 			}
 			else{
-#ifdef BIG_ENDIAN
-				int _tmp = swap_dword(*(int*)cp->value);
-				l += f->write(&_tmp,cp->size);
-#else
-				l += f->write(&cp->value,cp->size);
-#endif
+#				ifdef BIG_ENDIAN
+					int _tmp = swap_dword(*(int*)cp->value);
+					l += f->write(&_tmp,cp->size);
+#				else
+					l += f->write(&cp->value,cp->size);
+#				endif
 			};
 		};
 	};

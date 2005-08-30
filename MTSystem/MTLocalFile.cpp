@@ -12,8 +12,8 @@
 //---------------------------------------------------------------------------
 #include <time.h>
 #ifndef _WIN32
-#include <utime.h>
-#include <sys/mman.h>
+#	include <utime.h>
+#	include <sys/mman.h>
 #endif
 #include "MTLocalFile.h"
 #include "../Headers/MTXSystem2.h"
@@ -38,9 +38,9 @@ MTFolder* MTLocalHook::folderopen(char *url)
 
 bool MTLocalHook::filecopy(char *source,char *dest)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return (CopyFile(source,dest,false)==TRUE);
-	#else
+#	else
 		const int BUFSIZE = 4096;
 		char buf[BUFSIZE];
 		int n;
@@ -60,25 +60,25 @@ bool MTLocalHook::filecopy(char *source,char *dest)
 			};
 		};
 		return true;
-	#endif
+#	endif
 }
 
 bool MTLocalHook::filerename(char *source,char *dest)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return (MoveFile(source,dest)==TRUE);
-	#else
+#	else
 		return (rename(source,dest)==0);
-	#endif
+#	endif
 }
 
 bool MTLocalHook::filedelete(char *url)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return (DeleteFile(url)==TRUE);
-	#else
+#	else
 		return (unlink(url)==0);
-	#endif
+#	endif
 }
 
 void MTLocalHook::filetype(char *url,char *type,int length)
@@ -111,29 +111,29 @@ mmap(0)
 	if (e) path = e+3;
 	e = path;
 	if (strcmp(path,"stdin")==0){
-		#ifdef _WIN32
+#		ifdef _WIN32
 			h = GetStdHandle(STD_INPUT_HANDLE);
-		#else
+#		else
 			fs = stdin;
-		#endif
+#		endif
 	}
 	else if (strcmp(path,"stdout")==0){
-		#ifdef _WIN32
+#		ifdef _WIN32
 			h = GetStdHandle(STD_OUTPUT_HANDLE);
-		#else
+#		else
 			fs = stdout;
-		#endif
+#		endif
 	}
 	else if (strcmp(path,"stderr")==0){
-		#ifdef _WIN32
+#		ifdef _WIN32
 			h = GetStdHandle(STD_ERROR_HANDLE);
-		#else
+#		else
 			fs = stderr;
-		#endif
+#		endif
 	}
 	else{
 		stdhandle = false;
-		#ifdef _WIN32
+#		ifdef _WIN32
 			int waccess = 0;
 			int wshare = 0;
 			int wcreate = 0;
@@ -146,7 +146,7 @@ mmap(0)
 			else wcreate |= OPEN_EXISTING;
 			if (access & MTF_TEMP) wattr |= FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE;
 			h = CreateFile(e,waccess,wshare,0,wcreate,wattr,0);
-		#else
+#		else
 			char *laccess = "r";
 			switch (access & (MTF_READ|MTF_WRITE|MTF_CREATE)){
 			case MTF_READ|MTF_WRITE:
@@ -162,9 +162,9 @@ mmap(0)
 			};
 			fs = fopen(e,laccess);
 			if (fs) fseek(fs,0,SEEK_SET);
-		#endif
+#		endif
 	};
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (h==INVALID_HANDLE_VALUE){
 			switch (GetLastError()){
 			case 2:
@@ -182,7 +182,7 @@ mmap(0)
 				break;
 			};
 		};
-	#else
+#	else
 		if (fs==0){
 			switch (errno){
 			case ENODEV:
@@ -197,7 +197,7 @@ mmap(0)
 				break;
 			};
 		};
-	#endif
+#	endif
 }
 
 MTLocalFile::MTLocalFile(MTFile *parent,int start,int end,int access):
@@ -212,7 +212,7 @@ mmap(0),
 stdhandle(((MTLocalFile*)parent)->stdhandle)
 {
 	mtsetlasterror(0);
-	#ifdef _WIN32
+#	ifdef _WIN32
 		int waccess = 0;
 		HANDLE p = GetCurrentProcess();
 		if (access & MTF_READ) waccess |= GENERIC_READ;
@@ -235,7 +235,7 @@ stdhandle(((MTLocalFile*)parent)->stdhandle)
 			FLOGD1("%s - [System] WARNING: Cannot subclass file! (Error %d)"NL,mtgetlasterror());
 		};
 		SetFilePointer(h,start,0,FILE_BEGIN);
-	#else
+#	else
 		char *laccess = "r";
 		switch (access & (MTF_READ|MTF_WRITE|MTF_CREATE)){
 		case MTF_READ|MTF_WRITE:
@@ -250,18 +250,18 @@ stdhandle(((MTLocalFile*)parent)->stdhandle)
 			break;
 		};
 		fs = fdopen(dup(fileno(((MTLocalFile*)parent)->fs)),laccess);
-	#endif
+#	endif
 }
 
 MTLocalFile::~MTLocalFile()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (maph) CloseHandle(maph);
 		if ((!stdhandle) && (h!=INVALID_HANDLE_VALUE)) CloseHandle(h);
-	#else
+#	else
 		if (mmap) munmap(mmap,maplength);
 		if ((!stdhandle) && (fs)) fclose(fs);
-	#endif
+#	endif
 }
 
 int MTLocalFile::read(void *buffer,int size)
@@ -270,11 +270,11 @@ int MTLocalFile::read(void *buffer,int size)
 	
 	if (cpos+size>to) size = to-cpos;
 	if (size<=0) return 0;
-	#ifdef _WIN32
+#	ifdef _WIN32
 		ReadFile(h,buffer,size,(DWORD*)&read,0);
-	#else
+#	else
 		read = fread(buffer,1,size,fs);
-	#endif
+#	endif
 	cpos += read;
 	return read;
 }
@@ -286,7 +286,7 @@ int MTLocalFile::readln(char *buffer,int maxsize)
 	
 	if (cpos+maxsize>to) maxsize = to-cpos;
 	if (maxsize<=0) return 0;
-	#ifdef _WIN32
+#	ifdef _WIN32
 		int x,y,i,r,r2;
 		x = maxsize;
 		while (x>0){
@@ -321,7 +321,7 @@ int MTLocalFile::readln(char *buffer,int maxsize)
 			x -= r;
 		};
 done:
-	#else
+#	else
 		read = ftell(fs);
 		fgets(buffer,maxsize,fs);
 		read = ftell(fs)-read;
@@ -333,7 +333,7 @@ done:
 				e--;
 			};
 		};
-	#endif
+#	endif
 	cpos += read;
 	return read;
 }
@@ -344,7 +344,7 @@ int MTLocalFile::reads(char *buffer,int maxsize)
 	
 	if (cpos+maxsize>to) maxsize = to-cpos;
 	if (maxsize<=0) return 0;
-	#ifdef _WIN32
+#	ifdef _WIN32
 		int x,y,i,r;
 		x = maxsize;
 		while (x>0){
@@ -368,11 +368,11 @@ int MTLocalFile::reads(char *buffer,int maxsize)
 			x -= r;
 		};
 done:
-	#else
+#	else
 		read = ftell(fs);
 		fgets(buffer,maxsize,fs);
 		read = ftell(fs)-read;
-	#endif
+#	endif
 	cpos += read;
 	return read;
 }
@@ -383,11 +383,11 @@ int MTLocalFile::write(const void *buffer,int size)
 	
 	if (cpos+size>to) size = to-cpos;
 	if (size<=0) return 0;
-	#ifdef _WIN32
+#	ifdef _WIN32
 		WriteFile(h,buffer,size,(DWORD*)&written,0);
-	#else
+#	else
 		written = fwrite(buffer,1,size,fs);
-	#endif
+#	endif
 	cpos += written;
 	return written;
 }
@@ -399,32 +399,32 @@ int MTLocalFile::seek(int pos,int origin)
 		origin = MTF_BEGIN;
 		pos = to-pos;
 	};
-	#ifdef _WIN32
+#	ifdef _WIN32
 		cpos = SetFilePointer(h,pos,0,origin);
-	#else
+#	else
 		fseek(fs,pos,origin);
 		cpos = ftell(fs);
-	#endif
+#	endif
 	return cpos-from;
 }
 
 int MTLocalFile::length()
 {
 	if (to<0x7FFFFFFF) return to-from;
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return GetFileSize(h,0);
-	#else
+#	else
 		struct stat s;
 		fstat(fileno(fs),&s);
 		return s.st_size;
-	#endif
+#	endif
 }
 
 void *MTLocalFile::getpointer(int offset,int size)
 {
 	int waccess = 0;
 
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if ((!h) || (mmap)) return 0;
 		if (offset<0) offset = cpos;
 		else offset += from;
@@ -439,7 +439,7 @@ void *MTLocalFile::getpointer(int offset,int size)
 		mapoffset = (offset/allocalign)*allocalign;
 		mapoffset = offset-mapoffset;
 		mmap = MapViewOfFile(maph,waccess,0,offset-mapoffset,size+mapoffset);
-	#else
+#	else
 		if (mmap) return 0;
 		if (offset<0) offset = cpos;
 		else offset += from;
@@ -451,24 +451,24 @@ void *MTLocalFile::getpointer(int offset,int size)
 		mapoffset = offset-mapoffset;
 		maplength = size+mapoffset;
 		mmap = ::mmap(0,maplength,waccess,MAP_PRIVATE,fileno(fs),offset-mapoffset);
-	#endif
+#	endif
 	if (!mmap) return 0;
 	return (char*)mmap+mapoffset;
 }
 
 void MTLocalFile::releasepointer(void *mem)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if ((maph) && (mmap) && ((char*)mmap==(char*)mem-mapoffset)){
 			UnmapViewOfFile(mmap);
 			mmap = 0;
 		};
-	#else
+#	else
 		if ((mmap) && ((char*)mmap==(char*)mem-mapoffset)){
 			munmap(mmap,maplength);
 			mmap = 0;
 		};
-	#endif
+#	endif
 }
 
 int MTLocalFile::pos()
@@ -479,30 +479,30 @@ int MTLocalFile::pos()
 bool MTLocalFile::eof()
 {
 	if (cpos>=to) return true;
-	#ifdef _WIN32
+#	ifdef _WIN32
 		return (cpos>=(int)GetFileSize(h,0));
-	#else
+#	else
 		return (feof(fs)!=0);
-	#endif
+#	endif
 }
 
 bool MTLocalFile::seteof()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (mmap) return false;
 		if (maph){
 			CloseHandle(maph);
 			maph = 0;
 		};
 		return (SetEndOfFile(h)!=0);
-	#else
+#	else
 		return (ftruncate(fileno(fs),ftell(fs))==0);
-	#endif
+#	endif
 }
 
 bool MTLocalFile::gettime(int *modified,int *accessed)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		FILETIME fa,fm;
 		FILETIME *pfa,*pfm;
 		SYSTEMTIME stime;
@@ -533,19 +533,19 @@ bool MTLocalFile::gettime(int *modified,int *accessed)
 			utime.tm_sec = stime.wSecond;
 			*accessed = mktime(&utime);
 		};
-	#else
+#	else
 		struct stat s;
 
 		fstat(fileno(fs),&s);
 		if (modified) *modified = s.st_mtime;
 		if (accessed) *accessed = s.st_atime;
-	#endif
+#	endif
 	return true;
 }
 
 bool MTLocalFile::settime(int *modified,int *accessed)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		FILETIME fm,fa;
 		FILETIME *pfm,*pfa;
 		SYSTEMTIME stime;
@@ -576,7 +576,7 @@ bool MTLocalFile::settime(int *modified,int *accessed)
 			SystemTimeToFileTime(&stime,pfa);
 		};
 		return (SetFileTime(h,0,pfa,pfm)!=0);
-	#else
+#	else
 		struct utimbuf utb;
 		struct stat s;
 
@@ -586,7 +586,7 @@ bool MTLocalFile::settime(int *modified,int *accessed)
 		if (*accessed) utb.actime = *accessed;
 		else utb.actime = s.st_atime;
 		return (utime(url,&utb)==0);
-	#endif
+#	endif
 }
 
 MTFile* MTLocalFile::subclass(int start,int length,int access)
@@ -602,10 +602,9 @@ search(INVALID_HANDLE_VALUE),
 #endif
 id(0)
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		char *me;
 		int em;
-		
 		strcpy(mpath,path);
 		me = strchr(mpath,0);
 		if (me>mpath){
@@ -617,23 +616,23 @@ id(0)
 			search = FindFirstFile(mpath,&data);
 			SetErrorMode(em);
 		};
-	#else
+#	else
 		d = opendir(path);
-	#endif
+#	endif
 }
 
 MTLocalFolder::~MTLocalFolder()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (search!=INVALID_HANDLE_VALUE) FindClose(search);
-	#endif
+#	endif
 }
 
 bool MTLocalFolder::getfile(const char **name,int *attrib,double *size)
 {
 	char tmp[512];
 
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (search==INVALID_HANDLE_VALUE){
 			if (mpath[1]==':') return false;
 			if (mpath[0]==0){
@@ -678,9 +677,9 @@ bool MTLocalFolder::getfile(const char **name,int *attrib,double *size)
 			if (data.dwFileAttributes & FILE_ATTRIBUTE_READONLY) *attrib |= MTFA_READONLY;
 		};
 		if (size){
-			int64todouble((int*)&data.nFileSizeHigh,size);
+			int64todouble((mt_int64*)&data.nFileSizeHigh,size);
 		};
-	#else
+#	else
 		struct dirent *de;
 		de = readdir(d);
 		if (de==0) return false;
@@ -701,13 +700,13 @@ bool MTLocalFolder::getfile(const char **name,int *attrib,double *size)
 			};
 			if (size) *size = s.st_size;
 		};
-	#endif
+#	endif
 	return true;
 }
 
 bool MTLocalFolder::next()
 {
-	#ifdef _WIN32
+#	ifdef _WIN32
 		if (search!=INVALID_HANDLE_VALUE) return FindNextFile(search,&data)!=0;
 		if (mpath[0]==0) return false;
 		if (strcmp(mpath,"Root")==0){
@@ -720,8 +719,8 @@ bool MTLocalFolder::next()
 			if (ld) return true;
 		};
 		return false;
-	#else
+#	else
 		return true;
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------

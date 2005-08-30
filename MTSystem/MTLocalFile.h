@@ -19,15 +19,15 @@ class MTLocalFolder;
 //---------------------------------------------------------------------------
 #include "MTFile.h"
 #ifdef _WIN32
-	#include <windows.h>
-	#include <shlobj.h>
-	#include <shellapi.h>
+#	include <windows.h>
+#	include <shlobj.h>
+#	include <shellapi.h>
 #else
-	#include <sys/types.h>
-	#include <sys/stat.h>
-	#include <fcntl.h>
-	#include <stdio.h>
-	#include <dirent.h>
+#	include <sys/types.h>
+#	include <sys/stat.h>
+#	include <fcntl.h>
+#	include <stdio.h>
+#	include <dirent.h>
 #endif
 //---------------------------------------------------------------------------
 class MTLocalHook : public MTFileHook{
