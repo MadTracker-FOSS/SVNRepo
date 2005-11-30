@@ -443,7 +443,7 @@ public:
 	virtual void MTCT addfilehook(char *type,MTFileHook *hook) = 0;
 	virtual void MTCT delfilehook(char *type,MTFileHook *hook) = 0;
 
-	void* (MTCT *memalloc)(int size,int flags = 0);
+	void* (MTCT *memalloc)(int size,int flags);
 	bool (MTCT *memfree)(void *mem);
 	void* (MTCT *memrealloc)(void *mem,int size);
 	MTThread* (MTCT *getsysthread)();
@@ -455,8 +455,8 @@ public:
 	bool (MTCT *localfree)(int id);
 	bool (MTCT *localset)(int id,void *value);
 	void* (MTCT localget)(int id);
-	MTThread* (MTCT *threadcreate)(ThreadProc proc,bool autofree,bool autostart,void *param,int priority = MTT_NORMAL,char *name = 0);
-	MTProcess* (MTCT *processcreate)(ThreadProc tproc,void *param,int type,int priority,void *data,ProcessProc pproc,bool silent,char *name = 0);
+	MTThread* (MTCT *threadcreate)(ThreadProc proc,bool autofree,bool autostart,void *param,int priority,char *name);
+	MTProcess* (MTCT *processcreate)(ThreadProc tproc,void *param,int type,int priority,void *data,ProcessProc pproc,bool silent,char *name);
 	MTFile* (MTCT *fileopen)(char *url,int flags);
 	void (MTCT *fileclose)(MTFile *file);
 	bool (MTCT *fileexists)(char *filename);
@@ -467,11 +467,11 @@ public:
 	void (MTCT *filemaketemp)(char *filename,int length);
 	MTFolder* (MTCT *folderopen)(char *path);
 	void (MTCT *folderclose)(MTFolder *folder);
-	MTArray* (MTCT *arraycreate)(int nallocby,int itemsize = 0);
+	MTArray* (MTCT *arraycreate)(int nallocby,int itemsize);
 	void (MTCT *arraydelete)(MTArray *array);
 	MTHash* (MTCT *hashcreate)(int nallocby);
 	void (MTCT *hashdelete)(MTHash *array);
-	MTResources* (MTCT *resfind)(const char *filename,bool write = false);
+	MTResources* (MTCT *resfind)(const char *filename,bool write);
 	MTResources* (MTCT *resopen)(MTFile *f,bool ownfile);
 	void (MTCT *resclose)(MTResources *res);
 	MTConfigFile* (MTCT *configfind)(const char *filename);
@@ -483,16 +483,16 @@ public:
 	void (MTCT *xmldelete)(MTXML *xml);
 	MTLock* (MTCT *lockcreate)();
 	void (MTCT *lockdelete)(MTLock *lock);
-	MTEvent* (MTCT *eventcreate)(bool autoreset,int interval = 0,int resolution = 0,bool periodic = true,bool pulse = false);
+	MTEvent* (MTCT *eventcreate)(bool autoreset,int interval,int resolution,bool periodic,bool pulse);
 	void (MTCT *eventdelete)(MTEvent *event);
 	MTTimer* (MTCT *timercreate)(int interval,int resolution,bool periodic,int param,TimerProc proc);
-	MTTimer* (MTCT *timerevent)(int interval,int resolution,bool periodic,MTEvent *event,bool pulse = false);
+	MTTimer* (MTCT *timerevent)(int interval,int resolution,bool periodic,MTEvent *event,bool pulse);
 	void (MTCT *timerdelete)(MTTimer *timer);
 	MTCPUMonitor *(MTCT *cpumonitorcreate)(int ncounters);
 	int (MTCT *syscounter)();
 	bool (MTCT *syscounterex)(double *count);
 	void (MTCT *syswait)(int ms);
-	int (MTCT *syswaitmultiple)(int count,MTEvent **events,bool all,int timeout = -1);
+	int (MTCT *syswaitmultiple)(int count,MTEvent **events,bool all,int timeout);
 	int (MTCT *dialog)(char *message,char *caption,char *buttons,int flags,int timeout);
 	int (MTCT *resdialog)(MTResources *res,int id,char *caption,char *buttons,int timeout,int flags,...);
 	int (MTCT *authdialog)(char *message,char *login,char *password);
@@ -500,7 +500,7 @@ public:
 	void (MTCT *showlastoserror)();
 	void (MTCT *log)(const char *log,char date);
 	void (MTCT *flog)(const char *log,char date,...);
-	void (MTCT *dump)(unsigned char *address,int length,int offset = 0);
+	void (MTCT *dump)(unsigned char *address,int length,int offset);
 	void (MTCT *enter)(const char *func);
 	void (MTCT *fenter)(const char *func,...);
 	void (MTCT *leave)();
