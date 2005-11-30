@@ -5,7 +5,9 @@
 //		Platforms:	All
 //		Processors:	x86
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <math.h>
@@ -15,7 +17,7 @@ const	double f2pi = 6.283185307179586476925286766559;
 const double fresostart = 1.44927536231884057971014492753e-2;
 const double fresorange = 0.92753623188405797101449275362319;
 //---------------------------------------------------------------------------
-void MTACT a_subfilter_(sample *dest,sample *source,FilterStatus &status,int count)
+void MTCT a_subfilter_(sample *dest,sample *source,FilterStatus &status,int count)
 {
 	if ((status.fvarlng) && (status.rvarlng)){
 		while (count-->0){
@@ -57,7 +59,7 @@ void MTACT a_subfilter_(sample *dest,sample *source,FilterStatus &status,int cou
 	if (IS_DENORMAL(status.t[1])) status.t[1] = 0.0;
 }
 
-void MTACT a_filter_(sample *dest,sample *source,FilterStatus &status,int count,int frequency)
+void MTCT a_filter_(sample *dest,sample *source,FilterStatus &status,int count,int frequency)
 {
 	double fc,r;
 	int i = count;

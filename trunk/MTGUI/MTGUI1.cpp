@@ -509,7 +509,7 @@ MTControl *MTGUIInterface::newcontrol(int type,int tag,MTWinControl *parent,int 
 		res = new MTOSWindow(tag,parent,l,t,w,h);
 		break;
 	default:
-		LOGD("%s - [GUI] ERROR: Unknown object type!"NL);
+		FLOGD1("%s - [GUI] ERROR: Unknown object type %08X!"NL,type);
 		break;
 	};
 	if (res){
@@ -615,13 +615,12 @@ int syncloadwindow(MTSync *s)
 	MTWindow *window;
 	
 	window = (MTWindow*)gi->newcontrol(MTC_WINDOW,0,(MTDesktop*)s->param[2],0,0,256,128,0);
-	MTTRY{
+	MTTRY
 		window->loadfromstream((MTFile*)s->param[0],s->param[1],0);
-	}
-	MTCATCH{
+	MTCATCH
 		gi->delcontrol(window);
 		window = 0;
-	};
+	MTEND
 	return (int)window;
 }
 
@@ -984,9 +983,9 @@ void MTGUIInterface::registershortcut(MTShortcut *s)
 	};
 	keylookup = s->flags & (~(MTSF_UICONTROL|MTSF_GROUP));
 	keylookup |= (s->key<<8);
-#ifdef BIG_ENDIAN
-	keylookup = swap_dword(keylookup);
-#endif
+#	if (BIG_ENDIAN==1234)
+		keylookup = swap_dword(keylookup);
+#	endif
 	shortcuts->additem(keylookup,s);
 }
 
@@ -997,9 +996,9 @@ void MTGUIInterface::unregistershortcut(MTShortcut *s)
 	if (!shortcuts) return;
 	keylookup = s->flags & (~MTSF_UICONTROL);
 	keylookup |= (s->key<<8);
-#ifdef BIG_ENDIAN
+#	if (BIG_ENDIAN==1234)
 		keylookup = swap_dword(keylookup);
-#endif
+#	endif
 	shortcuts->delitem(keylookup);
 }
 
@@ -1380,9 +1379,9 @@ LRESULT CALLBACK MTGUIInterface::WindowProc(HWND wnd,unsigned int msg,unsigned i
 		keylookup |= (wparam<<8);
 		cmsg.scancode = (lparam>>16) & 0xFF;
 		cmsg.repeat = lparam>>30;
-#ifdef BIG_ENDIAN
-		keylookup = swap_dword(keylookup);
-#endif
+#		if (BIG_ENDIAN==1234)
+			keylookup = swap_dword(keylookup);
+#		endif
 		cs = (MTShortcut*)shortcuts->getitem(keylookup);
 		if (cs){
 			cmsg.s = cs;
@@ -1430,7 +1429,7 @@ LRESULT CALLBACK MTGUIInterface::WindowProc(HWND wnd,unsigned int msg,unsigned i
 extern "C"
 {
 
-MTXInterfaces* __stdcall MTXMain(MTInterface *mti)
+MTXInterfaces* MTCT MTXMain(MTInterface *mti)
 {
 	mtinterface = mti;
 	if (!gi) gi = new MTGUIInterface();

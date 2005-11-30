@@ -5,7 +5,9 @@
 //		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <math.h>
@@ -15,15 +17,17 @@
 #include "MTFilterASM.h"
 #include "MTResamplingASM.h"
 #include "MTCatmullASM.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 static const char *dspname = {"MadTracker DSP"};
 static const int dspversion = 0x30000;
 static const MTXKey dspkey = {0,0,0,0};
-MTXInterfaces i;
-MTDSPInterface *dspi;
-MTInterface *mtinterface;
-MTSystemInterface *si;
+#ifndef MTBUILTIN
+	MTXInterfaces i;
+	MTDSPInterface *dspi;
+	MTInterface *mtinterface;
+	MTSystemInterface *si;
+#endif
 MTResampleProc proc[255];
 //---------------------------------------------------------------------------
 MTDSPInterface::MTDSPInterface()
@@ -68,62 +72,64 @@ bool MTDSPInterface::init()
 	filter[0xD] = a_filter_;
 	filter[0xE] = a_filter_;
 	filter[0xF] = a_filter_;
-	resample[0x00] = (MTResampleProc)a_resample_none_8;
-	resample[0x01] = (MTResampleProc)a_resample_none_16;
-	resample[0x02] = (MTResampleProc)a_resample_none_32;
-	resample[0x03] = (MTResampleProc)a_resample_none_32;
-	resample[0x04] = (MTResampleProc)a_resample_none_8;
-	resample[0x05] = (MTResampleProc)a_resample_none_16;
-	resample[0x06] = (MTResampleProc)a_resample_none_32;
-	resample[0x07] = (MTResampleProc)a_resample_none_32;
-	resample[0x08] = (MTResampleProc)a_resample_none_8;
-	resample[0x09] = (MTResampleProc)a_resample_none_16;
-	resample[0x0A] = (MTResampleProc)a_resample_none_32;
-	resample[0x0B] = (MTResampleProc)a_resample_none_32;
-	resample[0x0C] = (MTResampleProc)a_resample_none_8;
-	resample[0x0D] = (MTResampleProc)a_resample_none_16;
-	resample[0x0E] = (MTResampleProc)a_resample_none_32;
-	resample[0x0F] = (MTResampleProc)a_resample_none_32;
-	resample[0x10] = (MTResampleProc)a_resample_none_8;
-	resample[0x11] = (MTResampleProc)a_resample_none_16;
-	resample[0x12] = (MTResampleProc)a_resample_none_32;
-	resample[0x13] = (MTResampleProc)a_resample_none_32;
-	resample[0x14] = (MTResampleProc)a_resample_none_8;
-	resample[0x15] = (MTResampleProc)a_resample_none_16;
-	resample[0x16] = (MTResampleProc)a_resample_none_32;
-	resample[0x17] = (MTResampleProc)a_resample_none_32;
-	resample[0x18] = (MTResampleProc)a_resample_none_8;
-	resample[0x19] = (MTResampleProc)a_resample_none_16;
-	resample[0x1A] = (MTResampleProc)a_resample_none_32;
-	resample[0x1B] = (MTResampleProc)a_resample_none_32;
-	resample[0x1C] = (MTResampleProc)a_resample_none_8;
-	resample[0x1D] = (MTResampleProc)a_resample_none_16;
-	resample[0x1E] = (MTResampleProc)a_resample_none_32;
-	resample[0x1F] = (MTResampleProc)a_resample_none_32;
+	resample[0x00] = (MTResampleProc)a_resample_linear_8;
+	resample[0x01] = (MTResampleProc)a_resample_linear_16;
+	resample[0x02] = (MTResampleProc)a_resample_linear_32;
+	resample[0x03] = (MTResampleProc)a_resample_linear_32;
+	resample[0x04] = (MTResampleProc)a_resample_linear_8;
+	resample[0x05] = (MTResampleProc)a_resample_linear_16;
+	resample[0x06] = (MTResampleProc)a_resample_linear_32;
+	resample[0x07] = (MTResampleProc)a_resample_linear_32;
+	resample[0x08] = (MTResampleProc)a_resample_linear_8;
+	resample[0x09] = (MTResampleProc)a_resample_linear_16;
+	resample[0x0A] = (MTResampleProc)a_resample_linear_32;
+	resample[0x0B] = (MTResampleProc)a_resample_linear_32;
+	resample[0x0C] = (MTResampleProc)a_resample_linear_8;
+	resample[0x0D] = (MTResampleProc)a_resample_linear_16;
+	resample[0x0E] = (MTResampleProc)a_resample_linear_32;
+	resample[0x0F] = (MTResampleProc)a_resample_linear_32;
+	resample[0x10] = (MTResampleProc)a_resample_linear_8;
+	resample[0x11] = (MTResampleProc)a_resample_linear_16;
+	resample[0x12] = (MTResampleProc)a_resample_linear_32;
+	resample[0x13] = (MTResampleProc)a_resample_linear_32;
+	resample[0x14] = (MTResampleProc)a_resample_linear_8;
+	resample[0x15] = (MTResampleProc)a_resample_linear_16;
+	resample[0x16] = (MTResampleProc)a_resample_linear_32;
+	resample[0x17] = (MTResampleProc)a_resample_linear_32;
+	resample[0x18] = (MTResampleProc)a_resample_linear_8;
+	resample[0x19] = (MTResampleProc)a_resample_linear_16;
+	resample[0x1A] = (MTResampleProc)a_resample_linear_32;
+	resample[0x1B] = (MTResampleProc)a_resample_linear_32;
+	resample[0x1C] = (MTResampleProc)a_resample_linear_8;
+	resample[0x1D] = (MTResampleProc)a_resample_linear_16;
+	resample[0x1E] = (MTResampleProc)a_resample_linear_32;
+	resample[0x1F] = (MTResampleProc)a_resample_linear_32;
 	splinereplace = a_splinereplace;
 	splinemodulate = a_splinemodulate;
-#ifdef _DEBUG
-	char file[256];
-	MTFile *f;
-	MTShaper s;
-	MTShape *sh;
-	sample *p;
-	int x;
-	short v;
-
-	s.add(0,64,0.5,192,0.75);
-	s.add(1,0,0.0,64,1.0,128,0.0,256,1.0);
-	sh = s.get(0,256,MTSHAPE_BUFFER);
-	strcpy(file,mtinterface->getprefs()->syspath[SP_ROOT]);
-	strcat(file,"Spline.raw");
-	f = si->fileopen(file,MTF_WRITE|MTF_SHAREREAD|MTF_CREATE);
-	p = sh->data;
-	for (x=sh->x1;x<sh->x2;x++){
-		v = (short)(32767*(*p++));
-		f->write(&v,sizeof(v));
-	};
-	si->fileclose(f);
-#endif
+#	ifdef _DEBUG
+		char file[256];
+		MTFile *f;
+		MTShaper s;
+		MTShape *sh;
+		sample *p;
+		int x;
+		short v;
+		s.add(0,64,0.5,192,0.75);
+		s.add(1,0,0.0,64,1.0,128,0.0,256,1.0);
+		sh = s.get(0,256,MTSHAPE_BUFFER);
+		strcpy(file,mtinterface->getprefs()->syspath[SP_ROOT]);
+		strcat(file,"Spline.raw");
+		f = si->fileopen(file,MTF_WRITE|MTF_SHAREREAD|MTF_CREATE);
+		if (f){
+			p = sh->data;
+			for (x=sh->x1;x<sh->x2;x++){
+				v = (short)(32767*(*p++));
+				f->write(&v,sizeof(v));
+			};
+			si->fileclose(f);
+		};
+		s.del(sh);
+#	endif
 	status |= MTX_INITIALIZED;
 	LEAVE();
 	return true;
@@ -161,10 +167,11 @@ int MTDSPInterface::config(int command,int param)
 	return 0;
 }
 //---------------------------------------------------------------------------
+#ifndef MTBUILTIN
 extern "C"
 {
 
-MTXInterfaces* __stdcall MTXMain(MTInterface *mti)
+MTXInterfaces* MTCT MTXMain(MTInterface *mti)
 {
 	mtinterface = mti;
 	if (!dspi) dspi = new MTDSPInterface();
@@ -174,4 +181,5 @@ MTXInterfaces* __stdcall MTXMain(MTInterface *mti)
 }
 
 }
+#endif
 //---------------------------------------------------------------------------

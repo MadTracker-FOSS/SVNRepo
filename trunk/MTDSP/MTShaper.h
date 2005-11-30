@@ -1,8 +1,19 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker DSP Core
+//
+//		Platforms:	All
+//		Processors:	All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTSHAPER_INCLUDED
 #define MTSHAPER_INCLUDED
 //---------------------------------------------------------------------------
-#include "../Headers/MTXExtension.h"
+#include "MTXExtension.h"
 //---------------------------------------------------------------------------
 #define SHAPER_LAYERS 16
 //---------------------------------------------------------------------------
@@ -38,6 +49,7 @@ public:
 	virtual void MTCT add(int layer,int x1,sample y1,int x2,sample y2,int x3,sample y3,int x4,sample y4);
 	virtual void MTCT add(int layer,int x1,int x2,sample *data);
 	virtual MTShape* MTCT get(int from,int to,int accept);
+	virtual void MTCT del(MTShape *s);
 	virtual void MTCT flush(int to);
 private:
 	MTShape l[SHAPER_LAYERS];

@@ -5,12 +5,14 @@
 //		Platforms:	All
 //		Processors:	x86
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include "MTCatmullASM.h"
 //---------------------------------------------------------------------------
-void MTACT a_splinereplace(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt)
+void MTCT a_splinereplace(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt)
 {
 	double t1 = (xf-x1)/(x2-x1);
 	double ti = (xt-x1)/(x2-x1);
@@ -27,7 +29,7 @@ void MTACT a_splinereplace(sample *dest,int size,double x0,sample p0,double x1,s
 	};
 }
 //---------------------------------------------------------------------------
-void MTACT a_splinemodulate(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt)
+void MTCT a_splinemodulate(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt)
 {
 	double t1 = (xf-x1)/(x2-x1);
 	double ti = (xt-x1)/(x2-x1);

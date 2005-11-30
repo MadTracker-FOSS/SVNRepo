@@ -3,15 +3,17 @@
 //	MadTracker DSP Core
 //
 //		Platforms:	All
-//		Processors: All
+//		Processors:	All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include <stdio.h>
 #include "MTShaper.h"
 #include "MTDSP1.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 MTShaper::MTShaper()
 {
@@ -135,6 +137,12 @@ MTShape* MTShaper::get(int from,int to,int accept)
 		};
 	};
 	return res;
+}
+
+void MTShaper::del(MTShape *s)
+{
+	si->memfree(s->data);
+	si->memfree(s);
 }
 
 void MTShaper::flush(int to)

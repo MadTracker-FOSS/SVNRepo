@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 winmm.lib version.lib /nologo /base:"0x14000000" /dll /debug /machine:I386 /out:"../../debug/Extensions/MTAudio.mtx" /pdbtype:sept
+# ADD LINK32 winmm.lib version.lib /nologo /base:"0x14000000" /dll /debug /debugtype:cv /machine:I386 /out:"../../debug/Extensions/MTAudio.mtx" /pdbtype:sept
 # SUBTRACT LINK32 /profile
 
 !ENDIF 
@@ -126,6 +126,18 @@ SOURCE=.\MTDirectSound.h
 # Begin Group "ASIO"
 
 # PROP Default_Filter "cpp;h"
+# End Group
+# Begin Group "DevDSP"
+
+# PROP Default_Filter "cpp;h"
+# Begin Source File
+
+SOURCE=.\MTDevDSP.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTDevDSP.h
+# End Source File
 # End Group
 # Begin Source File
 

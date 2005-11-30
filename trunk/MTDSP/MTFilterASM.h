@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker DSP Core
+//
+//		Platforms:	All
+//		Processors:	x86
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTFILTERASM_INCLUDED
 #define MTFILTERASM_INCLUDED
 
@@ -8,6 +19,6 @@
 //---------------------------------------------------------------------------
 #include "MTDSP1.h"
 //---------------------------------------------------------------------------
-void MTACT a_filter_(sample *dest,sample *source,FilterStatus &status,int count,int frequency);
+void MTCT a_filter_(sample *dest,sample *source,FilterStatus &status,int count,int frequency);
 //---------------------------------------------------------------------------
 #endif

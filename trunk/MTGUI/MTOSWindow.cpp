@@ -371,12 +371,11 @@ LRESULT CALLBACK MTOSWindow::CustomProc(HWND wnd,unsigned int msg,unsigned int w
 	LEAVE();
 	if (osproc->proc){
 //		FLOG4("%.8X->Message(%X,%.8X,%.8X)"NL,wnd,msg,wparam,lparam);
-		MTTRY{
+		MTTRY
 			return CallWindowProc(osproc->proc,wnd,msg,wparam,lparam);
-		}
-		MTCATCH{
+		MTCATCH
 			return 0;
-		};
+		MTEND
 	}
 	else return DefWindowProc(wnd,msg,wparam,lparam);
 }

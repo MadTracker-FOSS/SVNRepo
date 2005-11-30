@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MTOBJECTS_EXPORTS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /Gi /GX /ZI /Od /I "..\Headers\\" /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "_DEBUG" /D "_WINDOWS" /D "MTOBJECTS_EXPORTS" /D "MTXOBJECTS_INCLUDED" /D "MTSYSTEM_EXPORTS" /D "MTLEVEL_COMMERCIAL" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /Gi /GX /ZI /Od /I "..\Headers\\" /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "_DEBUG" /D "_WINDOWS" /D "MTOBJECTS_EXPORTS" /D "MTXOBJECTS_INCLUDED" /D "MTSYSTEM_EXPORTS" /D "MTVERSION_COMMERCIAL" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x40c /d "_DEBUG"
@@ -396,10 +396,6 @@ SOURCE=..\Headers\MTXNode.h
 # Begin Source File
 
 SOURCE=..\Headers\MTXObject.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\Headers\MTXObject2.h
 # End Source File
 # Begin Source File
 

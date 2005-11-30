@@ -242,7 +242,7 @@ bool MTGDIBitmap::load()
 		si->filetype(mfilename,ext,16);
 		f = si->fileopen(mfilename,MTF_READ|MTF_SHAREREAD);
 		if (f){
-			MTTRY{
+			MTTRY
 				if (ext[0]){
 					if (stricmp(ext,".gif")==0) bmp = (HBITMAP)loadgif(f,mck);
 					else if (stricmp(ext,".tif")==0) bmp = (HBITMAP)loadtif(f,mck);
@@ -257,24 +257,22 @@ bool MTGDIBitmap::load()
 					f->seek(0,MTF_BEGIN);
 					if (!bmp) bmp = (HBITMAP)loadtif(f,mck);
 				};
-			}
-			MTCATCH{
+			MTCATCH
 				bmp = 0;
-			};
+			MTEND
 			si->fileclose(f);
 		};
 	}
 	else if (mres){
 		f = mres->getresourcefile(MTR_BITMAP,mresid,0);
 		if (f){
-			MTTRY{
+			MTTRY
 				bmp = (HBITMAP)loadgif(f,mck);
 				f->seek(0,MTF_BEGIN);
 				if (!bmp) bmp = (HBITMAP)loadtif(f,mck);
-			}
-			MTCATCH{
+			MTCATCH
 				bmp = 0;
-			};
+			MTEND
 			mres->releaseresourcefile(f);
 		};
 	}
