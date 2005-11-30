@@ -22,7 +22,7 @@
 #		define __stdcall __attribute__((__stdcall__))
 #	endif
 #	ifndef __cdecl
-#		define __cdecl __attribute__((__cdecl__))
+#		define __cdecl
 #	endif
 #endif
 
