@@ -27,12 +27,12 @@ class GeneratorType : public ObjectType{
 public:
 	GeneratorType();
 
-	MTObject* MTCT create(MTModule *parent,int id,void *param);
+	MTObject* MTCT create(MTObject *parent,mt_int32 id,void *param);
 };
 
 class MTGenerator : public Oscillator{
 public:
-	MTGenerator(MTModule *parent,int i);
+	MTGenerator(MTObject *parent,mt_int32 i);
 	~MTGenerator();
 
 	int MTCT loadfromstream(MTFile *f,int size,void *params);

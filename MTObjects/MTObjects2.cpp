@@ -13,7 +13,7 @@
 #include "MTObjects2.h"
 #include "MTModule.h"
 //---------------------------------------------------------------------------
-#if MTLEVEL >= MTL_PROFESSIONAL
+#ifdef MTVERSION_PROFESSIONAL
 //---------------------------------------------------------------------------
 int nthreads;
 MTThread *thread[128];
@@ -38,5 +38,5 @@ int MTCT engineproc(MTThread *thread,void *param)
 	return 0;
 }
 //---------------------------------------------------------------------------
-#endif // MTLEVEL >= MTL_PROFESSIONAL
+#endif // MTVERSION_PROFESSIONAL
 //---------------------------------------------------------------------------

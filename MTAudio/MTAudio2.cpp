@@ -2,110 +2,187 @@
 //
 //	MadTracker Audio Core
 //
-//		Platforms:	Win32
+//		Platforms:	All
 //		Processors:	x86
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
 #include "MTAudio1.h"
 #include "MTAudio2.h"
-#include "../Headers/MTXObject.h"
-#include "../Headers/MTXModule.h"
-#include "../Headers/MTXTrack.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXObject.h"
+#include "MTXModule.h"
+#include "MTXTrack.h"
+#include "MTXSystem2.h"
 //---------------------------------------------------------------------------
-void __stdcall ri8(sample *source,void *dest,int count,int nchannels,int channel)
+void MTCT ri8(sample *source,void *dest,int count,int nchannels,int channel)
 {
 	static const sample f127 = 127.0;
 
-	__asm{
-		push	esi
-		push	edi
-		push	ebx
-		sub		esp,4
-		mov		ecx,count
-		mov		esi,source
-		test	ecx,ecx
-		mov		edi,dest
-		jz		mexit
-		mov		ebx,nchannels
-		sub		edi,ebx
-		add		edi,channel
-		ALIGN	8
-render:
-		fld	  a_sample ptr [esi]
-		fmul	f127
-		fistp	dword ptr [esp]
-		add		edi,ebx
-		mov		eax,[esp]
-		add		esi,s_sample
-		cmp		eax,127
-		jle		lsatok
-		mov		eax,127
-		jmp		satok
-lsatok:
-		cmp		eax,-128
-		jge		satok
-		mov		eax,-128
-satok:
-		dec		ecx
-		mov		[edi],al
-		jnz		render
-mexit:
-		add		esp,4
-		pop		ebx
-		pop		edi
-		pop		esi
-	};
+#	ifndef __GNUC__
+		__asm{
+			push	esi
+			push	edi
+			push	ebx
+			sub		esp,4
+			mov		ecx,count
+			mov		esi,source
+			test	ecx,ecx
+			mov		edi,dest
+			jz		mexit
+			mov		ebx,nchannels
+			sub		edi,ebx
+			add		edi,channel
+			ALIGN	8
+		render:
+			fld	  a_sample ptr [esi]
+			fmul	f127
+			fistp	dword ptr [esp]
+			add		edi,ebx
+			mov		eax,[esp]
+			add		esi,s_sample
+			cmp		eax,127
+			jle		lsatok
+			mov		eax,127
+			jmp		satok
+		lsatok:
+			cmp		eax,-128
+			jge		satok
+			mov		eax,-128
+		satok:
+			dec		ecx
+			mov		[edi],al
+			jnz		render
+		mexit:
+			add		esp,4
+			pop		ebx
+			pop		edi
+			pop		esi
+		};
+#	else
+		asm ("\
+			subl	$4,%%esp\n\
+			testl	%%ecx,%%ecx\n\
+			jz		_mexit1\n\
+			subl	%%ebx,%%edi\n\
+			addl	%[channel],%%edi\n\
+			.align	8\n\
+		_render1:\n\
+			fld"spls"	(%%esi)\n\
+			fmul	%[f127]\n\
+			fistpl	(%%esp)\n\
+			addl	%%ebx,%%edi\n\
+			movl	(%%esp),%%eax\n\
+			addl	$"spll",%%esi\n\
+			cmpl	$127,%%eax\n\
+			jle		_lsatok1\n\
+			movl	$127,%%eax\n\
+			jmp		_satok1\n\
+		_lsatok1:\n\
+			cmpl	$-128,%%eax\n\
+			jge		_satok1\n\
+			movl	$-128,%%eax\n\
+		_satok1:\n\
+			decl	%%ecx\n\
+			movb	%%al,(%%edi)\n\
+			jnz		_render1\n\
+		_mexit1:\n\
+			addl	$4,%%esp\n\
+			"
+			:
+			:[nchannels]"b"(nchannels),[count]"c"(count),[source]"S"(source),[dest]"D"(dest),[f127]"m"(f127),[channel]"m"(channel)
+			:"eax"
+			);
+#	endif
 }
 
-void __stdcall ri16(sample *source,void *dest,int count,int nchannels,int channel)
+void MTCT ri16(sample *source,void *dest,int count,int nchannels,int channel)
 {
 	static const sample f32767 = 32767.0;
 
-	__asm{
-		push	esi
-		push	edi
-		push	ebx
-		sub		esp,4
-		mov		ecx,count
-		mov		esi,source
-		test	ecx,ecx
-		mov		edi,dest
-		jz		mexit
-		mov		ebx,nchannels
-		mov		eax,channel
-		sal		ebx,1
-		sal		eax,1
-		sub		edi,ebx
-		add		edi,eax
-		ALIGN	8
-render:
-		fld	  a_sample ptr [esi]
-		fmul	f32767
-		fistp	dword ptr [esp]
-		add		edi,ebx
-		mov		eax,[esp]
-		add		esi,s_sample
-		cmp		eax,32767
-		jle		lsatok
-		mov		eax,32767
-		jmp		satok
-lsatok:
-		cmp		eax,-32768
-		jge		satok
-		mov		eax,-32768
-satok:
-		dec		ecx
-		mov		[edi],ax
-		jnz		render
-mexit:
-		add		esp,4
-		pop		ebx
-		pop		edi
-		pop		esi
-	};
+#	ifndef __GNUC__
+		__asm{
+			push	esi
+			push	edi
+			push	ebx
+			sub		esp,4
+			mov		ecx,count
+			mov		esi,source
+			test	ecx,ecx
+			mov		edi,dest
+			jz		mexit
+			mov		ebx,nchannels
+			mov		eax,channel
+			sal		ebx,1
+			sal		eax,1
+			sub		edi,ebx
+			add		edi,eax
+			ALIGN	8
+		render:
+			fld	  a_sample ptr [esi]
+			fmul	f32767
+			fistp	dword ptr [esp]
+			add		edi,ebx
+			mov		eax,[esp]
+			add		esi,s_sample
+			cmp		eax,32767
+			jle		lsatok
+			mov		eax,32767
+			jmp		satok
+		lsatok:
+			cmp		eax,-32768
+			jge		satok
+			mov		eax,-32768
+		satok:
+			dec		ecx
+			mov		[edi],ax
+			jnz		render
+		mexit:
+			add		esp,4
+			pop		ebx
+			pop		edi
+			pop		esi
+		};
+#	else
+		asm ("\
+			subl	$4,%%esp\n\
+			testl	%%ecx,%%ecx\n\
+			jz		_mexit2\n\
+			mov		%[channel],%%eax\n\
+			sall	$1,%%ebx\n\
+			sall	$1,%%eax\n\
+			subl	%%ebx,%%edi\n\
+			addl	%%eax,%%edi\n\
+			.align	8\n\
+		_render2:\n\
+			fld"spls"	(%%esi)\n\
+			fmul	%[f32767]\n\
+			fistpl	(%%esp)\n\
+			addl	%%ebx,%%edi\n\
+			movl	(%%esp),%%eax\n\
+			addl	$"spll",%%esi\n\
+			cmpl	$32767,%%eax\n\
+			jle		_lsatok2\n\
+			movl	$32767,%%eax\n\
+			jmp		_satok2\n\
+		_lsatok2:\n\
+			cmpl	$-32768,%%eax\n\
+			jge		_satok2\n\
+			movl	$-32768,%%eax\n\
+		_satok2:\n\
+			decl	%%ecx\n\
+			movw	%%ax,(%%edi)\n\
+			jnz		_render2\n\
+		_mexit2:\n\
+			addl	$4,%%esp\n\
+			"
+			:
+			:[nchannels]"b"(nchannels),[count]"c"(count),[source]"S"(source),[dest]"D"(dest),[f32767]"m"(f32767),[channel]"m"(channel)
+			:"eax"
+			);
+#	endif
 }
 //---------------------------------------------------------------------------
 void generateoutput()
@@ -222,11 +299,11 @@ void generateoutput()
 				renderproc[rid](master.buffer[y],cdevpos.ptr,minlng,cdev.nchannels,y);
 			};
 		};
-#ifdef _DEBUG
-		if (recf){
-			if (mix) recf->write(devpos[0].ptr,minlng*(output.device[0]->bits*output.device[0]->nchannels)>>3);
-		};
-#endif
+#		ifdef _DEBUG
+			if (recf){
+				if (mix) recf->write(devpos[0].ptr,minlng*(output.device[0]->bits*output.device[0]->nchannels)>>3);
+			};
+#		endif
 	} while (minlng);
 	
 // Unlock devices

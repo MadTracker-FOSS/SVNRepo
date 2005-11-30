@@ -69,7 +69,7 @@ bool MTMemoryHook::filedelete(char *url)
 	return false;
 }
 
-void MTMemoryHook::filetype(char *url,char *type,int length)
+void MTMemoryHook::filetype(const char *url,char *type,int length)
 {
 	return;
 }

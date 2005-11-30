@@ -44,12 +44,13 @@ enum MTObjectLock{
 };
 
 enum MTObjectAccess{
-	MTOA_CANREAD = 1,
-	MTOA_CANWRITE = 2,
-	MTOA_CANCOPY = 4,
-	MTOA_CANDELETE = 8,
-	MTOA_CANPLAY = 16,
-	MTOA_CANALL = 255
+	MTOA_CANREAD   = 0x01,
+	MTOA_CANWRITE  = 0x02,
+	MTOA_CANCOPY   = 0x04,
+	MTOA_CANDELETE = 0x08,
+	MTOA_CANPLAY   = 0x10,
+	MTOA_CANALL    = 0xFF,
+	MOTA_ISOWNER   = 0x80000000
 };
 
 enum MTObjectNotify{
@@ -65,14 +66,15 @@ enum MTObjectNotify{
 	MTN_IINSTANCEDELETE
 };
 
-#define MTOM_ADDDELETE  0x01
-#define MTOM_NAME       0x02
-#define MTOM_PARAM      0x04
-#define MTOM_DATA       0x08
-#define MTOM_NOUPDATE   0x10
+#define MTOM_ADDDELETE  0x010000
+#define MTOM_NAME       0x020000
+#define MTOM_PARAM      0x040000
+#define MTOM_DATA       0x080000
+#define MTOM_NOUPDATE   0x100000
 
-#define MTUID_EVERYONE   0x00000000
-#define MTUID_REGISTERED 0xFFFFFFFF
+#define MTEP_LINEAR 0x01
+#define MTEP_CURVED 0x02
+#define MTEP_EXP    0x04
 
 class MTObject;
 class MTModule;
@@ -81,13 +83,13 @@ class MTModule;
 #include "MTXSystem.h"
 //---------------------------------------------------------------------------
 struct EnvPoint{
+	mt_uint32 flags;
 	float x;
 	float y;
 };
 
-// Users
 struct MTUser{
-	unsigned int id;
+	MTUserID id;
 	char name[32];
 	char handle[32];
 	char group[32];
@@ -97,23 +99,23 @@ struct MTUser{
 };
 
 // Access
-struct MTRule{
-	int userid;
-	int access;
+struct MTACL{
+	MTUser *user;
+	mt_uint32 access;
+	MTACL *next; 
 };
 
 struct MTAccess{
-	int creatorid;
-	int caccess;
-	int nrules;
-	MTRule **rules;
+	MTUserID creatorid;
+	mt_uint32 caccess;
+	MTACL *acl;
 };
 
 typedef int (MTCT *MTObjectEnum)(MTObject *object,void *data);
 
 class MTObjectWrapper : public ObjectWrapper{
 public:
-	void MTCT create(void *object,void *parent,int type,int i);
+	void MTCT create(void *object,void *parent,mt_uint32 type,mt_int32 i);
 	void MTCT destroy(void *object);
 	bool MTCT lock(void *object,int flags,bool lock,int timeout);
 	void MTCT setname(void *object,char *newname);
@@ -130,15 +132,17 @@ public:
 	int lockread;
 	int lockwrite;
 	int modifying;
-	MTModule *parent;
+	MTObject *parent;
+	MTModule *module;
 	MTUser *owner;
 	MTUser *lastowner;
-	int objecttype;
-	int id;
-	int flags;
+	mt_uint32 objecttype;
+	mt_int32 id;
+	mt_uint32 flags;
 	char *name;
+	MTColor color;
 	
-	MTObject(MTModule *parent,int type,int i);
+	MTObject(MTObject *parent,mt_uint32 type,mt_int32 i);
 	virtual ~MTObject();
 	
 	virtual bool MTCT islocked();
@@ -150,7 +154,7 @@ public:
 	virtual void MTCT enumchildren(MTObjectEnum enumproc,void *data);
 	virtual int MTCT loadfromstream(MTFile *f,int size,void *params);
 	virtual int MTCT savetostream(MTFile *f,void *params);
-	virtual MTObject* MTCT duplicate(int targettype);
+	virtual MTObject* MTCT duplicate(mt_uint32 targettype);
 };
 //---------------------------------------------------------------------------
 #include "MTModule.h"

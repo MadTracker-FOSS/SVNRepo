@@ -20,7 +20,7 @@ class Track;
 // Track class
 class Track : public Node{
 public:
-	Track(MTModule *parent,int i,int sub = 0);
+	Track(MTObject *parent,int i,int sub = 0);
 	virtual ~Track();
 	
 	bool muted;

@@ -12,6 +12,7 @@
 //---------------------------------------------------------------------------
 #include "MTConsole.h"
 #include "MTExtensions.h"
+#include <stdio.h>
 //---------------------------------------------------------------------------
 MTConsole::MTConsole(MTInterface *mti)
 {
@@ -29,6 +30,9 @@ int MTConsole::read(void *buffer,int size)
 {
 	int read = 0;
 
+#	ifndef _WIN32
+		read = fread(buffer,1,size,stdin);
+#	endif
 	return read;
 }
 
@@ -36,6 +40,18 @@ int MTConsole::readln(char *buffer,int maxsize)
 {
 	int read = 0;
 
+#	ifndef _WIN32
+		char *e;
+		fwrite("> ",1,2,stdout);
+		if (fgets(buffer,maxsize,stdin)){
+			e = strchr(buffer,0);
+			if (*--e=='\n'){
+				while ((*e=='\r') || (*e=='\n')) *e-- = 0;
+			};
+			read = strlen(buffer);
+		}
+		else read = 0;
+#	endif
 	return read;
 }
 /*
@@ -48,8 +64,11 @@ int MTConsole::reads(char *buffer,int maxsize)
 */
 int MTConsole::write(const void *buffer,int size)
 {
-	size = 0;
-
+#	ifdef _WIN32
+		size = 0;
+#	else
+		size = fwrite(buffer,1,size,stdout);
+#	endif
 	return size;
 }
 
@@ -105,23 +124,42 @@ MTFile* MTConsole::subclass(int start,int length,int access)
 int MTConsole::userinput(const char *input)
 {
 	int x,y;
+	bool ok = false;
+	char cmd[64];
+	char *e;
 
+	if (mi->processinput(input)!=0) ok = true;
 	for (x=0;x<next;x++){
 		MTExtension &cext = *ext[x];
 		if (!cext.system){
 			for (y=0;y<cext.i->ninterfaces;y++){
-				MTTRY{
+				MTTRY
 					if (cext.i->interfaces[y]->status & MTX_INITIALIZED){
-						cext.i->interfaces[y]->processinput(input);
+						if (cext.i->interfaces[y]->processinput(input)!=0) ok = true;
 					};
-				}
-				MTCATCH{
+				MTCATCH
 					LOGD("%s - ERROR: Exception while processing input in '");
 					LOG(cext.i->interfaces[y]->name);
 					LOG("'!"NL);
-				};
+				MTEND
 			};
 		};
+	};
+	if (!ok){
+		char buf[256];
+		e = strchr(input,' ');
+		if (e){
+			x = e-input;
+			if (x>sizeof(cmd)-1) x = sizeof(cmd)-1;
+			strncpy(cmd,input,x);
+			cmd[x] = 0;
+		}
+		else{
+			cmd[sizeof(cmd)-1] = 0;
+			strncpy(cmd,input,sizeof(cmd)-1);
+		};
+		sprintf(buf,"Unknown command %s!"NL,cmd);
+		write(buf,strlen(buf));
 	};
 	return 0;
 }

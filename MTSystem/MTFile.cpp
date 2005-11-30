@@ -13,8 +13,14 @@
 #include <stdio.h>
 #include "MTFile.h"
 #include "MTLocalFile.h"
-#include "MTMemoryFile.h"
-#include "MTHTTPFile.h"
+#ifdef MTSYSTEM_MEMORYFILE
+#	include "MTMemoryFile.h"
+#endif
+#ifdef MTSYSTEM_INTERNET
+#	ifdef MTSYSTEM_HTTPFILE
+#		include "MTHTTPFile.h"
+#	endif
+#endif
 #include "MTXSystem2.h"
 //---------------------------------------------------------------------------
 int tmpid = 0;
@@ -25,15 +31,25 @@ void initFiles()
 	hooks = new MTHash(4);
 	hooks->additem("file",&localhook);
 	hooks->additem("pipe",&localhook);
-	hooks->additem("mem",&memoryhook);
-	hooks->additem("http",&httphook);
-//	hooks->additem("ftp",&ftphook);
-	initHTTP();
+#	ifdef MTSYSTEM_MEMORYFILE
+		hooks->additem("mem",&memoryhook);
+#	endif
+#	ifdef MTSYSTEM_INTERNET
+#		ifdef MTSYSTEM_HTTPFILE
+			hooks->additem("http",&httphook);
+			initHTTP();
+#		endif
+//		hooks->additem("ftp",&ftphook);
+#	endif
 }
 
 void uninitFiles()
 {
-	uninitHTTP();
+#	ifdef MTSYSTEM_INTERNET
+#		ifdef MTSYSTEM_HTTPFILE
+			uninitHTTP();
+#		endif
+#	endif
 	delete hooks;
 }
 //---------------------------------------------------------------------------
@@ -161,7 +177,7 @@ bool mtfilerename(char *filename,char *newname)
 	return s->filerename(filename,newname);
 }
 
-void mtfiletype(char *filename,char *filetype,int length)
+void mtfiletype(const char *filename,char *filetype,int length)
 {
 	MTFileHook *hook = gethook(filename);
 	filetype[0] = 0;

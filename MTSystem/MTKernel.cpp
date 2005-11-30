@@ -21,10 +21,12 @@
 #	include <sys/select.h>
 #	include <setjmp.h>
 #	include <pthread.h>
+#	include <errno.h>
+#	include <unistd.h>
 #endif
 //---------------------------------------------------------------------------
 MTThread *systhread;
-unsigned int nthreads,nathreads;
+unsigned int _nthreads,_nathreads;
 MTThread **threads;
 MTLock *threadlock;
 bool pf;
@@ -158,7 +160,7 @@ int mtsyscounter()
 #	else
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC,&ts);
-		return (ts.tv_sec*1000)+(ts.tv_nsec/1000);
+		return (ts.tv_sec*1000)+(ts.tv_nsec/1000000);
 #	endif
 }
 
@@ -181,7 +183,7 @@ bool mtsyscounterex(double *count)
 		struct timespec ts;
 
 		clock_gettime(CLOCK_MONOTONIC,&ts);
-		return double(ts.tv_sec)+double(ts.tv_nsec)/1000000.0;
+		return double(ts.tv_sec)+double(ts.tv_nsec)/1000000000.0;
 #	endif
 }
 
@@ -190,7 +192,7 @@ void mtsyswait(int ms)
 #	ifdef _WIN32
 		Sleep(ms);
 #	else
-		struct timespec ts = {ms/1000,(ms*1000)%1000000};
+		struct timespec ts = {ms/1000,(ms%1000)*1000};
 		nanosleep(&ts,0);
 #	endif
 }
@@ -217,8 +219,13 @@ int mtsyswaitmultiple(int count,MTEvent **events,bool all,int timeout)
 		mutex_cond = (_mutex_cond**)malloc(sizeof(_mutex_cond*)*count);
 		le = (_le**)malloc(sizeof(_le*)*count);
 		if (timeout!=-1){
-			to_time.tv_sec = timeout/1000;
-			to_time.tv_nsec = (timeout*1000)%1000000;
+			clock_gettime(CLOCK_REALTIME,&to_time);
+			to_time.tv_sec += timeout/1000;
+			to_time.tv_nsec += (timeout%1000)*1000000;
+			if (to_time.tv_nsec>1000000000){
+				to_time.tv_nsec -= 1000000000;
+				to_time.tv_sec++;
+			};
 		};
 		if (all){
 			res = 0;
@@ -319,7 +326,7 @@ void mttryinit()
 	_MTTRY *mt = (_MTTRY*)mtmemalloc(sizeof(_MTTRY));
 	mt->ne = 0;
 	mt->el = 0;
-fprintf(stderr,"INIT> Thread: %08X Data: %08X"NL,pthread_self(),mt);
+//fprintf(stderr,"INIT> Thread: %08X Data: %08X"NL,pthread_self(),mt);
 	mtsetprivatedata(-6,(void*)mt);
 	si->onerror = (void*)mttry;
 }
@@ -333,12 +340,7 @@ void mttryuninit()
 	mtmemfree(mt);
 }
 
-void ctxret()
-{
-	asm("movl $1,%eax");
-}
-
-int mttry(bool pop)
+void* mttry(bool pop)
 {
 	_MTTRY *mt = (_MTTRY*)mtgetprivatedata(-6);
 	if (!pop){
@@ -346,6 +348,9 @@ int mttry(bool pop)
 		mt->el = (_MTTRY_E*)malloc(sizeof(_MTTRY_E));
 		mt->el->prev = prev;
 		mt->ne++;
+//fprintf(stderr,"TRY> Thread: %08X Data: %08X (%d)"NL,pthread_self(),mtgetprivatedata(-6),mt->ne);
+		return mt->el->jb;
+/*
 		if (sigsetjmp(mt->el->jb,1)==0){
 fprintf(stderr,"TRY> Thread: %08X Data: %08X (%d)"NL,pthread_self(),mtgetprivatedata(-6),mt->ne);
 			return 0;
@@ -354,10 +359,11 @@ fprintf(stderr,"TRY> Thread: %08X Data: %08X (%d)"NL,pthread_self(),mtgetprivate
 fprintf(stderr,"CATCH> Thread: %08X Data: %08X (%d)"NL,pthread_self(),mtgetprivatedata(-6),mt->ne);
 			return 1;
 		};
+*/
 	}
 	else{
 		_MTTRY_E *old = mt->el;
-fprintf(stderr,"<RET Thread: %08X Data: %08X (%d)"NL,pthread_self(),mt,mt->ne);
+//fprintf(stderr,"<RET Thread: %08X Data: %08X (%d)"NL,pthread_self(),mt,mt->ne);
 		mt->el = old->prev;
 		free(old);
 		mt->ne--;
@@ -369,7 +375,7 @@ void mtsigreturn(int sig)
 {
 	_MTTRY *mt = (_MTTRY*)mtgetprivatedata(-6);
 	if (mt->ne>0){
-fprintf(stderr,"<CRASH> Thread: %08X Data: %08X"NL,pthread_self(),mt);
+//fprintf(stderr,"<CRASH> Thread: %08X Data: %08X"NL,pthread_self(),mt);
 		siglongjmp(mt->el->jb,sig);
 	};
 }
@@ -424,12 +430,12 @@ void stopThreads(bool processes)
 {
 	int x,n;
 
-	if (nthreads>0){
+	if (_nthreads>0){
 #		ifdef _DEBUG
 			char buf[256];
 			if (processes){
 				n = 0;
-				for (x=0;x<nthreads;x++){
+				for (x=0;x<_nthreads;x++){
 					if (threads[x]->type) n++;
 				};
 				if (n){
@@ -438,12 +444,12 @@ void stopThreads(bool processes)
 				};
 			}
 			else{
-				sprintf(buf,"%d thread(s) still running!",nthreads);
+				sprintf(buf,"%d thread(s) still running!",_nthreads);
 				mtdialog(buf,"Threads",MTD_OK,MTD_EXCLAMATION,5000);
 			};
 #		endif
 		if (processes){
-			for (x=0;x<nthreads;x++){
+			for (x=0;x<_nthreads;x++){
 				if (threads[x]->type){
 					threads[x]->terminate();
 					x--;
@@ -451,7 +457,7 @@ void stopThreads(bool processes)
 			};
 		}
 		else{
-			while (nthreads>0) threads[0]->terminate();
+			while (_nthreads>0) threads[0]->terminate();
 		};
 	};
 }
@@ -523,10 +529,27 @@ MTEvent::MTEvent(bool autoreset,int interval,int resolution,bool periodic,bool p
 		else timer = 0;
 #	else
 		signaled = false;
+		needpulse = pulse;
 		needreset = autoreset;
 		e_mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
 		pthread_mutex_init(e_mutex,0);
 		start = end = 0;
+		if (interval){
+			struct sigevent se;
+			struct itimerspec ts;
+			se.sigev_notify = SIGEV_THREAD;
+			se.sigev_signo = SIGRTMAX;
+			se.sigev_value.sival_ptr = this;
+			se.sigev_notify_function = LinuxEventProc;
+			se.sigev_notify_attributes = 0;
+			timer_create(CLOCK_REALTIME,&se,(timer_t*)&timer);
+			mtmemzero(&ts,sizeof(ts));
+			ts.it_value.tv_sec = interval/1000;
+			ts.it_value.tv_nsec = (interval%1000)*1000000;
+			if (periodic) ts.it_interval = ts.it_value;
+			timer_settime((timer_t)timer,0,&ts,0);
+		}
+		else timer = 0;
 #	endif
 }
 
@@ -556,6 +579,7 @@ MTEvent::~MTEvent()
 			CloseHandle(event);
 		};
 #	else
+		if (timer) timer_delete((timer_t)timer);
 		pthread_mutex_destroy(e_mutex);
 		free(e_mutex);
 #	endif
@@ -687,6 +711,13 @@ void MTEvent::_del(_le *list)
 	free(list);
 	pthread_mutex_unlock(e_mutex);
 }
+
+void MTEvent::LinuxEventProc(sigval timer)
+{
+	MTEvent &cevent = *(MTEvent*)timer.sival_ptr;
+	if (cevent.needpulse) cevent.pulse();
+	else cevent.set();
+}
 #endif
 //---------------------------------------------------------------------------
 MTThread::MTThread(ThreadProc proc,bool autofree,bool autostart,void *param,int priority,char *name):
@@ -704,12 +735,12 @@ hasmsg(false)
 {
 	if (name) mname = name;
 	threadlock->lock();
-	if (nthreads==nathreads){
-		nathreads += 4;
-		if (threads) threads = (MTThread**)mtmemrealloc(threads,4*nathreads);
-		else threads = (MTThread**)mtmemalloc(4*nathreads);
+	if (_nthreads==_nathreads){
+		_nathreads += 4;
+		if (threads) threads = (MTThread**)mtmemrealloc(threads,4*_nathreads);
+		else threads = (MTThread**)mtmemalloc(4*_nathreads);
 	};
-	threads[nthreads++] = this;
+	threads[_nthreads++] = this;
 	if (autostart) start();
 	threadlock->unlock();
 #	ifndef _WIN32
@@ -787,21 +818,21 @@ MTThread::~MTThread()
 		systhread = 0;
 	}
 	else{
-		for (x=0;x<nthreads;x++){
+		for (x=0;x<_nthreads;x++){
 			if (threads[x]==this){
-				for (y=x;y<nthreads-1;y++) threads[y] = threads[y+1];
-				threads[--nthreads] = 0;
+				for (y=x;y<_nthreads-1;y++) threads[y] = threads[y+1];
+				threads[--_nthreads] = 0;
 				break;
 			};
 		};
-		if (nthreads<nathreads-4){
-			nathreads -= 4;
-			if (nathreads<=0){
+		if (_nthreads<_nathreads-4){
+			_nathreads -= 4;
+			if (_nathreads<=0){
 				mtmemfree(threads);
 				threads = 0;
-				nathreads = 0;
+				_nathreads = 0;
 			}
-			else threads = (MTThread**)mtmemrealloc(threads,4*nathreads);
+			else threads = (MTThread**)mtmemrealloc(threads,4*_nathreads);
 		};
 	};
 	threadlock->unlock();
@@ -1036,7 +1067,7 @@ mpproc(pproc)
 	setprogress(0.0);
 	threadlock->lock();
 	status = MTPS_WAITING;
-	for (x=0;x<nthreads;x++){
+	for (x=0;x<_nthreads;x++){
 		if ((threads[x]!=this) && (threads[x]->type)){
 			MTProcess &cprocess = *(MTProcess*)threads[x];
 			if ((cprocess.status==MTPS_WORKING) && ((cprocess.type>>16)==(type>>16))){
@@ -1045,16 +1076,18 @@ mpproc(pproc)
 			};
 		};
 	};
-	if ((!silent) && (sysres) && ((dsk = (MTDesktop*)di->getdefaultdesktop())) && ((dsk->flags & MTCF_HIDDEN)==0)){
-		MTFile *wf = sysres->getresourcefile(MTR_WINDOW,MTW_tasks,&size);
-		if (wf){
-			MTWindow *tasks = gi->loadwindowfromfile(wf,size,dsk);
-			tasks->flags |= MTCF_FREEONCLOSE;
-			guidata = tasks;
-			tasks->switchflags(MTCF_HIDDEN,false);
-			sysres->releaseresourcefile(wf);
+#	ifdef MTSYSTEM_RESOURCES
+		if ((!silent) && (sysres) && ((dsk = (MTDesktop*)di->getdefaultdesktop())) && ((dsk->flags & MTCF_HIDDEN)==0)){
+			MTFile *wf = sysres->getresourcefile(MTR_WINDOW,MTW_tasks,&size);
+			if (wf){
+				MTWindow *tasks = gi->loadwindowfromfile(wf,size,dsk);
+				tasks->flags |= MTCF_FREEONCLOSE;
+				guidata = tasks;
+				tasks->switchflags(MTCF_HIDDEN,false);
+				sysres->releaseresourcefile(wf);
+			};
 		};
-	};
+#	endif
 	start();
 	threadlock->unlock();
 }
@@ -1075,10 +1108,10 @@ MTProcess::~MTProcess()
 			LOGD("%s - [System] ERROR: Thread timeout!"NL);
 		};
 	};
-	if (progress!=-1.0) setprogress(-1.0);
+	if ((progress!=-1.0) && (progress!=-2.0)) setprogress(-1.0);
 	threadlock->lock();
 	status = MTPS_FINISHED;
-	for (x=0;x<nthreads;x++){
+	for (x=0;x<_nthreads;x++){
 		if ((threads[x]!=this) && (threads[x]->type)){
 			MTProcess &cprocess = *(MTProcess*)threads[x];
 			if ((cprocess.status==MTPS_WAITING) && ((cprocess.type>>16)==(type>>16))){
@@ -1147,12 +1180,18 @@ mproc(proc)
 		id = timeSetEvent(interval,res,WinTimerProc,(DWORD)this,(periodic)?TIME_PERIODIC:TIME_ONESHOT);
 #	else
 		struct sigevent se;
-		se.sigev_notify = SIGEV_SIGNAL;
-		se.sigev_signo = SIGALRM;
+		struct itimerspec ts;
+		se.sigev_notify = SIGEV_THREAD;
+		se.sigev_signo = SIGRTMAX;
 		se.sigev_value.sival_ptr = this;
 		se.sigev_notify_function = LinuxTimerProc;
 		se.sigev_notify_attributes = 0;
 		timer_create(CLOCK_REALTIME,&se,(timer_t*)&id);
+		mtmemzero(&ts,sizeof(ts));
+		ts.it_value.tv_sec = interval/1000;
+		ts.it_value.tv_nsec = (interval%1000)*1000000;
+		if (periodic) ts.it_interval = ts.it_value;
+		timer_settime((timer_t)id,0,&ts,0);
 #	endif
 }
 

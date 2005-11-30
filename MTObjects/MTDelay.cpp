@@ -26,17 +26,19 @@ DelayType::DelayType()
 }
 
 
-MTObject* DelayType::create(MTModule *parent,int id,void *param)
+MTObject* DelayType::create(MTObject *parent,mt_int32 id,void *param)
 {
 	return new MTDelay(parent,id);
 }
 //---------------------------------------------------------------------------
-MTDelay::MTDelay(MTModule *module,int i):
-Effect(module,MTO_MTDELAY,i),
+MTDelay::MTDelay(MTObject *parent,mt_int32 i):
+Effect(parent,MTO_MTDELAY,i),
 ntaps(0),
 monomerge(false)
 {
-	res->loadstringf(MTT_effect,name,255,i+1);
+#	ifdef MTSYSTEM_RESOURCES
+		res->loadstringf(MTT_effect,name,255,i+1);
+#	endif
 	mtmemzero(buffer,sizeof(buffer));
 	mtmemzero(taps,sizeof(taps));
 	_frequency = ai->getoutput()->frequency;
@@ -150,21 +152,21 @@ void MTDelay::setparam(int cat,int id,double value,int steps)
 	cat--;
 	switch (id){
 	case 0: taps[cat].flags = (int)value; break;
-	case 1: taps[cat].delay = value; break;
-	case 2: taps[cat].volume = value; break;
-	case 3: taps[cat].feedback = value; break;
-	case 4: taps[cat].pan[0].pan = value; break;
-	case 5: taps[cat].pan[0].amp = value; break;
-	case 6: taps[cat].pan[0].period = value; break;
-	case 7: taps[cat].pan[0].phase = value; break;
-	case 8: taps[cat].pan[1].pan = value; break;
-	case 9: taps[cat].pan[1].amp = value; break;
-	case 10: taps[cat].pan[1].period = value; break;
-	case 11: taps[cat].pan[1].phase = value; break;
-	case 12: taps[cat].pan[2].pan = value; break;
-	case 13: taps[cat].pan[2].amp = value; break;
-	case 14: taps[cat].pan[2].period = value; break;
-	case 15: taps[cat].pan[2].phase = value; break;
+	case 1: taps[cat].delay = (float)value; break;
+	case 2: taps[cat].volume = (float)value; break;
+	case 3: taps[cat].feedback = (float)value; break;
+	case 4: taps[cat].pan[0].pan = (float)value; break;
+	case 5: taps[cat].pan[0].amp = (float)value; break;
+	case 6: taps[cat].pan[0].period = (float)value; break;
+	case 7: taps[cat].pan[0].phase = (float)value; break;
+	case 8: taps[cat].pan[1].pan = (float)value; break;
+	case 9: taps[cat].pan[1].amp = (float)value; break;
+	case 10: taps[cat].pan[1].period = (float)value; break;
+	case 11: taps[cat].pan[1].phase = (float)value; break;
+	case 12: taps[cat].pan[2].pan = (float)value; break;
+	case 13: taps[cat].pan[2].amp = (float)value; break;
+	case 14: taps[cat].pan[2].period = (float)value; break;
+	case 15: taps[cat].pan[2].phase = (float)value; break;
 	default: break;
 	};
 	cat++;

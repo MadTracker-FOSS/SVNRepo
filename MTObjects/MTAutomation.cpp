@@ -18,25 +18,26 @@
 //---------------------------------------------------------------------------
 // Automation functions
 //---------------------------------------------------------------------------
-Automation::Automation(MTModule *parent,int i):
+Automation::Automation(MTObject *parent,mt_int32 i):
 MTObject(parent,MTO_AUTOMATION,i)
 {
-	mtmemzero(&trkauto,sizeof(trkauto));
-	res->loadstringf(MTT_automation,name,255,id);
+	envelopes = si->arraycreate(8,sizeof(TrackAuto));
+#	ifdef MTSYSTEM_RESOURCES
+		res->loadstringf(MTT_automation,name,255,id);
+#	endif
 }
 
 Automation::~Automation()
 {
 	int x,y;
 	
-	if (parent){
-		parent->apatt->a[id] = 0;
+	if (module){
+		A(module->apatt,Automation)[id] = 0;
 		for (y=0;y<MAX_LAYERS;y++){
 			for (x=0;x<MAX_SEQUENCES;x++)
-				if (parent->sequ[y][x].patt==(id | 0x1000)) parent->sequ[y][x].patt = 0xFFFF;
+				if (module->sequ[y][x].patt==(id | 0x1000)) module->sequ[y][x].patt = 0xFFFF;
 		};
 	};
-	for (x=0;x<MAX_TRACKS+MAX_MTRACKS;x++)
-		if (trkauto[x].trkenv) si->memfree(trkauto[x].trkenv);
+	si->arraydelete(envelopes);
 }
 //---------------------------------------------------------------------------

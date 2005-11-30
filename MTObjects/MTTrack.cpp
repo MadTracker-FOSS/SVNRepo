@@ -19,7 +19,7 @@
 //---------------------------------------------------------------------------
 // Track functions
 //---------------------------------------------------------------------------
-Track::Track(MTModule *parent,int i,int sub):
+Track::Track(MTObject *parent,int i,int sub):
 Node(parent,MTO_TRACK,i),
 muted(false),
 solo(false),
@@ -38,8 +38,10 @@ offset(0)
 	mtmemzero(buffer,sizeof(buffer));
 	if (parent){
 		if (id<MAX_TRACKS){
-			res->loadstringf(MTT_track,name,255,id+1);
-			Node *dest = A(parent->master,Track)[0];
+#			ifdef MTSYSTEM_RESOURCES
+				res->loadstringf(MTT_track,name,255,id+1);
+#			endif
+			Node *dest = A(module->master,Track)[0];
 			n = dest->noutputs;
 			for (x=0;x<noutputs;x++){
 				outputs[x].s = x;
@@ -50,7 +52,9 @@ offset(0)
 		}
 		else{
 			vol = 0.5;
-			res->loadstringf(MTT_master,name,255,id-MAX_TRACKS+1);
+#			ifdef MTSYSTEM_RESOURCES
+				res->loadstringf(MTT_master,name,255,id-MAX_TRACKS+1);
+#			endif
 			if (output->ndevices){
 				Node *dest = output->device[0]->master;
 				n = dest->noutputs;
@@ -72,9 +76,9 @@ offset(0)
 
 Track::~Track()
 {
-	if (parent){
-		if (id<MAX_TRACKS) parent->trk->a[id] = 0;
-		else parent->master->a[id-MAX_TRACKS] = 0;
+	if (module){
+		if (id<MAX_TRACKS) module->trk->a[id] = 0;
+		else module->master->a[id-MAX_TRACKS] = 0;
 	};
 	free();
 }
@@ -92,8 +96,8 @@ void Track::alloc()
 	lock(MTOL_LOCK,true);
 	if (buffer[0]) free();
 	nsamples = output->buffersamples*2;
-	if (parent){
-		parent->needupdaterouting();
+	if (module){
+		module->needupdaterouting();
 		if (id<MAX_TRACKS) nsamples = output->buffersamples*2;
 		else nsamples = output->device[0]->master->nsamples;
 	}
@@ -112,8 +116,8 @@ void Track::free()
 	sample *old[8];
 	
 	lock(MTOL_LOCK,true);
-	if (parent){
-		parent->needupdaterouting();
+	if (module){
+		module->needupdaterouting();
 	};
 	for (x=0;x<noutputs;x++){
 		old[x] = buffer[x];

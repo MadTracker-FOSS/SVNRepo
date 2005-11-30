@@ -12,10 +12,17 @@
 //---------------------------------------------------------------------------
 #ifndef MTSYSTEM1_INCLUDED
 #define MTSYSTEM1_INCLUDED
-
+//---------------------------------------------------------------------------
+#include "../MT3Config.h"
+//---------------------------------------------------------------------------
 #define MTS_WINNT    0x00001
 #define MTS_MMX      0x00002
-#define MTS_SIMD     0x00004
+#define MTS_SSE      0x00004
+#define MTS_SSE2     0x00008
+#define MTS_SSE3     0x00010
+#define MTS_CX8      0x00100
+#define MTS_CMOV     0x00200
+#define MTS_HT       0x01000
 #define MTS_DEBUGGED 0x10000
 
 #define MTM_ZERO     1
@@ -92,14 +99,20 @@
 #define A(_A,_T) ((_T**)_A->a)
 #define D(_A,_T) ((_T*)_A->d)
 
-#if defined(MTSYSTEM_EXPORTS) && defined(_WIN32)
-#	define MTTRY   __try{
-#	define MTCATCH }__except(LPTOP_LEVEL_EXCEPTION_FILTER(si->onerror)(GetExceptionInformation())){
-#	define MTEND };
+#ifdef MTSYSTEM_EXPORTS
+#	ifdef _WIN32
+#		define MTTRY   __try{
+#		define MTCATCH }__except(LPTOP_LEVEL_EXCEPTION_FILTER(si->onerror)(GetExceptionInformation())){
+#		define MTEND };
+#	else
+#		define MTTRY   try{if (sigsetjmp((__jmp_buf_tag*)mttry(false),1)==0){
+#		define MTCATCH }else{throw "Got signal!";}}catch(...){
+#		define MTEND }mttry(true);
+#	endif
 #else
-#	define MTTRY   try{if (mttry(false)==0){
-#	define MTCATCH }else{throw;}}catch(...){
-#	define MTEND }mttry(true);
+#	define MTTRY   try{
+#	define MTCATCH }catch(...){
+#	define MTEND };
 #endif
 //---------------------------------------------------------------------------
 class MTConfigFile;
@@ -118,9 +131,18 @@ class MTHash;
 #include "MTXExtension.h"
 #include "MTXGUI.h"
 #include "MTXDisplay.h"
-#include "MTSocket.h"
-#include "MTConfig.h"
-#include "MTMiniConfig.h"
+#ifdef MTSYSTEM_INTERNET
+#	include "MTSocket.h"
+#endif
+#ifdef MTSYSTEM_CONFIG
+#	include "MTConfig.h"
+#endif
+#ifdef MTSYSTEM_MINICONFIG
+#	include "MTMiniConfig.h"
+#endif
+#ifdef MTSYSTEM_XML
+#	include "MTXML.h"
+#endif
 #include "MTFile.h"
 #include "MTKernel.h"
 #include "MTResources.h"
@@ -128,6 +150,8 @@ class MTHash;
 //---------------------------------------------------------------------------
 #ifdef _WIN32
 #	include <windows.h>
+#else
+#	include <setjmp.h>
 #endif
 //---------------------------------------------------------------------------
 static const int systemtype = FOURCC('X','S','Y','S');
@@ -177,7 +201,7 @@ public:
 	bool (MTCT *filecopy)(char *filename,char *destination);
 	bool (MTCT *filedelete)(char *filename);
 	bool (MTCT *filerename)(char *filename,char *newname);
-	void (MTCT *filetype)(char *filename,char *filetype,int length);
+	void (MTCT *filetype)(const char *filename,char *filetype,int length);
 	void (MTCT *filemaketemp)(char *filename,int length);
 	MTFolder* (MTCT *folderopen)(char *path);
 	void (MTCT *folderclose)(MTFolder *folder);
@@ -188,11 +212,29 @@ public:
 	MTResources* (MTCT *resfind)(const char *filename,bool write = false);
 	MTResources* (MTCT *resopen)(MTFile *f,bool ownfile);
 	void (MTCT *resclose)(MTResources *res);
+#ifdef MTSYSTEM_CONFIG
 	MTConfigFile* (MTCT *configfind)(const char *filename);
 	MTConfigFile* (MTCT *configopen)(const char *filename);
 	void (MTCT* configclose)(MTConfigFile* file);
+#else
+	void* configfind;
+	void* configopen;
+	void* configclose;
+#endif
+#ifdef MTSYSTEM_MINICONFIG
 	MTMiniConfig* (MTCT *miniconfigcreate)();
 	void (MTCT *miniconfigdelete)(MTMiniConfig *cfg);
+#else
+	void* miniconfigcreate;
+	void* miniconfigdelete;
+#endif
+#ifdef MTSYSTEM_XML
+	MTXML* (MTCT *xmlcreate)();
+	void (MTCT *xmldelete)(MTXML *xml);
+#else
+	void* xmlcreate;
+	void* xmldelete;
+#endif
 	MTLock* (MTCT *lockcreate)();
 	void (MTCT *lockdelete)(MTLock *lock);
 	MTEvent* (MTCT *eventcreate)(bool autoreset,int interval = 0,int resolution = 0,bool periodic = true,bool pulse = false);
@@ -204,10 +246,15 @@ public:
 	int (MTCT *syscounter)();
 	bool (MTCT *syscounterex)(double *count);
 	void (MTCT *syswait)(int ms);
-	int (MTCT *syswaitmultiple)(int count,MTEvent **events,bool all,int timeout);
+	int (MTCT *syswaitmultiple)(int count,MTEvent **events,bool all,int timeout = -1);
 	int (MTCT *dialog)(char *message,char *caption,char *buttons,int flags,int timeout);
+#ifdef MTSYSTEM_RESOURCES
 	int (MTCT *resdialog)(MTResources *res,int id,char *caption,char *buttons,int timeout,int flags,...);
 	int (MTCT *authdialog)(char *message,char *login,char *password);
+#else
+	void* resdialog;
+	void* authdialog;
+#endif
 	void (MTCT *showoserror)(int error);
 	void (MTCT *showlastoserror)();
 	void (MTCT *log)(const char *log,char date);
@@ -238,8 +285,10 @@ void* MTCT mtmemalloc(int size,int flags = 0);
 bool MTCT mtmemfree(void *mem);
 void* MTCT mtmemrealloc(void *mem,int size);
 int MTCT mtdialog(char *message,char *caption,char *buttons,int flags,int timeout);
+#ifdef MTSYSTEM_RESOURCES
 int MTCT mtresdialog(MTResources *res,int id,char *caption,char *buttons,int timeout,int flags,...);
 int MTCT mtauthdialog(char *message,char *login,char *password);
+#endif
 void MTCT mtshowoserror(int error);
 void MTCT mtshowlastoserror();
 int MTCT mtsync_inc(int *value);
@@ -252,7 +301,9 @@ int MTCT mtsync_dec(int *value);
 extern MTInterface *mtinterface;
 extern MTGUIInterface *gi;
 extern MTDisplayInterface *di;
-extern MTResources *sysres;
+#ifdef MTSYSTEM_RESOURCES
+	extern MTResources *sysres;
+#endif
 #ifdef _WIN32
 	extern SYSTEM_INFO sysinfo;
 #endif

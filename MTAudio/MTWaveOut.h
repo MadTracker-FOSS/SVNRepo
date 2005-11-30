@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Audio Core
+//
+//		Platforms:	Win32
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTWAVEOUT_INCLUDED
 #define MTWAVEOUT_INCLUDED
 //---------------------------------------------------------------------------

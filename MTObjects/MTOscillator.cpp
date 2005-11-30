@@ -26,14 +26,14 @@ SampleType::SampleType()
 	description = "Sample";
 }
 
-MTObject* SampleType::create(MTModule *parent,int id,void *param)
+MTObject* SampleType::create(MTObject *parent,mt_int32 id,void *param)
 {
 	return new MTSample(parent,id);
 }
 //---------------------------------------------------------------------------
 // MTSample functions
 //---------------------------------------------------------------------------
-MTSample::MTSample(MTModule *parent,int i):
+MTSample::MTSample(MTObject *parent,mt_int32 i):
 Oscillator(parent,MTO_MTSAMPLE,i),
 filename(0),
 time(0),
@@ -53,7 +53,9 @@ fileoffset(0),
 peaks(0)
 {
 	mtmemzero(data,sizeof(data));
-	res->loadstringf(MTT_oscillator,name,255,id);
+#	ifdef MTSYSTEM_RESOURCES
+		res->loadstringf(MTT_oscillator,name,255,id);
+#	endif
 }
 
 MTSample::~MTSample()
@@ -182,8 +184,9 @@ panvarlng(0)
 		status[x].tc = x%noutputs;
 		status[x].multiplier = volume/divider;
 		status[x].vol = volume*status[x].multiplier;
+		status[x].pitch = pitch;
 	};
-	a_floattofixed(pitch,pitchi,pitchd);
+//	a_floattofixed(pitch,pitchi,pitchd);
 }
 
 bool MTSampleInstance::seek(double offset,int origin,int units)
@@ -228,6 +231,8 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 	int x,e,ls,le;
 	int ccount,coffset,cmax;
 	int flags;
+	int pitchi;
+	unsigned int pitchd;
 
 	silence = true;
 	if (!dspi) return false;
@@ -312,11 +317,39 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 				};
 			};
 			if (ccount<=0) break;
+			cstatus.pitch = pitch;
 			if ((fabs(cstatus.vol)<VOLUME_THRESOLD) && ((cstatus.volvarlng==0) || (cstatus.volvar==0.0))){
+				a_floattofixed(cstatus.pitch,pitchi,pitchd);
 				a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,ccount,cstatus.reverse);
 			}
 			else{
-				dspi->resample[flags](outputs[cstatus.tc]+coffset,(sample*)cparent.data[cstatus.sc]+cstatus.posi,ccount,cstatus,pitchi,pitchd);
+				if ((cstatus.volvarlng!=0) && (cstatus.volvarlng<ccount)){
+					dspi->resample[flags](outputs[cstatus.tc]+coffset,(char*)(cparent.data[cstatus.sc])+(cstatus.posi<<flags),cstatus.volvarlng,cstatus);
+
+					cstatus.vol += cstatus.volvar*cstatus.volvarlng;
+					ccount -= cstatus.volvarlng;
+
+					a_floattofixed(cstatus.pitch,pitchi,pitchd);
+					a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,cstatus.volvarlng,cstatus.reverse);
+
+					cstatus.volvarlng = 0;
+
+					dspi->resample[flags](outputs[cstatus.tc]+coffset,(char*)(cparent.data[cstatus.sc])+(cstatus.posi<<flags),ccount,cstatus);
+					
+					a_floattofixed(cstatus.pitch,pitchi,pitchd);
+					a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,ccount,cstatus.reverse);
+				}
+				else{
+					dspi->resample[flags](outputs[cstatus.tc]+coffset,(char*)(cparent.data[cstatus.sc])+(cstatus.posi<<flags),ccount,cstatus);
+
+					if (cstatus.volvarlng>=ccount){
+						cstatus.vol += cstatus.volvar*ccount;
+						cstatus.volvarlng -= ccount;
+					};
+					a_floattofixed(cstatus.pitch,pitchi,pitchd);
+					a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,ccount,cstatus.reverse);
+				};
+//				dspi->resample[flags](outputs[cstatus.tc]+coffset,(sample*)cparent.data[cstatus.sc]+cstatus.posi,ccount,cstatus);
 				silence = false;
 			};
 			if (!cparent.loop) break;
@@ -337,7 +370,7 @@ void MTSampleInstance::setnote(double n)
 	note = n;
 	if (cparent.flags & SF_SYNCHRONIZED){
 		pitch = ((double)cparent.frequency/(double)output->frequency)*(module->playstatus.bpm/cparent.bpm);
-		a_floattofixed(pitch,pitchi,pitchd);
+//		a_floattofixed(pitch,pitchi,pitchd);
 		return;
 	};
 	reverse = (n<0);
@@ -349,7 +382,7 @@ void MTSampleInstance::setnote(double n)
 		reverse = false;
 	};
 	pitch = ((double)cparent.frequency/(double)output->frequency)*pow(1.0594630943592952645618252949463,n-((MTSample*)parent)->note);
-	a_floattofixed(pitch,pitchi,pitchd);
+//	a_floattofixed(pitch,pitchi,pitchd);
 	for (x=0;x<nstatus;x++){
 		status[x].reverse ^= reverse;
 	};

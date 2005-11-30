@@ -24,11 +24,14 @@
 #define MF_DRUMSAUTO      0x08
 #define MF_MASTERAUTO     0x10
 
+#define PACKED
 #if defined __BORLANDC__
-	#pragma -a2
+#	pragma -a2
 #elif defined(WIN32) || defined(__FLAT__)
-	#pragma pack(push)
-	#pragma pack(2)
+#	pragma pack(push)
+#	pragma pack(2)
+#else
+#	define PACKED  __attribute__((packed));
 #endif
 
 struct _MT2Header{
@@ -43,13 +46,13 @@ struct _MT2Header{
 	unsigned short ninstr,nspl;
 	unsigned char pl[256];
 	unsigned short ddl;
-};
+}PACKED;
 
 struct _MT2DrumsData{
 	unsigned short ndpatts;
 	unsigned short splmap[8];
 	unsigned char dpl[256];
-};
+}PACKED;
 
 struct _MT2TRKS{
 	unsigned short volume;
@@ -57,22 +60,22 @@ struct _MT2TRKS{
 	char output;
 	unsigned short trkfxid;
 	unsigned short trkfxparam[64][8];
-};
+}PACKED;
 
 struct _MT2Automation{
 	unsigned short flags;
 	unsigned short trkfxid;
-};
+}PACKED;
 
 struct _MT2Automation203{
 	int flags;
 	int trkfxid;
-};
+}PACKED;
 
 struct _MT2EnvPoint{
 	unsigned short x;
 	short y;
-};
+}PACKED;
 
 struct _MT2Instrument{
 	char name[32];
@@ -85,7 +88,7 @@ struct _MT2Instrument{
 	unsigned short flags;
 // if (ver>=0x0202) else volume and panning only
 	int envmask;
-};
+}PACKED;
 
 struct _MT2IEnvelope{
 	char flags;
@@ -95,7 +98,7 @@ struct _MT2IEnvelope{
 	unsigned char loope;
 	char reserved[3];
 	_MT2EnvPoint points[16];
-};
+}PACKED;
 
 struct _MT2InstrSynth{	// if (_MT2Instrument.flags!=0)
 	unsigned char synthid;
@@ -110,8 +113,8 @@ struct _MT2InstrSynth{	// if (_MT2Instrument.flags!=0)
 	unsigned char midich;
 	unsigned char midipr;
 	unsigned char prog;
-	char reserved[16];
-};
+	char reserved[17];
+}PACKED;
 
 struct _MT2Sample{
 	char name[32];
@@ -128,14 +131,14 @@ struct _MT2Sample{
 	char panning;
 	char note;
 	short spb;
-};
+}PACKED;
 
 struct _MT2Group{
 	unsigned char splid;
 	unsigned char vol;
 	short pitch;
 	char reserved[4];
-};
+}PACKED;
 
 struct _MT2VST{
 	char dll[64];
@@ -148,12 +151,12 @@ struct _MT2VST{
 	signed char pan;
 	char res[17];
 	mt_uint32 n;
-};
+}PACKED;
 
 #if defined(WIN32) || defined(__FLAT__)
-	#pragma pack(pop)
+#	pragma pack(pop)
 #elif defined CBUILDER
-	#pragma -a-
+#	pragma -a-
 #endif
 
 void loadMT2pattern(MTPattern *p,void *buffer,int size,bool compressed)
@@ -252,7 +255,8 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 	MTModule &module = *(MTModule*)object;
 	MTFile *f;
 	MTProcess *p = (MTProcess*)process;
-	int x,y,z,tmpl,incl,size,csize,pc,ac,dc,max,nvst;
+	int x,y,z,incl,size,csize,pc,ac,dc,max,nvst;
+	mt_uint32 tmpl;
 	_MT2Header header;
 	_MT2DrumsData drums;
 	char tmpb,*tmpc,*tmpc2;
@@ -272,7 +276,8 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 // Header
 	f->read(&header,sizeof(header));
 	if (strncmp(header.id,"MT20",4)) goto error;
-	module.access.creatorid = header.userid;
+//TODO
+//	module.access.creatorid = header.userid;
 	memcpy(module.name,header.title,64);
 	FLOG3("Loading \"%s\" Author: %08X Software: %s"NL,header.title,header.userid,header.tracker);
 	if (header.ticks<1) header.ticks = 6;
@@ -474,11 +479,11 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 // Automation
 	if (header.flags & MF_AUTOMATION){
 		for (x=0;x<header.npatts;x++){
-			module.apatt->a[x] = new Automation(&module,x);
+			Automation *pauto = new Automation(A(module.patt,Pattern)[x],0);
+//			A(module.apatt,Automation)[x] = pauto;
 			y = 0;
 			ok = false;
 			while (true){
-				TrackAuto &ctrkauto = A(module.apatt,Automation)[x]->trkauto[y];
 				if (y>MAX_TRACKS+1){
 					_MT2Automation203 cauto;
 					f->read(&cauto,sizeof(cauto));
@@ -498,32 +503,30 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 				if (header.version>=0x203){
 					_MT2Automation203 cauto;
 					f->read(&cauto,sizeof(cauto));
-					ctrkauto.flags = cauto.flags;
-					ctrkauto.fx = cauto.trkfxid;
+					tmpl = cauto.flags;
 				}
 				else{
 					_MT2Automation cauto;
 					f->read(&cauto,sizeof(cauto));
-					ctrkauto.flags = cauto.flags;
-					ctrkauto.fx = cauto.trkfxid;
+					tmpl = cauto.flags;
 				};
-				if (ctrkauto.flags){
-					ctrkauto.trkenv = mtnew(TrackEnvelopes);
-					tmpl = ctrkauto.flags;
-					z = 0;
-					while (tmpl!=0){
-						_MT2EnvPoint tmpp[64];
-						if (tmpl & 1){
-							f->read(&ctrkauto.trkenv->env[z].npoints,4);
-							f->read(tmpp,sizeof(tmpp));
-							for (incl=0;incl<64;incl++){
-								ctrkauto.trkenv->env[z].points[incl].x = (float)tmpp[incl].x/(header.ticks*header.lpb);
-								ctrkauto.trkenv->env[z].points[incl].y = (float)tmpp[incl].y;
-							};
-							z++;
+				z = 0;
+				while (tmpl!=0){
+					_MT2EnvPoint tmpp[64];
+					if (tmpl & 1){
+						TrackAuto ctrkauto;
+						mtmemzero(&ctrkauto,sizeof(ctrkauto));
+						f->read(&ctrkauto.env.npoints,4);
+						f->read(tmpp,sizeof(tmpp));
+						for (incl=0;incl<64;incl++){
+							ctrkauto.env.points[incl].flags = MTEP_LINEAR;
+							ctrkauto.env.points[incl].x = (float)tmpp[incl].x/(header.ticks*header.lpb);
+							ctrkauto.env.points[incl].y = (float)tmpp[incl].y;
 						};
-						tmpl >>= 1;
+						pauto->envelopes->push(&ctrkauto);
+						z++;
 					};
+					tmpl >>= 1;
 					ok = true;
 				};
 autoskip:
@@ -534,11 +537,12 @@ autoskip:
 				else if (y==MAX_TRACKS+1){
 					if (header.version<0x250) break;
 				}
-				else if (y==MAX_TRACKS+1+nvst) break;
+				else if (y>=MAX_TRACKS+1+nvst) break;
 			};
 			if (!ok){
-				delete A(module.apatt,Automation)[x];
-				module.apatt->a[x] = 0;
+				delete pauto;
+//				delete A(module.apatt,Automation)[x];
+//				module.apatt->a[x] = 0;
 			};
 		};
 		if (p) p->setprogress((float)f->seek(0,MTF_CURRENT)/max);
@@ -718,16 +722,16 @@ autoskip:
 	for (x=1;x<256;x++){
 		MTInstrument &cinstr = *A(module.instr,MTInstrument)[x];
 		if (!&cinstr) continue;
-#ifdef _DEBUG
+#		ifdef _DEBUG
 //<TEST>
-		char *e = strstr(cinstr.name,"VST ");
-		if (e){
-			oi->newobject(MTO_INSTRUMENT+1,&module,x,e+4,false,true);
-			delete &cinstr;
-			continue;
-		};
+			char *e = strstr(cinstr.name,"VST ");
+			if (e){
+				oi->newobject(MTO_INSTRUMENT+1,&module,x,e+4,false,true);
+				delete &cinstr;
+				continue;
+			};
 //</TEST>
-#endif
+#		endif
 		for (y=0;y<96;y++){
 			Oscillator &cspl = *cinstr.grp[cinstr.range[0][y]].spl;
 			if (!&cspl) continue;

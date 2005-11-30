@@ -20,26 +20,23 @@ class Automation;
 // Automation
 //---------------------------------------------------------------------------
 struct AEnvelope{
-	int npoints;
+	mt_uint32 npoints;
 	EnvPoint points[64];
 };
 
-struct TrackEnvelopes{
-	AEnvelope env[16];
-};
-
 struct TrackAuto{
-	int flags;
-	int fx;
-	TrackEnvelopes *trkenv;
+	MTObject *target;
+	mt_uint32 param;
+	mt_uint32 flags;
+	AEnvelope env;
 };
 
 class Automation : public MTObject{
 public:
-	Automation(MTModule *parent,int i);
+	Automation(MTObject *parent,mt_int32 i);
 	virtual ~Automation();
 	
-	TrackAuto trkauto[MAX_TRACKS+MAX_MTRACKS];
+	MTArray *envelopes;
 };
 //---------------------------------------------------------------------------
 #endif

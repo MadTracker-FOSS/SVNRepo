@@ -16,7 +16,7 @@
 //---------------------------------------------------------------------------
 // MadTracker object functions
 //---------------------------------------------------------------------------
-MTObject::MTObject(MTModule *parent,int type,int i):
+MTObject::MTObject(MTObject *parent,mt_uint32 type,mt_int32 i):
 modified(0),
 lockread(0),
 lockwrite(0),
@@ -27,11 +27,12 @@ lastowner(0),
 objecttype(type),
 id(i),
 flags(0),
-name(0)
+color(MTColor(160,160,160,0))
 {
-	access.creatorid = 0;
+	if (parent) module = parent->module;
+	else module = 0;
+	access.creatorid = MTUID_EVERYONE;
 	access.caccess = MTOA_CANALL;
-	access.nrules = 0;
 	name = (char*)si->memalloc(256,MTM_ZERO);
 }
 
@@ -122,30 +123,32 @@ int MTObject::savetostream(MTFile *f,void *params)
 	return 0;
 }
 
-MTObject* MTObject::duplicate(int targettype)
+MTObject* MTObject::duplicate(mt_uint32 targettype)
 {
 	return 0;
 }
 //---------------------------------------------------------------------------
 // MadTracker object wrapperfunctions
 //---------------------------------------------------------------------------
-void MTObjectWrapper::create(void *object,void *parent,int type,int i)
+void MTObjectWrapper::create(void *object,void *parent,mt_uint32 type,mt_int32 i)
 {
 	MTObject &o = *(MTObject*)object;
 	o.modified = 0;
 	o.lockread = 0;
 	o.lockwrite = 0;
 	o.modifying = 0;
-	o.parent = (MTModule*)parent;
+	o.parent = (MTObject*)parent;
+	if (o.parent) o.module = o.parent->module;
+	else o.module = 0;
 	o.owner = 0;
 	o.lastowner = 0;
 	o.objecttype = type;
 	o.id = i;
 	o.flags = 0;
-	o.access.creatorid = 0;
+	o.access.creatorid = MTUID_EVERYONE;
 	o.access.caccess = MTOA_CANALL;
-	o.access.nrules = 0;
 	o.name = (char*)si->memalloc(256,MTM_ZERO);
+	o.color = 0xC0C0C0;
 }
 
 void MTObjectWrapper::destroy(void *object)

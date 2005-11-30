@@ -81,7 +81,7 @@ bool MTLocalHook::filedelete(char *url)
 #	endif
 }
 
-void MTLocalHook::filetype(char *url,char *type,int length)
+void MTLocalHook::filetype(const char *url,char *type,int length)
 {
 	char *e;
 	

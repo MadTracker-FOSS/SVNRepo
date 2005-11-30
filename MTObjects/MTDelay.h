@@ -33,7 +33,7 @@ public:
 	MTArray *columns;
 
 	DelayType();
-	MTObject* MTCT create(MTModule *parent,int id,void *param);
+	MTObject* MTCT create(MTObject *parent,mt_int32 id,void *param);
 };
 //---------------------------------------------------------------------------
 struct Tap{
@@ -52,7 +52,7 @@ struct Tap{
 	
 class MTDelay : public Effect{
 public:
-	MTDelay(MTModule *parent,int i);
+	MTDelay(MTObject *parent,mt_int32 i);
 	~MTDelay();
 	void MTCT notify(MTObject *source,int message,int param1,void *param2);
 	EffectInstance* MTCT createinstance(int noutputs,sample **outputs,int ninputs,sample **inputs,InstrumentInstance *caller = 0);

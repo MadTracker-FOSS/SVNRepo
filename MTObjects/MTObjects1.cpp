@@ -28,30 +28,34 @@
 #include "MTGenerator.h"
 #include "../../debug/Interface/MTObjectsRES.h"
 #ifdef _DEBUG
-#include "MTTest.h"
+#	include "MTTest.h"
 #endif
 //---------------------------------------------------------------------------
 static const char *objectsname = {"MadTracker Objects"};
 static const int objectsversion = 0x30000;
 static const MTXKey objectskey = {0,0,0,0};
-MTXInterfaces i;
-MTObjectsInterface *oi;
-MTInterface *mtinterface;
-MTSystemInterface *si;
-MTAudioInterface *ai;
-MTDSPInterface *dspi;
-MTGUIInterface *gi;
+#ifndef MTBUILTIN
+	MTXInterfaces i;
+	MTObjectsInterface *oi;
+	MTInterface *mtinterface;
+	MTSystemInterface *si;
+	MTAudioInterface *ai;
+	MTDSPInterface *dspi;
+	MTGUIInterface *gi;
+#endif
 MTObjectsPreferences objectsprefs = {false,false};
 Skin *skin;
-MTResources *res;
+#ifdef MTSYSTEM_RESOURCES
+	MTResources *res;
+#endif
 MTWindow *monitor;
 MTHash *objecttype;
 MTArray *load,*save,*edit;
 MTLock *objectlock;
 WaveOutput *output;
 MTObjectWrapper ow;
-#if MTLEVEL >= MTL_PROFESSIONAL
-bool smpsupport = true;
+#ifdef MTVERSION_PROFESSIONAL
+	bool smpsupport = true;
 #endif
 //---------------------------------------------------------------------------
 bool grantaccess(MTObject *object,int access,bool silent = true,bool lock = false)
@@ -102,16 +106,18 @@ bool grantaccess(MTObject *object,int access,bool silent = true,bool lock = fals
 	};
 	if (((read) && (object->lockread)) || ((write) && (object->lockwrite))){
 		objectlock->unlock();
-		if (!silent){
-			oowner = object->owner;
-			res->loadstring(o,os,15);
-			if (!(oowner) || (oowner==cuser)){
-				si->resdialog(res,MTT_lock1,"MTObjects",MTD_OK,MTD_INFORMATION|MTD_MODAL,5000,os);
-			}
-			else{
-				si->resdialog(res,MTT_lock2,"MTObjects",MTD_OK,MTD_INFORMATION|MTD_MODAL,5000,os,oowner->name);
+#		ifdef MTSYSTEM_RESOURCES
+			if (!silent){
+				oowner = object->owner;
+				res->loadstring(o,os,15);
+				if (!(oowner) || (oowner==cuser)){
+					si->resdialog(res,MTT_lock1,"MTObjects",MTD_OK,MTD_INFORMATION|MTD_MODAL,5000,os);
+				}
+				else{
+					si->resdialog(res,MTT_lock2,"MTObjects",MTD_OK,MTD_INFORMATION|MTD_MODAL,5000,os,oowner->name);
+				};
 			};
-		};
+#		endif
 		return false;
 	};
 	if (object->access.caccess & access) goto granted;
@@ -127,9 +133,11 @@ bool grantaccess(MTObject *object,int access,bool silent = true,bool lock = fals
 	};
 	objectlock->unlock();
 	if (!silent){
-		res->loadstring(a,as,15);
-		res->loadstring(o,os,15);
-		si->resdialog(res,MTT_noaccess,"MTObjects",MTD_OK,MTD_EXCLAMATION|MTD_MODAL,5000,as,os);
+#		ifdef MTSYSTEM_RESOURCES
+			res->loadstring(a,as,15);
+			res->loadstring(o,os,15);
+			si->resdialog(res,MTT_noaccess,"MTObjects",MTD_OK,MTD_EXCLAMATION|MTD_MODAL,5000,as,os);
+#		endif
 	};
 	return false;
 granted:
@@ -188,34 +196,42 @@ bool MTObjectsInterface::init()
 	ai = (MTAudioInterface*)mtinterface->getinterface(audiotype);
 	dspi = (MTDSPInterface*)mtinterface->getinterface(dsptype);
 	gi = (MTGUIInterface*)mtinterface->getinterface(guitype);
-	if ((!si) || (!dspi)){
-		LOGD("%s - [Objects] ERROR: Missing DSP extension!"NL);
+	if (!ai){
+		LOGD("%s - [Objects] ERROR: Missing MTAudio extension!"NL);
+		return false;
+	};
+	if (!dspi){
+		LOGD("%s - [Objects] ERROR: Missing MTDSP extension!"NL);
 		return false;
 	};
 	ENTER("MTObjectsInterface::init");
 	LOGD("%s - [Objects] Initializing..."NL);
-	res = si->resfind("MTObjects.mtr",false);
-	if (!res){
-		LOGD("%s - [Objects] ERROR: Missing MTObjects.mtr!"NL);
-		LEAVE();
-		return false;
-	};
-#if MTLEVEL >= MTL_PROFESSIONAL
-	nthreads = si->ncpu;
-#endif
-	if ((conf = (MTConfigFile*)mtinterface->getconf("Global",false))){
-		if (conf->setsection("MTObjects")){
-#if MTLEVEL >= MTL_PROFESSIONAL
-			if (smpsupport){
-				conf->getparameter("SMPSupport",&smpsupport,MTCT_BOOLEAN,sizeof(smpsupport));
-				conf->getparameter("Threads",&nthreads,MTCT_UINTEGER,sizeof(nthreads));
-				if (nthreads<1) nthreads = 1;
-				else if (nthreads>128) nthreads = 128;
-			};
-#endif
+#	ifdef MTSYSTEM_RESOURCES
+		res = si->resfind("MTObjects.mtr",false);
+		if (!res){
+			LOGD("%s - [Objects] ERROR: Missing MTObjects.mtr!"NL);
+			LEAVE();
+			return false;
 		};
-		mtinterface->releaseconf(conf);
-	};
+#	endif
+#	ifdef MTVERSION_PROFESSIONAL
+		nthreads = si->ncpu;
+#	endif
+#	ifdef MTSYSTEM_CONFIG
+		if ((conf = (MTConfigFile*)mtinterface->getconf("Global",false))){
+			if (conf->setsection("MTObjects")){
+#				ifdef MTVERSION_PROFESSIONAL
+					if (smpsupport){
+						conf->getparameter("SMPSupport",&smpsupport,MTCT_BOOLEAN,sizeof(smpsupport));
+						conf->getparameter("Threads",&nthreads,MTCT_UINTEGER,sizeof(nthreads));
+						if (nthreads<1) nthreads = 1;
+						else if (nthreads>128) nthreads = 128;
+					};
+#				endif
+			};
+			mtinterface->releaseconf(conf);
+		};
+#	endif
 	objectlock = si->lockcreate();
 	output = ai->getoutput();
 	objecttype = si->hashcreate(4);
@@ -232,26 +248,28 @@ bool MTObjectsInterface::init()
 	addobjecttype(patterntype);
 	addobjecttype(delaytype);
 	addobjecttype(generatortype);
-	initInstrEditor();
-	initPattEditor();
 	initColumns();
+#	ifdef MTOBJECTS_EDITORS
+		initInstrEditor();
+		initPattEditor();
+		addedit(MTO_MODULE,ModuleEdit,"Sequencer");
+		addedit(MTO_INSTRUMENT,InstrumentEdit,"Instrument Editor");
+		addedit(MTO_PATTERN,PatternEdit,"Pattern Editor");
+#	endif
 	addload(MTO_MODULE,loadMT2,".mt2","MadTracker 2 Module");
 	addload(MTO_OSCILLATOR,loadWAV,".wav","Wave Sample");
 	addload(MTO_INSTRUMENT,loadSF2,".sf2","Sound Font 2");
-	addedit(MTO_MODULE,ModuleEdit,"Sequencer");
-	addedit(MTO_INSTRUMENT,InstrumentEdit,"Instrument Editor");
-	addedit(MTO_PATTERN,PatternEdit,"Pattern Editor");
 	status |= MTX_INITIALIZED;
-#if MTLEVEL >= MTL_PROFESSIONAL
-	if (smpsupport){
-		if (nthreads>1){
-			FLOGD1("%s - [Objects] Preparing engine for %d CPU's..."NL,nthreads);
-			for (x=1;x<nthreads;x++){
-				thread[x] = si->threadcreate(engineproc,true,true,(void*)x,MTT_REALTIME,"Engine");
+#	ifdef MTVERSION_PROFESSIONAL
+		if (smpsupport){
+			if (nthreads>1){
+				FLOGD1("%s - [Objects] Preparing engine for %d CPU's..."NL,nthreads);
+				for (x=1;x<nthreads;x++){
+					thread[x] = si->threadcreate(engineproc,true,true,(void*)x,MTT_REALTIME,"Engine");
+				};
 			};
 		};
-	};
-#endif
+#	endif
 	LEAVE();
 	return true;
 }
@@ -263,16 +281,16 @@ void MTObjectsInterface::uninit()
 
 	ENTER("MTObjectsInterface::uninit");
 	LOGD("%s - [Objects] Uninitializing..."NL);
-#if MTLEVEL >= MTL_PROFESSIONAL
-	if (smpsupport){
-		if (nthreads>1){
-			LOGD("%s - [Objects] Stopping engine threads..."NL);
-			for (x=1;x<nthreads;x++){
-				thread[x]->terminate();
+#	ifdef MTVERSION_PROFESSIONAL
+		if (smpsupport){
+			if (nthreads>1){
+				LOGD("%s - [Objects] Stopping engine threads..."NL);
+				for (x=1;x<nthreads;x++){
+					thread[x]->terminate();
+				};
 			};
 		};
-	};
-#endif
+#	endif
 	status &= (~MTX_INITIALIZED);
 	oldlock = objectlock;
 	objectlock = 0;
@@ -291,15 +309,17 @@ void MTObjectsInterface::uninit()
 		si->memfree(((ObjectEdit*)edit->a[x])->description);
 		si->memfree(edit->a[x]);
 	};
-	deledit(MTO_MODULE,ModuleEdit);
-	deledit(MTO_INSTRUMENT,InstrumentEdit);
-	deledit(MTO_PATTERN,PatternEdit);
 	delload(MTO_MODULE,loadMT2);
 	delload(MTO_OSCILLATOR,loadWAV);
 	delload(MTO_INSTRUMENT,loadSF2);
+#	ifdef MTOBJECTS_EDITORS
+		deledit(MTO_MODULE,ModuleEdit);
+		deledit(MTO_INSTRUMENT,InstrumentEdit);
+		deledit(MTO_PATTERN,PatternEdit);
+		uninitPattEditor();
+		uninitInstrEditor();
+#	endif
 	uninitColumns();
-	uninitPattEditor();
-	uninitInstrEditor();
 	delobjecttype(generatortype);
 	delobjecttype(instrumenttype);
 	delobjecttype(sampletype);
@@ -319,8 +339,10 @@ void MTObjectsInterface::uninit()
 	si->arraydelete(load);
 	si->arraydelete(save);
 	si->arraydelete(edit);
-	si->resclose(res);
-	res = 0;
+#	ifdef MTSYSTEM_RESOURCES
+		si->resclose(res);
+		res = 0;
+#	endif
 	LEAVE();
 }
 
@@ -328,28 +350,30 @@ void MTObjectsInterface::start()
 {
 	MTCustomControl *cc;
 
-	if (gi){
-		skin = gi->getskin();
-		objectlock->lock();
-		monitor = gi->loadwindow(res,MTW_monitor,0);
-		if (monitor){
-			cc = (MTCustomControl*)monitor->getcontrolfromuid(MTC_cpumonitor);
-			cc->behaviours = new MTCPUGraph(cc);
-			cc = (MTCustomControl*)monitor->getcontrolfromuid(MTC_chanmonitor);
-			cc->behaviours = new MTChannelsGraph(cc);
+#	ifdef MTSYSTEM_RESOURCES
+		if (gi){
+			skin = gi->getskin();
+			objectlock->lock();
+			monitor = gi->loadwindow(res,MTW_monitor,0);
+			if (monitor){
+				cc = (MTCustomControl*)monitor->getcontrolfromuid(MTC_cpumonitor);
+				cc->behaviours = new MTCPUGraph(cc);
+				cc = (MTCustomControl*)monitor->getcontrolfromuid(MTC_chanmonitor);
+				cc->behaviours = new MTChannelsGraph(cc);
+			};
+			objectlock->unlock();
 		};
-		objectlock->unlock();
-	};
-#ifdef _DEBUG
-	_test_start();
-#endif
+#	endif
+#	ifdef _DEBUG
+//		_test_start();
+#	endif
 }
 
 void MTObjectsInterface::stop()
 {
-#ifdef _DEBUG
-	_test_stop();
-#endif
+#	ifdef _DEBUG
+//		_test_stop();
+#	endif
 	if (!gi) return;
 	if (monitor){
 		if (objectlock) objectlock->lock();
@@ -361,29 +385,29 @@ void MTObjectsInterface::stop()
 
 void MTObjectsInterface::processcmdline(void *params)
 {
-#if MTLEVEL >= MTL_PROFESSIONAL
-	MTArray *pa = (MTArray*)params;
-	MTCLParam *np;
+#	ifdef MTVERSION_PROFESSIONAL
+		MTArray *pa = (MTArray*)params;
+		MTCLParam *np;
 
-	pa->reset();
-	while ((np = (MTCLParam*)pa->next())){
-		if (!np->name) continue;
-		if (strcmp(np->name,"nosmp")==0){
-			smpsupport = false;
-			break;
+		pa->reset();
+		while ((np = (MTCLParam*)pa->next())){
+			if (!np->name) continue;
+			if (strcmp(np->name,"nosmp")==0){
+				smpsupport = false;
+				break;
+			};
 		};
-	};
-#endif
+#	endif
 }
 
 void MTObjectsInterface::showusage(void *out)
 {
-#if MTLEVEL >= MTL_PROFESSIONAL
-	MTFile *co = (MTFile*)out;
-	const char *usage = {"      --nosmp       Disable SMP support"NL};
+#	ifdef MTVERSION_PROFESSIONAL
+		MTFile *co = (MTFile*)out;
+		const char *usage = {"      --nosmp       Disable SMP support"NL};
 
-	co->write(usage,strlen(usage));
-#endif
+		co->write(usage,strlen(usage));
+#	endif
 }
 
 int MTObjectsInterface::config(int command,int param)
@@ -391,53 +415,55 @@ int MTObjectsInterface::config(int command,int param)
 	return 0;
 }
 
-MTObject* MTObjectsInterface::newobject(int type,MTModule *parent,int id,void *param,bool locked,bool assign)
+MTObject* MTObjectsInterface::newobject(mt_uint32 type,MTObject *parent,mt_int32 id,void *param,bool locked,bool assign)
 {
 	int x;
+	MTModule *module = 0;
 	MTObject *object = 0;
 	ObjectType *ctype;
 
 	FENTER5("MTObjectsInterface::newobject(%d,%.8X,%d,%.8X,%d)",type,parent,id,param,locked);
 //	objectlock->lock();
-	if (parent){
-		parent->mlock->lock();
-		if ((id<0) && (assign)){
+	if (parent) module = parent->module;
+	if (module){
+		module->mlock->lock();
+		if ((id<0) && (assign) && (parent==module)){
 			switch (type & MTO_TYPEMASK){
 			case MTO_PATTERN:
-				for (x=0;x<parent->patt->nitems;x++){
-					if (parent->patt->a[x]==0){
+				for (x=0;x<module->patt->nitems;x++){
+					if (module->patt->a[x]==0){
 						id = x;
 						break;
 					};
 				};
 				break;
 			case MTO_AUTOMATION:
-				for (x=0;x<parent->apatt->nitems;x++){
-					if (parent->apatt->a[x]==0){
+				for (x=0;x<module->apatt->nitems;x++){
+					if (module->apatt->a[x]==0){
 						id = x;
 						break;
 					};
 				};
 				break;
 			case MTO_INSTRUMENT:
-				for (x=0;x<parent->instr->nitems;x++){
-					if (parent->instr->a[x]==0){
+				for (x=0;x<module->instr->nitems;x++){
+					if (module->instr->a[x]==0){
 						id = x;
 						break;
 					};
 				};
 				break;
 			case MTO_OSCILLATOR:
-				for (x=0;x<parent->spl->nitems;x++){
-					if (parent->spl->a[x]==0){
+				for (x=0;x<module->spl->nitems;x++){
+					if (module->spl->a[x]==0){
 						id = x;
 						break;
 					};
 				};
 				break;
 			case MTO_TRACK:
-				for (x=0;x<parent->trk->nitems;x++){
-					if (parent->trk->a[x]==0){
+				for (x=0;x<module->trk->nitems;x++){
+					if (module->trk->a[x]==0){
 						id = x;
 						break;
 					};
@@ -445,8 +471,8 @@ MTObject* MTObjectsInterface::newobject(int type,MTModule *parent,int id,void *p
 				break;
 			case MTO_EFFECT:
 			case MTO_TRACKEFFECT:
-				for (x=0;x<parent->trk->nitems;x++){
-					if (parent->fx->a[x]==0){
+				for (x=0;x<module->trk->nitems;x++){
+					if (module->fx->a[x]==0){
 						id = x;
 						break;
 					};
@@ -461,13 +487,13 @@ MTObject* MTObjectsInterface::newobject(int type,MTModule *parent,int id,void *p
 		break;
 	case MTO_AUTOMATION:
 		object = new Automation(parent,id);
-		if ((parent) && (assign)) parent->apatt->a[id] = object;
+		if ((parent) && (assign) && (parent==module)) module->apatt->a[id] = object;
 		break;
 	case MTO_TRACK:
 		object = new Track(parent,id);
-		if ((parent) && (assign)){
-			if (id<MAX_TRACKS) parent->trk->a[id] = object;
-			else parent->master->a[id-MAX_TRACKS] = object;
+		if ((parent) && (assign) && (parent==module)){
+			if (id<MAX_TRACKS) module->trk->a[id] = object;
+			else module->master->a[id-MAX_TRACKS] = object;
 		};
 		break;
 	default:
@@ -475,20 +501,20 @@ MTObject* MTObjectsInterface::newobject(int type,MTModule *parent,int id,void *p
 		if ((ctype) && (ctype->type==type)){
 			object = ctype->create(parent,id,param);
 		};
-		if ((parent) && (assign)){
+		if ((parent) && (assign) && (parent==module)){
 			switch (type & MTO_TYPEMASK){
 			case MTO_PATTERN:
-				parent->patt->a[id] = object;
+				module->patt->a[id] = object;
 				break;
 			case MTO_INSTRUMENT:
-				parent->instr->a[id] = object;
+				module->instr->a[id] = object;
 				break;
 			case MTO_OSCILLATOR:
-				parent->spl->a[id] = object;
+				module->spl->a[id] = object;
 				break;
 			case MTO_EFFECT:
 			case MTO_TRACKEFFECT:
-				parent->fx->a[id] = object;
+				module->fx->a[id] = object;
 				break;
 			};
 		};
@@ -498,7 +524,7 @@ MTObject* MTObjectsInterface::newobject(int type,MTModule *parent,int id,void *p
 		LOGD("%s [Objects] ERROR: Unknown object!");
 	};
 	if ((object) && (locked)) object->lock(MTOL_LOCK,true);
-	if (parent) parent->mlock->unlock();
+	if (module) module->mlock->unlock();
 //	objectlock->unlock();
 	if (object) mtinterface->notify(object,MTN_NEW,id);
 	LEAVE();
@@ -520,7 +546,8 @@ bool MTObjectsInterface::deleteobject(MTObject *object)
 	bool candelete = true;
 	int type = 0;
 	int id = -1;
-	MTModule *parent = object->parent;
+	MTObject *parent = object->parent;
+	MTModule *module = object->module;
 	
 	if (object->islocked()) return false;
 	if (!grantaccess(object,MTOA_CANDELETE,true,true)) return false;
@@ -528,37 +555,36 @@ bool MTObjectsInterface::deleteobject(MTObject *object)
 	if ((object->objecttype & MTO_TYPEMASK)==MTO_MODULE) object->enumchildren(candeleteenum,&candelete);
 	if (candelete){
 		mtinterface->notify(object,MTN_DELETE,0);
-		MTTRY{
+		MTTRY
 //			objectlock->lock();
-			if (parent) parent->mlock->lock();
+			if (module) module->mlock->lock();
 			type = object->objecttype;
 			id = object->id;
 			delete object;
-		}
-		MTCATCH{
-		};
-		if (parent){
+		MTCATCH
+		MTEND
+		if ((parent) && (parent==module)){
 			if (id>=0){
 				switch (type & MTO_TYPEMASK){
 				case MTO_INSTRUMENT:
-					parent->instr->a[id] = 0;
+					module->instr->a[id] = 0;
 					break;
 				case MTO_OSCILLATOR:
-					parent->spl->a[id] = 0;
+					module->spl->a[id] = 0;
 					break;
 				case MTO_PATTERN:
-					parent->patt->a[id] = 0;
+					module->patt->a[id] = 0;
 					break;
 				case MTO_AUTOMATION:
-					parent->apatt->a[id] = 0;
+					module->apatt->a[id] = 0;
 					break;
 				case MTO_EFFECT:
 				case MTO_TRACKEFFECT:
-					parent->fx->a[id] = 0;
+					module->fx->a[id] = 0;
 					break;
 				};
 			};
-			parent->mlock->unlock();
+			module->mlock->unlock();
 		};
 //		objectlock->unlock();
 		LEAVE();
@@ -572,6 +598,7 @@ bool MTObjectsInterface::loadobject(MTObject *object,const char *filename,void *
 {
 	int x;
 	char filetype[32];
+	bool ret = false;
 	
 	si->filetype(filename,filetype,32);
 	if (filetype[0]==0) return false;
@@ -580,8 +607,13 @@ bool MTObjectsInterface::loadobject(MTObject *object,const char *filename,void *
 		ObjectIO &cio = *(ObjectIO*)load->a[x];
 		if (cio.type!=object->objecttype) continue;
 		if (strstr(cio.filetypes,filetype)){
+			MTTRY
+				ret = cio.func(object,(char*)filename,process);
+			MTCATCH
+				ret = false;
+			MTEND
 			LEAVE();
-			return cio.func(object,(char*)filename,process);
+			return ret;
 		};
 	};
 	LEAVE();
@@ -654,11 +686,13 @@ bool MTObjectsInterface::ownobject(MTObject *object,MTUser *user,bool silent)
 		break;
 	};
 	objectlock->unlock();
-	res->loadstring(o,os,15);
-	if (!(oowner) || (oowner==cuser))
-		si->resdialog(res,MTT_lock1,"MTObjects",MTD_OK,MTD_INFORMATION,5000,os);
-	else
-		si->resdialog(res,MTT_lock2,"MTObjects",MTD_OK,MTD_INFORMATION,5000,os,oowner->name);
+#	ifdef MTSYSTEM_RESOURCES
+		res->loadstring(o,os,15);
+		if (!(oowner) || (oowner==cuser))
+			si->resdialog(res,MTT_lock1,"MTObjects",MTD_OK,MTD_INFORMATION,5000,os);
+		else
+			si->resdialog(res,MTT_lock2,"MTObjects",MTD_OK,MTD_INFORMATION,5000,os,oowner->name);
+#	endif
 	return false;
 }
 
@@ -712,14 +746,14 @@ int MTObjectsInterface::getnumtypes()
 	return objecttype->nitems;
 }
 
-int MTObjectsInterface::gettype(int id)
+mt_uint32 MTObjectsInterface::gettype(int id)
 {
 	ObjectType *ctype = (ObjectType*)objecttype->getitemfromid(id);
 	if (!ctype) return 0;
 	return ctype->type;
 }
 
-ObjectType* MTObjectsInterface::getobjecttype(int type)
+ObjectType* MTObjectsInterface::getobjecttype(mt_uint32 type)
 {
 	return (ObjectType*)objecttype->getitem(type);
 }
@@ -737,14 +771,14 @@ ObjectType* MTObjectsInterface::getobjecttype(const char *description)
 	return 0;
 }
 
-int MTObjectsInterface::addobjecttype(ObjectType *type)
+mt_uint32 MTObjectsInterface::addobjecttype(ObjectType *type)
 {
 	FLOGD2("%s - [Objects] Adding object type: %s (%.8X)"NL,type->description,type->type);
 	objecttype->additem(type->type,type);
 	return type->type;
 }
 
-bool MTObjectsInterface::addload(int type,ObjectIOFunc loadfunc,const char *filetypes,const char *description)
+bool MTObjectsInterface::addload(mt_uint32 type,ObjectIOFunc loadfunc,const char *filetypes,const char *description)
 {
 	ObjectIO *cio;
 
@@ -759,7 +793,7 @@ bool MTObjectsInterface::addload(int type,ObjectIOFunc loadfunc,const char *file
 	return true;
 }
 
-bool MTObjectsInterface::addsave(int type,ObjectIOFunc savefunc,const char *filetypes,const char *description)
+bool MTObjectsInterface::addsave(mt_uint32 type,ObjectIOFunc savefunc,const char *filetypes,const char *description)
 {
 	ObjectIO *cio;
 
@@ -774,7 +808,7 @@ bool MTObjectsInterface::addsave(int type,ObjectIOFunc savefunc,const char *file
 	return true;
 }
 
-bool MTObjectsInterface::addedit(int type,ObjectEditFunc editfunc,const char *description)
+bool MTObjectsInterface::addedit(mt_uint32 type,ObjectEditFunc editfunc,const char *description)
 {
 	ObjectEdit *cedit;
 
@@ -792,7 +826,7 @@ void MTObjectsInterface::delobjecttype(ObjectType *type)
 	objecttype->delitem(type->type);
 }
 
-void MTObjectsInterface::delload(int type,ObjectIOFunc loadfunc)
+void MTObjectsInterface::delload(mt_uint32 type,ObjectIOFunc loadfunc)
 {
 	int x;
 	
@@ -807,7 +841,7 @@ void MTObjectsInterface::delload(int type,ObjectIOFunc loadfunc)
 	};
 }
 
-void MTObjectsInterface::delsave(int type,ObjectIOFunc savefunc)
+void MTObjectsInterface::delsave(mt_uint32 type,ObjectIOFunc savefunc)
 {
 	int x;
 	
@@ -822,7 +856,7 @@ void MTObjectsInterface::delsave(int type,ObjectIOFunc savefunc)
 	};
 }
 
-void MTObjectsInterface::deledit(int type,ObjectEditFunc editfunc)
+void MTObjectsInterface::deledit(mt_uint32 type,ObjectEditFunc editfunc)
 {
 	int x;
 	
@@ -839,7 +873,7 @@ void MTObjectsInterface::deledit(int type,ObjectEditFunc editfunc)
 extern "C"
 {
 
-MTXInterfaces* __stdcall MTXMain(MTInterface *mti)
+MTXInterfaces* MTCT MTXMain(MTInterface *mti)
 {
 	mtinterface = mti;
 	mtinterface->_ow = &ow;

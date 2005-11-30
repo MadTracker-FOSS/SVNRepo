@@ -16,12 +16,14 @@
 #include "MTXSystem2.h"
 #include "../../debug/Interface/MTObjectsRES.h"
 //---------------------------------------------------------------------------
-MTFilter::MTFilter(MTModule *module,int i):
-Effect(module,MTO_MTFILTER,i),
+MTFilter::MTFilter(MTObject *parent,mt_int32 i):
+Effect(parent,MTO_MTFILTER,i),
 frequency(4000.0),
 resonance(0.5)
 {
-	res->loadstringf(MTT_effect,name,255,i+1);
+#	ifdef MTSYSTEM_RESOURCES
+		res->loadstringf(MTT_effect,name,255,i+1);
+#	endif
 }
 
 EffectInstance* MTFilter::createinstance(int noutputs,sample **outputs,int ninputs,sample **inputs,InstrumentInstance *caller)
@@ -94,10 +96,10 @@ void MTFilter::setparam(int cat,int id,double value,int steps)
 	if (cat!=0) return;
 	switch (id){
 	case 0:
-		frequency = value*44100.0;
+		frequency = (float)(value*44100.0);
 		break;
 	case 1:
-		resonance = value;
+		resonance = (float)value;
 		break;
 	case 2:
 		break;
@@ -142,14 +144,14 @@ void MTFilterInstance::setparam(int cat,int id,double value,int length)
 		if (length){
 			for (x=0;x<noutputs;x++){
 				status[x].fvarlng = length;
-				status[x].frequency2 = value;
+				status[x].frequency2 = (float)value;
 				status[x].flags |= FILTER_RAMP;
 			};
 		}
 		else{
 			for (x=0;x<noutputs;x++){
 				status[x].fvarlng = 0;
-				status[x].frequency = value;
+				status[x].frequency = (float)value;
 				status[x].flags = 0;
 			};
 		};
@@ -158,14 +160,14 @@ void MTFilterInstance::setparam(int cat,int id,double value,int length)
 		if (length){
 			for (x=0;x<noutputs;x++){
 				status[x].rvarlng = length;
-				status[x].resonance2 = value;
+				status[x].resonance2 = (float)value;
 				status[x].flags |= FILTER_RAMP;
 			};
 		}
 		else{
 			for (x=0;x<noutputs;x++){
 				status[x].rvarlng = 0;
-				status[x].resonance = value;
+				status[x].resonance = (float)value;
 				status[x].flags = 0;
 			};
 		};

@@ -47,7 +47,7 @@ public:
 	virtual bool MTCT filecopy(char *source,char *dest) = 0;
 	virtual bool MTCT filerename(char *source,char *dest) = 0;
 	virtual bool MTCT filedelete(char *url) = 0;
-	virtual void MTCT filetype(char *url,char *type,int length) = 0;
+	virtual void MTCT filetype(const char *url,char *type,int length) = 0;
 };
 
 class MTFile{
@@ -92,7 +92,7 @@ bool MTCT mtfileexists(char *url);
 bool MTCT mtfilecopy(char *source,char *destination);
 bool MTCT mtfiledelete(char *filename);
 bool MTCT mtfilerename(char *filename,char *newname);
-void MTCT mtfiletype(char *filename,char *filetype,int length);
+void MTCT mtfiletype(const char *filename,char *filetype,int length);
 void MTCT mtfilemaketemp(char *filename,int length);
 MTFile* MTCT mttempfile(int access);
 }

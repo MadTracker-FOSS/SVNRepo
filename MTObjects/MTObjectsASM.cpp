@@ -12,9 +12,9 @@
 //---------------------------------------------------------------------------
 #include "MTObjectsASM.h"
 //---------------------------------------------------------------------------
-bool MTACT a_floattofixed(double f,int &i,unsigned int &d)
+bool MTCT a_floattofixed(double f,int &i,unsigned int &d)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		__asm{
 			push	esi
 			mov		eax,dword ptr [f+4]
@@ -24,7 +24,7 @@ bool MTACT a_floattofixed(double f,int &i,unsigned int &d)
 			jnz		_ok
 			xor		eax,eax
 			xor		edx,edx
-			jmp		_exit
+			jmp		_done
 		_ok:
 			push	eax
 			mov		ecx,eax
@@ -49,7 +49,7 @@ bool MTACT a_floattofixed(double f,int &i,unsigned int &d)
 			bt		eax,31
 			sbb		eax,eax
 			and		eax,1
-		_exit:
+		_done:
 			mov		esi,i
 			mov		edi,d
 			mov		[esi],ecx
@@ -57,7 +57,7 @@ bool MTACT a_floattofixed(double f,int &i,unsigned int &d)
 			pop		edi
 			pop		esi
 		};
-	#else
+#	else
 		asm ("\
 			leal	%[f],%%edx\n\
 			movl	4(%%edx),%%eax\n\
@@ -96,15 +96,15 @@ bool MTACT a_floattofixed(double f,int &i,unsigned int &d)
 			movl	%%edx,(%%edi)\n\
 			"
 			:
-			:[f]"m"(f),[i]"S"(i),[d]"D"(d)
+			:[f]"m"(f),[i]"S"(&i),[d]"D"(&d)
 			:"eax","ecx","edx"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
-void MTACT a_changesign(char *buffer,int count)
+void MTCT a_changesign(char *buffer,int count)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		_asm{
 			push	esi
 			push	edi
@@ -120,18 +120,18 @@ void MTACT a_changesign(char *buffer,int count)
 			stosd
 			jnz		_loop
 			and		edx,0x3
-			jz		_exit
+			jz		_done
 		_loop2:
 			lodsb
 			xor		al,0x80
 			dec		edx
 			stosb
 			jnz		_loop2
-		_exit:
+		_done:
 			pop		edi
 			pop		esi
 		};
-	#else
+#	else
 		asm ("\
 			movl	%%esi,%%edi\n\
 			movl	%%ecx,%%edx\n\
@@ -156,12 +156,12 @@ void MTACT a_changesign(char *buffer,int count)
 			:[buffer]"S"(buffer),[count]"c"(count)
 			:"eax","edx","edi"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
-void MTACT a_delta_add_8(char *dest,char *source,int count)
+void MTCT a_delta_add_8(char *dest,char *source,int count)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		_asm{
 			push	esi
 			push	edi
@@ -179,7 +179,7 @@ void MTACT a_delta_add_8(char *dest,char *source,int count)
 			pop		edi
 			pop		esi
 		};
-	#else
+#	else
 		asm ("\
 			decl	%%edi\n\
 		_add1:\n\
@@ -193,12 +193,12 @@ void MTACT a_delta_add_8(char *dest,char *source,int count)
 			:[source]"S"(source),[dest]"D"(dest),[count]"c"(count)
 			:"eax"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
-void MTACT a_delta_add_16(short *dest,short *source,int count)
+void MTCT a_delta_add_16(short *dest,short *source,int count)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		_asm{
 			push	esi
 			push	edi
@@ -216,7 +216,7 @@ void MTACT a_delta_add_16(short *dest,short *source,int count)
 			pop		edi
 			pop		esi
 		};
-	#else
+#	else
 		asm ("\
 			subl	$2,%%edi\n\
 		_add2:\n\
@@ -230,22 +230,22 @@ void MTACT a_delta_add_16(short *dest,short *source,int count)
 			:[source]"S"(source),[dest]"D"(dest),[count]"c"(count)
 			:"eax"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
-void MTACT a_delta_encode_8(char *buffer,int count)
+void MTCT a_delta_encode_8(char *buffer,int count)
 {
 //TODO
 }
 //---------------------------------------------------------------------------
-void MTACT a_delta_encode_16(short *buffer,int count)
+void MTCT a_delta_encode_16(short *buffer,int count)
 {
 //TODO
 }
 //---------------------------------------------------------------------------
-void MTACT a_delta_decode_8(char *buffer,int count)
+void MTCT a_delta_decode_8(char *buffer,int count)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		_asm{
 			push	esi
 			push	edi
@@ -266,7 +266,7 @@ void MTACT a_delta_decode_8(char *buffer,int count)
 			pop		edi
 			pop		esi
 		};
-	#else
+#	else
 		asm ("\
 			movl	%%esi,%%edi\n\
 			xorl	%%edx,%%edx\n\
@@ -284,12 +284,12 @@ void MTACT a_delta_decode_8(char *buffer,int count)
 			:[buffer]"S"(buffer),[count]"c"(count)
 			:"eax","edx","edi"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
-void MTACT a_delta_decode_16(short *buffer,int count)
+void MTCT a_delta_decode_16(short *buffer,int count)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		_asm{
 			push	esi
 			push	edi
@@ -310,7 +310,7 @@ void MTACT a_delta_decode_16(short *buffer,int count)
 			pop		edi
 			pop		esi
 		};
-	#else
+#	else
 		asm ("\
 			movl	%%esi,%%edi\n\
 			xorl	%%edx,%%edx\n\
@@ -328,19 +328,19 @@ void MTACT a_delta_decode_16(short *buffer,int count)
 			:[buffer]"S"(buffer),[count]"c"(count)
 			:"eax","edx","edi"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
-void MTACT a_deinterleave_8(char **dest,char *source,int channels,int count)
+void MTCT a_deinterleave_8(char **dest,char *source,int channels,int count)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		_asm{
 			push	esi
 			push	edi
 			push	ebx
 			mov		edx,channels
 			dec		edx
-			jl		_exit
+			jl		_done
 		_nextchan:
 			mov		esi,source
 			lea		esi,[esi+edx]
@@ -357,12 +357,12 @@ void MTACT a_deinterleave_8(char **dest,char *source,int channels,int count)
 			jnz		_loop
 			dec		edx
 			jge		_nextchan
-		_exit:
+		_done:
 			pop		ebx
 			pop		edi
 			pop		esi
 		};
-	#else
+#	else
 		asm ("\
 			movl	%[channels],%%edx\n\
 			decl	%%edx\n\
@@ -389,19 +389,19 @@ void MTACT a_deinterleave_8(char **dest,char *source,int channels,int count)
 			:[channels]"m"(channels),[dest]"m"(dest),[count]"m"(count),[source]"m"(source)
 			:"eax","ebx","ecx","esi","edi"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
-void MTACT a_deinterleave_16(short **dest,short *source,int channels,int count)
+void MTCT a_deinterleave_16(short **dest,short *source,int channels,int count)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		_asm{
 			push	esi
 			push	edi
 			push	ebx
 			mov		edx,channels
 			dec		edx
-			jl		_exit
+			jl		_done
 		_nextchan:
 			mov		esi,source
 			lea		esi,[esi+edx*2]
@@ -419,12 +419,12 @@ void MTACT a_deinterleave_16(short **dest,short *source,int channels,int count)
 			jnz		_loop
 			dec		edx
 			jge		_nextchan
-		_exit:
+		_done:
 			pop		ebx
 			pop		edi
 			pop		esi
 		};
-	#else
+#	else
 		asm ("\
 			movl	%[channels],%%edx\n\
 			decl	%%edx\n\
@@ -452,12 +452,12 @@ void MTACT a_deinterleave_16(short **dest,short *source,int channels,int count)
 			:[channels]"m"(channels),[dest]"m"(dest),[count]"m"(count),[source]"m"(source)
 			:"eax","ebx","ecx","esi","edi"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------
-void MTACT a_calcposition(int &posi,unsigned int &posd,int pitch,unsigned int pitchd,int count,bool reverse)
+void MTCT a_calcposition(int &posi,unsigned int &posd,int pitch,unsigned int pitchd,int count,bool reverse)
 {
-	#ifndef __GNUC__
+#	ifndef __GNUC__
 		_asm{
 			push	ebx
 			mov		ebx,posi
@@ -477,14 +477,14 @@ void MTACT a_calcposition(int &posi,unsigned int &posd,int pitch,unsigned int pi
 			jne		_reverse
 			add		[ecx],eax
 			adc		[ebx],edx
-			jmp		_exit
+			jmp		_done
 		_reverse:
 			sub		[ecx],eax
 			sbb		[ebx],edx
-		_exit:
+		_done:
 			pop		ebx
 		};
-	#else
+#	else
 		asm ("\
 			xorl	%%edx,%%edx\n\
 			mull	%[count]\n\
@@ -506,10 +506,10 @@ void MTACT a_calcposition(int &posi,unsigned int &posd,int pitch,unsigned int pi
 			sbbl	%%edx,(%%ebx)\n\
 		_exit5:\n\
 			"
-			:[posd]"=&c"(posd),[posi]"=&b"(posi)
-			:[pitch]"m"(pitch),[pitchd]"a"(pitchd),[reverse]"m"(reverse),[count]"m"(count)
+			:
+			:[pitch]"m"(pitch),[pitchd]"a"(pitchd),[posd]"c"(&posd),[posi]"b"(&posi),[reverse]"m"(reverse),[count]"m"(count)
 			:"edx"
 			);
-	#endif
+#	endif
 }
 //---------------------------------------------------------------------------

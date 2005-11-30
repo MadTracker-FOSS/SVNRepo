@@ -99,15 +99,16 @@ public:
 	virtual bool MTCT pulse();
 	virtual bool MTCT set();
 	virtual bool MTCT reset();
-	virtual bool MTCT wait(int timeout);
+	virtual bool MTCT wait(int timeout = -1);
 protected:
 	friend int MTCT mtsyswaitmultiple(int count,MTEvent **events,bool all,int timeout);
 	friend class MTTimer;
+	int timer;
 #ifdef _WIN32
 	HANDLE event;
-	int timer;
 #else
-	bool signaled,needreset;
+	static void LinuxEventProc(sigval);
+	bool signaled,needreset,needpulse;
 	pthread_mutex_t *e_mutex;
 	_le *start,*end;
 	void _add(_le *list);
@@ -221,7 +222,7 @@ void initKernel();
 void uninitKernel();
 void stopThreads(bool processes);
 #ifndef _WIN32
-	int mttry(bool pop);
+	void* mttry(bool pop);
 	void mtsigreturn(int sig);
 #endif
 //---------------------------------------------------------------------------

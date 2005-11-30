@@ -35,6 +35,7 @@ bool startInterface();
 void stopInterface();
 void showInterface();
 //---------------------------------------------------------------------------
+void loadmodule(const char *filename);
 void setmodule(void *module);
 //---------------------------------------------------------------------------
 extern void *wnd;
