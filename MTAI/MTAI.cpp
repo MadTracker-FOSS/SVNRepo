@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
 //
-//	MadTracker Artificial Intelligence
+//	MadTracker Artificial Intelligence System
 //
 //		Platforms:	All
 //		Processors: All
