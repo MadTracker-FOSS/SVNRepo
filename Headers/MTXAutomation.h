@@ -21,7 +21,7 @@ class Automation;
 // Automation
 //---------------------------------------------------------------------------
 struct AEnvelope{
-	int npoints;
+	mt_uint32 npoints;
 	EnvPoint points[64];
 };
 
@@ -37,7 +37,7 @@ struct TrackAuto{
 
 class Automation : public MTObject{
 public:
-	Automation(MTModule *parent,int i);
+	Automation(MTObject *parent,mt_int32 i);
 	virtual ~Automation();
 
 	TrackAuto trkauto[MAX_TRACKS+MAX_MTRACKS];

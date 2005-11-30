@@ -24,7 +24,7 @@ public:
 	float panx,pany,panz;
 	float quality;
 
-	Oscillator(MTModule *parent,int type,int i);
+	Oscillator(MTObject *parent,mt_uint32 type,mt_int32 i);
 	virtual ~Oscillator() = 0;
 	
 	virtual OscillatorInstance* MTCT createinstance(int noutputs,sample **outputs,InstrumentInstance *caller) = 0;

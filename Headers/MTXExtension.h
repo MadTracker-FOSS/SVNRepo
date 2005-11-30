@@ -2,7 +2,7 @@
 //
 //	MadTracker 3 Public Extension Header
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
 //
 //	http://www.madtracker.org/
 //	info@madtracker.org
@@ -17,42 +17,57 @@
 //	Calling Convention
 //
 
-#ifndef __stdcall
-	#ifdef __GNUC__
-		#define __stdcall __attribute__((__stdcall__))
-	#elif !defined(_MSC_VER)
-		#error You need to define __stdcall for your compiler
-	#endif
-#endif
-
-#ifndef __cdecl
-	#ifdef __GNUC__
-		#define __cdecl __attribute__((__cdecl__))
-	#elif !defined(_MSC_VER)
-		#error You need to define __cdecl for your compiler
-	#endif
+#ifdef __GNUC__
+#	ifndef __stdcall
+#		define __stdcall __attribute__((__stdcall__))
+#	endif
+#	ifndef __cdecl
+#		define __cdecl __attribute__((__cdecl__))
+#	endif
 #endif
 
 #define MTCT __cdecl
-#define MTACT __stdcall
 
-#define NL "\r\n"
+#undef WINDOWS
+#undef WIN32
+#undef WIN64
 
-enum{
-	MTL_FREE = 0,
-	MTL_BASIC,
-	MTL_PROFESSIONAL,
-	MTL_COMMERCIAL
-};
-
-#if defined(MTVERSION_COMMERCIAL)
-	#define MTLEVEL	MTL_COMMERCIAL
-#elif defined(MTVERSION_PROFESSIONAL)
-	#define MTLEVEL	MTL_PROFESSIONAL
-#elif defined(MTVERSION_BASIC)
-	#define MTLEVEL	MTL_BASIC
+#if defined(_MSC_VER)
+#	define WINDOWS
+#	if defined(_WIN64)
+#		define WIN64
+#	elif defined(_WIN32)
+#		define WIN32
+#	endif
+#elif defined(__BORLANDC__)
+#	define WINDOWS
+#	if defined(_WIN64)
+#		define WIN64
+#	elif defined(_WIN32)
+#		define WIN32
+#	endif
+#elif defined(__MACOSX__)
+#	define MACOSX
 #else
-	#define MTLEVEL	MTL_FREE
+#	define LINUX
+#	if defined(__x86_64) || defined(_x86_64)
+#		define LINUX64
+#	else
+#		define LINUX32
+#	endif
+#endif
+
+#ifdef WINDOWS
+#	define NL "\r\n"
+#else
+#	define NL "\n"
+#endif
+
+#ifdef MTVERSION_COMMERCIAL
+#	define MTVERSION_PROFESSIONAL
+#endif
+#ifdef MTVERSION_PROFESSIONAL
+#	define MTVERSION_BASIC
 #endif
 
 //
@@ -60,7 +75,7 @@ enum{
 //	(PowerPC, etc.)
 //
 
-//#define BIG_ENDIAN
+//#define BIG_ENDIAN 1234
 
 //
 //	Uncomment the following line if you compile for the 64-bit version
@@ -68,10 +83,17 @@ enum{
 
 //#define MT3_64BIT
 
-#ifdef BIG_ENDIAN
-	#define FOURCC(a,b,c,d) ((((long)a)<<24) | (((long)b)<<16) | (((long)c)<<8) | (((long)d)<<0))
+#if (BIG_ENDIAN==1234)
+#	define FOURCC(a,b,c,d) ((((long)a)<<24) | (((long)b)<<16) | (((long)c)<<8) | (((long)d)<<0))
 #else
-	#define FOURCC(a,b,c,d) ((((long)d)<<24) | (((long)c)<<16) | (((long)b)<<8) | (((long)a)<<0))
+#	define FOURCC(a,b,c,d) ((((long)d)<<24) | (((long)c)<<16) | (((long)b)<<8) | (((long)a)<<0))
+#endif
+
+#ifndef MIN
+#	define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+#ifndef MAX
+#	define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
 //
@@ -79,126 +101,112 @@ enum{
 //
 
 #if defined(_WIN32)
-
 #	if defined(__CYGWIN__)
-
 #		include <_G_config.h>
 		typedef _G_int64_t mt_int64;
 		typedef _G_int32_t mt_int32;
 		typedef _G_uint32_t mt_uint32;
 		typedef _G_int16_t mt_int16;
 		typedef _G_uint16_t mt_uint16;
-
 #	elif defined(__MINGW32__)
-
 		typedef short mt_int16;
 		typedef unsigned short mt_uint16;
 		typedef int mt_int32;
 		typedef unsigned int mt_uint32;
 		typedef long long mt_int64;
 		typedef unsigned long long mt_uint64;
-
 #	elif defined(__MWERKS__)
-
 		typedef long long mt_int64;
 		typedef int mt_int32;
 		typedef unsigned int mt_uint32;
 		typedef short mt_int16;
 		typedef unsigned short mt_uint16;
-
-#	else
-
-		/* MSVC/Borland */
+#	else	/* MSVC/Borland */
 		typedef __int64 mt_int64;
 		typedef __int32 mt_int32;
 		typedef unsigned __int32 mt_uint32;
 		typedef __int16 mt_int16;
 		typedef unsigned __int16 mt_uint16;
-
 #	endif
-
 #elif defined(__MACOS__)
-
 #	include <sys/types.h>
 	typedef SInt16 mt_int16;
 	typedef UInt16 mt_uint16;
 	typedef SInt32 mt_int32;
 	typedef UInt32 mt_uint32;
 	typedef SInt64 mt_int64;
-
 #elif defined(__MACOSX__)	/* MacOS X Framework build */
-
 #	include <sys/types.h>
 	typedef int16_t mt_int16;
 	typedef u_int16_t mt_uint16;
 	typedef int32_t mt_int32;
 	typedef u_int32_t mt_uint32;
 	typedef int64_t mt_int64;
-
 #elif defined(__BEOS__)		/* Be */
-
 #	include <inttypes.h>
 	typedef int16_t mt_int16;
 	typedef u_int16_t mt_uint16;
 	typedef int32_t mt_int32;
 	typedef u_int32_t mt_uint32;
 	typedef int64_t mt_int64;
-
 #elif defined (__EMX__)		/* OS/2 GCC */
-
 	typedef short mt_int16;
 	typedef unsigned short mt_uint16;
 	typedef int mt_int32;
 	typedef unsigned int mt_uint32;
 	typedef long long mt_int64;
-
 #elif defined (DJGPP)		/* DJGPP */
-
 	typedef short mt_int16;
 	typedef int mt_int32;
 	typedef unsigned int mt_uint32;
 	typedef long long mt_int64;
-
 #elif defined(R5900)		/* PS2 EE */
-
 	typedef long mt_int64;
 	typedef int mt_int32;
 	typedef unsigned mt_uint32;
 	typedef short mt_int16;
-
 #elif defined(__SYMBIAN32__)	/* Symbian GCC */
-
 	typedef signed short mt_int16;
 	typedef unsigned short mt_uint16;
 	typedef signed int mt_int32;
 	typedef unsigned int mt_uint32;
 	typedef long long int mt_int64;
-
 #else
-
-#	include <sys/types.h>
+	#include <sys/types.h>
 	typedef int16_t mt_int16;
 	typedef u_int16_t mt_uint16;
 	typedef int32_t mt_int32;
 	typedef u_int32_t mt_uint32;
 	typedef int64_t mt_int64;
-
 #endif
+typedef char mt_int8;
+typedef unsigned char mt_uint8;
 
 #ifdef MT3_64BIT
 	typedef double sample;
-	#define a_sample qword
-	#define s_sample 8
+#	define s_sample 8
+#	ifdef __GNUC__
+#		define spls "l"
+#		define spll "8"
+#	else
+#		define a_sample qword
+#	endif
 #else
-	typedef float  sample;
-	#define a_sample dword
-	#define s_sample 4
+	typedef float sample;
+#	define s_sample 4
+#	ifdef __GNUC__
+#		define spls "s"
+#		define spll "4"
+#	else
+#		define a_sample dword
+#	endif
 #endif
 
 #define MTX_INITIALIZED	1
 
 enum{
 	SP_ROOT = 0,
+	SP_USER,
 	SP_CONFIG,
 	SP_USERCONFIG,
 	SP_EXTENSIONS,
@@ -234,6 +242,36 @@ struct MTXKey{
 	int key1,key2,key3,key4;
 };
 
+struct MTUserID{
+	mt_uint32 id1;
+	mt_uint32 id2;
+	inline bool operator == (MTUserID &u){ return ((id1==u.id1) && (id2==u.id2)); }
+	inline bool operator = (MTUserID u){ id1 = u.id1; id2 = u.id2; return true; }
+};
+
+const MTUserID MTUID_EVERYONE   = {0,0x00000000};
+const MTUserID MTUID_BASICREG   = {0,0x00000001};
+const MTUserID MTUID_PROREG     = {0,0x00000002};
+const MTUserID MTUID_BETATESTER = {0,0x00000003};
+const MTUserID MTUID_MTSTAFF    = {0,0x00000004};
+
+struct MTColor{
+	union{
+		struct{
+			mt_uint8 R,G,B,A;
+		};
+		mt_uint32 RGBA;
+	};
+	MTColor(mt_uint32 rgba = 0){ RGBA = rgba; }
+	MTColor(mt_uint8 r,mt_uint8 g,mt_uint8 b,mt_uint8 a){ R = r; G = g; B = b; A = a; }
+	inline bool operator == (MTColor &c){ return (RGBA==c.RGBA); }
+	inline bool operator = (mt_uint32 i){ RGBA = i; return true; }
+	inline MTColor operator + (MTColor &c){ return MTColor(MIN(255,(int)R+c.R),MIN(255,(int)G+c.G),MIN(255,(int)B+c.B),MIN(255,(int)A+c.A)); }
+	inline MTColor operator * (MTColor &c){ return MTColor((int)R*c.R/255,(int)G*c.G/255,(int)B*c.B/255,(int)A*c.A/255); }
+	inline MTColor operator += (MTColor &c){ R = MIN(255,(int)R+c.R); G = MIN(255,(int)G+c.G); B = MIN(255,(int)B+c.B); A = MIN(255,(int)A+c.A); }
+	inline MTColor operator *= (MTColor &c){ R = (int)R*c.R/255; G = (int)G*c.G/255; B = (int)B*c.B; A = (int)A*c.A/255; }
+};
+
 struct MTCLParam{
 	char *name;
 	char *value;
@@ -266,7 +304,7 @@ typedef void (MTCT *RefreshProc)(void *param);
 
 class ObjectWrapper{
 public:
-	virtual void MTCT create(void *object,void *parent,int type,int i) = 0;
+	virtual void MTCT create(void *object,void *parent,mt_uint32 type,mt_int32 i) = 0;
 	virtual void MTCT destroy(void *object) = 0;
 	virtual bool MTCT lock(void *object,int flags,bool lock,int timeout = -1) = 0;
 	virtual void MTCT setname(void *object,char *newname) = 0;
@@ -303,53 +341,78 @@ public:
 	virtual int MTCT processinput(const char *input){ return 0; };
 };
 
-typedef MTXInterfaces* MTACT MTXMainCall(MTInterface *mti);
+typedef MTXInterfaces* MTCT MTXMainCall(MTInterface *mti);
 //---------------------------------------------------------------------------
 //	Swapping functions to convert little<->big endian
 //---------------------------------------------------------------------------
 #ifndef __BORLANDC__
+
 #ifdef WIN32
-#pragma warning(disable: 4035)
+#	pragma warning(disable: 4035)
 #endif
-inline short swap_word(short a)
+
+static inline short swap_word(short a)
 {
-#ifndef __GNUG__
-	__asm{
-		mov		ax,a
-		xchg	al,ah
-	};
-#else
-	asm ("xchg %al,%ah"::"a"(a):"%eax");
-#endif
+#	ifndef __GNUG__
+		__asm{
+			mov		ax,a
+			xchg	al,ah
+		};
+#	else
+		long r;
+		asm ("xchg %%al,%%ah":"=a"(r):"a"(a));
+		return r;
+#	endif
 }
 
-inline long swap_dword(long a)
+static inline long swap_dword(long a)
 {
-#ifndef __GNUG__
-	__asm{
-		mov		eax,a
-		bswap	eax
-	};
-#else
-	asm ("bswap %0"::"r"(a):"%eax");
-#endif
+#	ifndef __GNUG__
+		__asm{
+			mov		eax,a
+			bswap	eax
+		};
+#	else
+		long r;
+		asm ("bswap %%eax":"=a"(r):"a"(a));
+		return r;
+#	endif
 }
 
-inline void int64todouble(void *int64,double *d)
+static inline void int64todouble(mt_int64 *int64,double *d)
 {
-#ifndef __GNUG__
-	__asm{
-		fild	qword ptr int64;
-		fst		qword ptr d
-	};
-#else
-	asm ("fildq %1; fstq %0":"=m"(d):"m"(int64));
-#endif
+#	ifndef __GNUG__
+		__asm{
+			fild	qword ptr int64
+			fstp	qword ptr d
+		};
+#	else
+		asm ("fildl %1; fstpl %0":"=m"(d):"m"(int64));
+#	endif
 }
+
+static inline mt_int32 doubletoint32(double d)
+{
+#	ifndef __GNUG__
+		__asm{
+			push	0
+			fild	qword ptr d
+			fstp	dword ptr [esp]
+			pop		eax
+		};
+#	else
+		int i;
+		asm ("fistl %0":"=m"(i):"t"(d));
+		return i;
+#	endif
+}
+
 #ifdef WIN32
-#pragma warning(default: 4035)
+#	pragma warning(default: 4035)
 #endif
+
 #else
+
 inline short __fastcall swap_word(short a)
 {
 	return (a>>8)|((a & 0xFF)<<8);
@@ -364,6 +427,7 @@ inline void __fastcall int64todouble(void *int64,double *d)
 {
 	*d = ((double)(*(int*)int64))*4294967296.0+(double)(*(((int*)int64)+1));
 }
+
 #endif
 //---------------------------------------------------------------------------
 //	Some functions that are not part of the C++ standard library

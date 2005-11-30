@@ -16,13 +16,20 @@
 #include "MTXExtension.h"
 #ifdef _WIN32
 #	include <windows.h>
+#else
+#	include <setjmp.h>
 #endif
 //---------------------------------------------------------------------------
 static const int systemtype = FOURCC('X','S','Y','S');
 
 #define MTS_WINNT    0x00001
 #define MTS_MMX      0x00002
-#define MTS_SIMD     0x00004
+#define MTS_SSE      0x00004
+#define MTS_SSE2     0x00008
+#define MTS_SSE3     0x00010
+#define MTS_CX8      0x00100
+#define MTS_CMOV     0x00200
+#define MTS_HT       0x01000
 #define MTS_DEBUGGED 0x10000
 
 #define MTR_WINDOW   FOURCC('M','T','W','N')
@@ -180,8 +187,10 @@ enum MTConfigType{
 #	define MTEND };
 #else
 	typedef	int (*_mt_try)(bool);
-#	define MTTRY   try{if (((_mt_try)si->onerror)(false)==0){
-#	define MTCATCH }else{throw;}}catch(...){
+#	define MTTRY   try{if (sigsetjmp((__jmp_buf_tag*)((_mt_try)si->onerror)(false),1)==0){
+#	define MTCATCH }else{throw "Got signal!";}}catch(...){
+//#	define MTTRY   if (sigsetjmp((__jmp_buf_tag*)((_mt_try)si->onerror)(false),1)==0){
+//#	define MTCATCH }else{
 #	define MTEND }((_mt_try)si->onerror)(true);
 #endif
 //---------------------------------------------------------------------------
@@ -201,14 +210,14 @@ public:
 	virtual bool MTCT pulse() = 0;
 	virtual bool MTCT set() = 0;
 	virtual bool MTCT reset() = 0;
-	virtual bool MTCT wait(int timeout) = 0;
+	virtual bool MTCT wait(int timeout = -1) = 0;
 protected:
+	int d1;
 #ifdef _WIN32
-	void *d1;
-	int d2;
+	void *d2;
 #else
-	bool d1,d2;
-	void *d3,*d4,*d5;
+	bool d2,d3,d4;
+	void *d5,*d6,*d7;
 #endif
 };
 
@@ -263,7 +272,7 @@ public:
 	virtual bool MTCT filecopy(char *source,char *dest) = 0;
 	virtual bool MTCT filerename(char *source,char *dest) = 0;
 	virtual bool MTCT filedelete(char *url) = 0;
-	virtual void MTCT filetype(char *url,char *type,int length) = 0;
+	virtual void MTCT filetype(const char *url,char *type,int length) = 0;
 };
 
 class MTFile{
@@ -308,13 +317,14 @@ typedef int (MTCT *SortProc)(void *item1,void *item2);
 
 class MTArray{
 public:
+	int _is;
 	int nitems;
 	union{
 		void **a;
 		void *d;
 	};
 
-	inline void* operator[](int i){ return a[i]; };
+	inline void* operator[](unsigned int i){ return (a)?a[i]:((d)?(char*)d+_is*i:0); };
 	virtual ~MTArray() = 0;
 	virtual int MTCT additem(int at,void *item) = 0;
 	virtual int MTCT additems(int at,int count) = 0;
@@ -387,6 +397,21 @@ public:
 	virtual int MTCT savetostream(MTFile *f,int flags = (MTMC_ALL|MTMC_HEADER)) = 0;
 };
 
+class MTXML{
+public:
+	virtual ~MTXML() = 0;
+	virtual void* MTCT readfile(const char *file,const char *encoding) = 0;
+	virtual void* MTCT readmemory(const char *buf,int size,const char *encoding) = 0;
+	virtual char* MTCT getname(void *node) = 0;
+	virtual void* MTCT getchildren(void *node) = 0;
+	virtual void* MTCT getlast(void *node) = 0;
+	virtual void* MTCT getparent(void *node) = 0;
+	virtual void* MTCT getnext(void *node) = 0;
+	virtual void* MTCT getprev(void *node) = 0;
+	virtual char* MTCT getcontent(void *node) = 0;
+	virtual void* MTCT getproperties(void *node) = 0;
+};
+
 class MTCPUMonitor{
 public:
 	int flushid;
@@ -454,6 +479,8 @@ public:
 	void (MTCT* configclose)(MTConfigFile* file);
 	MTMiniConfig* (MTCT *miniconfigcreate)();
 	void (MTCT *miniconfigdelete)(MTMiniConfig *cfg);
+	MTXML* (MTCT *xmlcreate)();
+	void (MTCT *xmldelete)(MTXML *xml);
 	MTLock* (MTCT *lockcreate)();
 	void (MTCT *lockdelete)(MTLock *lock);
 	MTEvent* (MTCT *eventcreate)(bool autoreset,int interval = 0,int resolution = 0,bool periodic = true,bool pulse = false);
@@ -465,7 +492,7 @@ public:
 	int (MTCT *syscounter)();
 	bool (MTCT *syscounterex)(double *count);
 	void (MTCT *syswait)(int ms);
-	int (MTCT *syswaitmultiple)(int count,MTEvent **events,bool all,int timeout);
+	int (MTCT *syswaitmultiple)(int count,MTEvent **events,bool all,int timeout = -1);
 	int (MTCT *dialog)(char *message,char *caption,char *buttons,int flags,int timeout);
 	int (MTCT *resdialog)(MTResources *res,int id,char *caption,char *buttons,int timeout,int flags,...);
 	int (MTCT *authdialog)(char *message,char *login,char *password);
