@@ -268,8 +268,8 @@ struct MTColor{
 	inline bool operator = (mt_uint32 i){ RGBA = i; return true; }
 	inline MTColor operator + (MTColor &c){ return MTColor(MIN(255,(int)R+c.R),MIN(255,(int)G+c.G),MIN(255,(int)B+c.B),MIN(255,(int)A+c.A)); }
 	inline MTColor operator * (MTColor &c){ return MTColor((int)R*c.R/255,(int)G*c.G/255,(int)B*c.B/255,(int)A*c.A/255); }
-	inline MTColor operator += (MTColor &c){ R = MIN(255,(int)R+c.R); G = MIN(255,(int)G+c.G); B = MIN(255,(int)B+c.B); A = MIN(255,(int)A+c.A); }
-	inline MTColor operator *= (MTColor &c){ R = (int)R*c.R/255; G = (int)G*c.G/255; B = (int)B*c.B; A = (int)A*c.A/255; }
+	inline bool operator += (MTColor &c){ R = MIN(255,(int)R+c.R); G = MIN(255,(int)G+c.G); B = MIN(255,(int)B+c.B); A = MIN(255,(int)A+c.A); return true; }
+	inline bool operator *= (MTColor &c){ R = (int)R*c.R/255; G = (int)G*c.G/255; B = (int)B*c.B; A = (int)A*c.A/255; return true; }
 };
 
 struct MTCLParam{
