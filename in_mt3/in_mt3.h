@@ -1,24 +1,61 @@
-
-// The following ifdef block is the standard way of creating macros which make exporting 
-// from a DLL simpler. All files within this DLL are compiled with the IN_MT3_EXPORTS
-// symbol defined on the command line. this symbol should not be defined on any project
-// that uses this DLL. This way any other project whose source files include this file see 
-// IN_MT3_API functions as being imported from a DLL, wheras this DLL sees symbols
-// defined with this macro as being exported.
-#ifdef IN_MT3_EXPORTS
-#define IN_MT3_API __declspec(dllexport)
+//---------------------------------------------------------------------------
+//
+//	MadTracker 3 Winamp/XMMS Plugin
+//
+//		Platforms:	Win32
+//		Processors:	All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
+#ifndef IN_MT3_INCLUDED
+#define IN_MT3_INCLUDED
+//---------------------------------------------------------------------------
+#ifdef _WIN32
+#	include <windows.h>
+#	include "in2.h"
 #else
-#define IN_MT3_API __declspec(dllimport)
+#	include "plugin.h"
 #endif
+//---------------------------------------------------------------------------
+#define MTBUILTIN
 
-// This class is exported from the in_mt3.dll
-class IN_MT3_API CIn_mt3 {
-public:
-	CIn_mt3(void);
-	// TODO: add your methods here.
-};
+#define MTXSYSTEM_INCLUDED
+#define MTXDSP_INCLUDED
+#define MTXOBJECTS_INCLUDED
+//#define MTXAUDIO_INCLUDED
 
-extern IN_MT3_API int nIn_mt3;
+#ifndef MTSYSTEM_EXPORTS
+#	define MTSYSTEM_EXPORTS
+#endif
+#define MTDSP_EXPORTS
+#define MTOBJECTS_EXPORTS
+#define MTAUDIO_EXPORTS
 
-IN_MT3_API int fnIn_mt3(void);
-
+#define MT3CONFIG_INCLUDED
+//---------------------------------------------------------------------------
+#include "../MTSystem/MTSystem1.h"
+#include "../MTDSP/MTDSP1.h"
+#include "../MTObjects/MTObjects1.h"
+#include "MTXAudio.h"
+//---------------------------------------------------------------------------
+extern WaveDevice wadevice;
+extern WaveOutput waoutput;
+extern MTModule *module;
+#ifdef _WIN32
+	extern In_Module mod;
+#else
+	extern InputPlugin mod;
+#endif
+extern MTXInterfaces i;
+extern MTInterface *mtinterface;
+extern MTSystemInterface *si;
+extern MTDSPInterface *dspi;
+extern MTObjectsInterface *oi;
+extern MTAudioInterface *ai;
+extern MTDisplayInterface *di;
+extern MTGUIInterface *gi;
+//---------------------------------------------------------------------------
+#endif
