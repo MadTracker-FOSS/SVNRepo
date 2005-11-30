@@ -24,6 +24,9 @@
 #	ifndef __cdecl
 #		define __cdecl
 #	endif
+#	define MTEXPORT __attribute__((visibility("default")))
+#else
+#	define MTEXPORT __declspec( dllexport )
 #endif
 
 #define MTCT __cdecl
