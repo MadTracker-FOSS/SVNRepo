@@ -63,26 +63,26 @@ class Track;
 struct Sequence{
 	double pos;
 	double length;
-	unsigned short patt;
-	unsigned short automation;
-	signed char transpose;
-	unsigned char flags;
-	unsigned short reserved;
+	mt_uint16 patt;
+	mt_uint16 automation;
+	mt_int8 transpose;
+	mt_uint8 flags;
+	mt_uint16 reserved;
 };
 
 // Tempo
 struct Tempo{
-	int flags;
+	mt_uint32 flags;
 	double pos;
 	double bpm;
-	int reserved1;
-	int reserved2;
+	mt_uint32 reserved1;
+	mt_uint32 reserved2;
 };
 
 // Player status
 struct PlayStatus{
-	int flags;
-	int cseq[MAX_LAYERS];
+	mt_uint32 flags;
+	mt_uint32 cseq[MAX_LAYERS];
 	double pos;
 	double bpm;
 	double loopfrom;
@@ -91,7 +91,7 @@ struct PlayStatus{
 	double length;
 	double spb;
 	PatternInstance *patti[MAX_LAYERS];
-	int nchannels,nachannels;
+	mt_uint32 nchannels,nachannels;
 	InstrumentInstance **chan;
 	WaveOutput *coutput;
 };
@@ -99,13 +99,13 @@ struct PlayStatus{
 // Module class
 class MTModule : public MTObject{
 public:
-	unsigned short nmtracks;
-	unsigned short ntracks;
+	mt_uint16 nmtracks;
+	mt_uint16 ntracks;
 	double loops;
 	double loope;
 	char *message;
 	bool showmessage;
-	char summarymask;
+	mt_uint8 summarymask;
 	char *summary[8];
 	char *filename;
 	
@@ -117,10 +117,10 @@ public:
 	PlayStatus playstatus;
 	MTCPUMonitor *cpu;
 
-	int nsequ[MAX_LAYERS];
+	mt_uint32 nsequ[MAX_LAYERS];
 	Sequence sequ[MAX_LAYERS][MAX_SEQUENCES];
 
-	MTModule(int i);
+	MTModule(mt_int32 i);
 	virtual ~MTModule();
 
 	virtual void MTCT getdisplayname(char *buffer,int cb) = 0;

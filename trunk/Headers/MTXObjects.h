@@ -29,14 +29,14 @@ typedef bool (MTCT *ObjectEditFunc)(MTObject *object,void *window,int flags,MTUs
 
 class ObjectType{
 public:
-	int type;
+	mt_uint32 type;
 	char *description;
-	virtual MTObject* MTCT create(MTModule *parent,int id,void *param) = 0;
+	virtual MTObject* MTCT create(MTObject *parent,mt_int32 id,void *param) = 0;
 };
 
 class MTObjectsInterface : public MTXInterface{
 public:
-	virtual MTObject* MTCT newobject(int type,MTModule *parent,int id,void *param = 0,bool locked = false,bool assign = true) = 0;
+	virtual MTObject* MTCT newobject(mt_uint32 type,MTObject *parent,mt_int32 id,void *param = 0,bool locked = false,bool assign = true) = 0;
 	virtual void MTCT deleteobject(MTObject *object) = 0;
 	virtual bool MTCT loadobject(MTObject *object,const char *filename,void *process = 0) = 0;
 	virtual bool MTCT saveobject(MTObject *object,const char *filename,void *process = 0) = 0;
@@ -45,17 +45,17 @@ public:
 	virtual bool MTCT editobject(MTObject *object,void *window,int flags = 0) = 0;
 	virtual void MTCT closeobject(MTObject *object) = 0;
 	virtual int MTCT getnumtypes() = 0;
-	virtual int MTCT gettype(int id) = 0;
-	virtual ObjectType* MTCT getobjecttype(int type) = 0;
+	virtual mt_uint32 MTCT gettype(int id) = 0;
+	virtual ObjectType* MTCT getobjecttype(mt_uint32 type) = 0;
 	virtual ObjectType* MTCT getobjecttype(const char *description) = 0;
-	virtual int MTCT addobjecttype(ObjectType *type) = 0;
-	virtual bool MTCT addload(int type,ObjectIOFunc loadfunc,const char *filetypes,const char *description) = 0;
-	virtual bool MTCT addsave(int type,ObjectIOFunc savefunc,const char *filetypes,const char *description) = 0;
-	virtual bool MTCT addedit(int type,ObjectEditFunc editfunc,const char *description) = 0;
+	virtual mt_uint32 MTCT addobjecttype(ObjectType *type) = 0;
+	virtual bool MTCT addload(mt_uint32 type,ObjectIOFunc loadfunc,const char *filetypes,const char *description) = 0;
+	virtual bool MTCT addsave(mt_uint32 type,ObjectIOFunc savefunc,const char *filetypes,const char *description) = 0;
+	virtual bool MTCT addedit(mt_uint32 type,ObjectEditFunc editfunc,const char *description) = 0;
 	virtual void MTCT delobjecttype(ObjectType *type) = 0;
-	virtual void MTCT delload(int type,ObjectIOFunc loadfunc) = 0;
-	virtual void MTCT delsave(int type,ObjectIOFunc savefunc) = 0;
-	virtual void MTCT deledit(int type,ObjectEditFunc editfunc) = 0;
+	virtual void MTCT delload(mt_uint32 type,ObjectIOFunc loadfunc) = 0;
+	virtual void MTCT delsave(mt_uint32 type,ObjectIOFunc savefunc) = 0;
+	virtual void MTCT deledit(mt_uint32 type,ObjectEditFunc editfunc) = 0;
 };
 //---------------------------------------------------------------------------
 #endif

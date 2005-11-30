@@ -17,7 +17,7 @@
 //---------------------------------------------------------------------------
 static const int audiotype = FOURCC('X','A','U','D');
 
-#define MAX_AUDIODEVICES 64
+#define MAX_AUDIODEVICES 256
 #define PRIVATE_BUFFER   1024
 //---------------------------------------------------------------------------
 struct WaveDevice;

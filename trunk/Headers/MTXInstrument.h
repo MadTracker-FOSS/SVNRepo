@@ -74,7 +74,7 @@ class InstrumentInstance;
 //---------------------------------------------------------------------------
 class Instrument : public MTObject{
 public:
-	Instrument(MTModule *parent,int type,int i):MTObject(parent,type,i){	};
+	Instrument(MTObject *parent,mt_uint32 type,mt_int32 i):MTObject(parent,type,i){	};
 	virtual ~Instrument(){	};
 	
 	virtual InstrumentInstance* MTCT createinstance(Track *track,PatternInstance *caller,InstrumentInstance *previous) = 0;
@@ -148,7 +148,7 @@ public:
 	float mpanx,mpany,mpanz;
 	
 	InstrumentInstance(Instrument *p,Track *t,PatternInstance *c,int l,InstrumentInstance *previous){
-		flags = 0; cpu = 0; parent = p; module = p->parent; track = t; caller = c; layer = l; note = cpos = nextevent = 0.0;	gvol = mvol = 1.0; mpanx = mpany = mpanz = 0.0;
+		flags = 0; cpu = 0; parent = p; module = p->module; track = t; caller = c; layer = l; note = cpos = nextevent = 0.0;	gvol = mvol = 1.0; mpanx = mpany = mpanz = 0.0;
 	};
 	virtual ~InstrumentInstance(){
 	};

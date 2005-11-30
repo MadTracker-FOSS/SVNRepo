@@ -39,13 +39,17 @@ struct ChannelStatus;
 struct ChannelStatus{
 	int posi;
 	unsigned int posd;
+	double pitch;
+	double pitchvar;
 	double vol;
 	double volvar;
-	int volvarlng;
 	double multiplier;
+	int pitchvarlng;
+	int volvarlng;
 	unsigned char tc;
 	unsigned char sc;
 	bool reverse;
+	char reserved;
 };
 
 struct FilterStatus{
@@ -60,25 +64,25 @@ struct FilterStatus{
 	float resonance2;
 };
 
-typedef void (MTACT *MTFilterProc)(sample *dest,sample *source,FilterStatus &status,int count,int frequency);
-typedef void (MTACT *MTResampleProc)(sample *dest,sample *source,int count,ChannelStatus &status,int pitchi,unsigned int pitchd);
+typedef void (MTCT *MTFilterProc)(sample *dest,sample *source,FilterStatus &status,int count,int frequency);
+typedef void (MTCT *MTResampleProc)(sample *dest,char *source,int count,ChannelStatus &status);
 
 class MTDSPInterface : public MTXInterface{
 public:
-	void (MTACT *emptybuffer)(sample *dest,int count);
-	void (MTACT *replacebuffer)(sample *dest,sample *source,int count);
-	void (MTACT *replacebuffermul)(sample *dest,sample *source,double mul,int count);
-	void (MTACT *addbuffer)(sample *dest,sample *source,int count);
-	void (MTACT *addbuffermul)(sample *dest,sample *source,double mul,int count);
-	void (MTACT *addbuffermul2)(sample *dest1,sample *dest2,sample *source,double mul1,double mul2,int count);
-	void (MTACT *addbufferslide)(sample *dest,sample *source,double mul,double inc,int count);
-	void (MTACT *addbufferslide2)(sample *dest1,sample *dest2,sample *source,double mul1,double mul2,double inc1,double inc2,int count);
-	void (MTACT *ampbuffer)(sample *dest,double mul,int count);
-	void (MTACT *modulatebuffer)(sample *dest,sample *source,int count);
+	void (MTCT *emptybuffer)(sample *dest,int count);
+	void (MTCT *replacebuffer)(sample *dest,sample *source,int count);
+	void (MTCT *replacebuffermul)(sample *dest,sample *source,double mul,int count);
+	void (MTCT *addbuffer)(sample *dest,sample *source,int count);
+	void (MTCT *addbuffermul)(sample *dest,sample *source,double mul,int count);
+	void (MTCT *addbuffermul2)(sample *dest1,sample *dest2,sample *source,double mul1,double mul2,int count);
+	void (MTCT *addbufferslide)(sample *dest,sample *source,double mul,double inc,int count);
+	void (MTCT *addbufferslide2)(sample *dest1,sample *dest2,sample *source,double mul1,double mul2,double inc1,double inc2,int count);
+	void (MTCT *ampbuffer)(sample *dest,double mul,int count);
+	void (MTCT *modulatebuffer)(sample *dest,sample *source,int count);
 	MTFilterProc filter[16];
 	MTResampleProc resample[32];
-	void (MTACT *splinereplace)(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt);
-	void (MTACT *splinemodulate)(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt);
+	void (MTCT *splinereplace)(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt);
+	void (MTCT *splinemodulate)(sample *dest,int size,double x0,sample p0,double x1,sample p1,double x2,sample p2,double x3,sample p3,double xf,double xt);
 };
 //---------------------------------------------------------------------------
 #endif
