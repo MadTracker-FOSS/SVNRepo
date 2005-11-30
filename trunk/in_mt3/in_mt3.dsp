@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IN_MT3_EXPORTS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\Headers\\" /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IN_MT3_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\Headers\\" /I "..\opt\include\\" /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IN_MT3_EXPORTS" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x80c /d "NDEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 /nologo /dll /debug /machine:I386 /out:"../../release/in_mt3.dll"
+# ADD LINK32 user32.lib shell32.lib winmm.lib /nologo /dll /debug /machine:I386 /out:"D:\audio\Winamp\Plugins\in_mt3.dll"
 
 !ELSEIF  "$(CFG)" == "in_mt3 - Win32 Debug"
 
@@ -68,8 +68,8 @@ LINK32=link.exe
 # PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IN_MT3_EXPORTS" /Yu"stdafx.h" /FD /GZ  /c
-# ADD CPP /nologo /MTd /W3 /Gm /Gi /GX /ZI /Od /I "..\Headers\\" /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IN_MT3_EXPORTS" /FR /YX /FD /GZ  /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IN_MT3_EXPORTS" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /Gi /GX /ZI /Od /I "..\Headers\\" /I "..\opt\include\\" /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "IN_MT3_EXPORTS" /FR /YX"in_mt3.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x80c /d "_DEBUG"
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 user32.lib shell32.lib /nologo /dll /debug /machine:I386 /out:"../../debug/in_mt3.dll" /pdbtype:sept
+# ADD LINK32 user32.lib shell32.lib winmm.lib /nologo /dll /debug /machine:I386 /out:"D:\audio\Winamp\Plugins\in_mt3.dll" /pdbtype:sept
 
 !ENDIF 
 
@@ -90,6 +90,76 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;h;hpp;hxx;hm;inl"
+# Begin Group "ASM"
+
+# PROP Default_Filter "asm;inc"
+# Begin Source File
+
+SOURCE=..\MTDSP\MTBuffer.asm
+
+!IF  "$(CFG)" == "in_mt3 - Win32 Release"
+
+# Begin Custom Build
+IntDir=.\Release
+InputPath=..\MTDSP\MTBuffer.asm
+InputName=MTBuffer
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "in_mt3 - Win32 Debug"
+
+# Begin Custom Build
+IntDir=.\Debug
+InputPath=..\MTDSP\MTBuffer.asm
+InputName=MTBuffer
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\MTDSP\MTResampling.asm
+
+!IF  "$(CFG)" == "in_mt3 - Win32 Release"
+
+# Begin Custom Build
+IntDir=.\Release
+InputPath=..\MTDSP\MTResampling.asm
+InputName=MTResampling
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "in_mt3 - Win32 Debug"
+
+# Begin Custom Build
+IntDir=.\Debug
+InputPath=..\MTDSP\MTResampling.asm
+InputName=MTResampling
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=.\IN2.H
+# End Source File
 # Begin Source File
 
 SOURCE=.\in_mt3.cpp
@@ -97,6 +167,26 @@ SOURCE=.\in_mt3.cpp
 # Begin Source File
 
 SOURCE=.\in_mt3.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTPluginInterface.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTPluginInterface.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTWinamp1.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\OUT.H
+# End Source File
+# Begin Source File
+
+SOURCE=.\plugin.h
 # End Source File
 # End Group
 # End Target
