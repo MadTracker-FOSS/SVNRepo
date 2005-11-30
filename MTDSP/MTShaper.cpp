@@ -70,7 +70,7 @@ void MTShaper::add(int layer,int x1,int x2,sample *data)
 	if ((layer<0) || (layer>=SHAPER_LAYERS)) return;
 	if (l[layer].type==MTSHAPE_BUFFER) si->memfree(l[layer].data);
 	l[layer].type = MTSHAPE_BUFFER;
-	l[layer].data = (sample*)si->memalloc((x2-x1)*s_sample);
+	l[layer].data = (sample*)si->memalloc((x2-x1)*s_sample,0);
 	dspi->replacebuffer(l[layer].data,data,x2-x1);
 	memcpy(l[layer].data,data,(x2-x1)*s_sample);
 }
@@ -85,7 +85,7 @@ MTShape* MTShaper::get(int from,int to,int accept)
 	if (!(accept & MTSHAPE_BUFFER)) return 0;
 	res = mtnew(MTShape);
 	res->type = MTSHAPE_BUFFER;
-	res->data = (sample*)si->memalloc(s_sample*(to-from));
+	res->data = (sample*)si->memalloc(s_sample*(to-from),0);
 	res->x1 = from;
 	res->x2 = to;
 	c = res->data;
