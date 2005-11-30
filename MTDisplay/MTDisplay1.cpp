@@ -422,7 +422,7 @@ void MTDisplayInterface::sync()
 extern "C"
 {
 
-MTXInterfaces* __stdcall MTXMain(MTInterface *mti)
+MTXInterfaces* MTCT MTXMain(MTInterface *mti)
 {
 	mtinterface = (MTInterface*)mti;
 	if (!di) di = new MTDisplayInterface();

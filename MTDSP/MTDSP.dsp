@@ -91,6 +91,78 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;h"
+# Begin Group "ASM"
+
+# PROP Default_Filter "asm"
+# Begin Source File
+
+SOURCE=.\MTBuffer.asm
+
+!IF  "$(CFG)" == "MTDSP - Win32 Release"
+
+# Begin Custom Build
+IntDir=.\Release
+InputPath=.\MTBuffer.asm
+InputName=MTBuffer
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "MTDSP - Win32 Debug"
+
+# Begin Custom Build
+IntDir=.\Debug
+InputPath=.\MTBuffer.asm
+InputName=MTBuffer
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTDSPASM.inc
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=.\MTResampling.asm
+
+!IF  "$(CFG)" == "MTDSP - Win32 Release"
+
+# Begin Custom Build
+IntDir=.\Release
+InputPath=.\MTResampling.asm
+InputName=MTResampling
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "MTDSP - Win32 Debug"
+
+USERDEP__MTRES="MTDSPASM.inc"	"..\Headers\MTXASM.inc"	
+# Begin Custom Build
+IntDir=.\Debug
+InputPath=.\MTResampling.asm
+InputName=MTResampling
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\MTBufferASM.cpp

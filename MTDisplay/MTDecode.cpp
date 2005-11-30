@@ -13,6 +13,11 @@
 #include "MTDecode.h"
 #include "../Headers/MTXSystem.h"
 #include "../Headers/MTXSystem2.h"
+#define XMD_H
+#undef NEED_FAR_POINTERS
+#undef FAR
+#include <png.h>
+#include <jpeglib.h>
 //---------------------------------------------------------------------------
 // LZH Decoder
 //---------------------------------------------------------------------------
@@ -318,7 +323,7 @@ void* loadgif(MTFile *f,int &colorkey)
 	LEAVE();
 	return bmp;
 }
-
+//---------------------------------------------------------------------------
 void* loadtif(MTFile *f,int &colorkey)
 {
 	BITMAPINFO *bmi;
@@ -344,11 +349,11 @@ void* loadtif(MTFile *f,int &colorkey)
 	f->read(&align,2);
 	if ((align=='II') || (align=='MM')){
 		bmi = (BITMAPINFO*)si->memalloc(sizeof(BITMAPINFOHEADER)+sizeof(RGBQUAD)*256,MTM_ZERO);
-#ifdef BIG_ENDIAN
-		swap = (align=='II');
-#else
-		swap = (align=='MM');
-#endif
+#		if (BIG_ENDIAN==1234)
+			swap = (align=='II');
+#		else
+			swap = (align=='MM');
+#		endif
 		f->read(&version,2);
 		if (swap) version = swap_word(version);
 		if (version==42){
@@ -619,6 +624,69 @@ void* loadtif(MTFile *f,int &colorkey)
 		si->memfree(bmi);
 	};
 	LEAVE();
+	return bmp;
+}
+//---------------------------------------------------------------------------
+void mtpngread(png_structp png_ptr,png_bytep data,png_size_t length)
+{
+	MTFile *f = (MTFile*)png_get_io_ptr(png_ptr);
+	f->read(data,length);
+}
+
+void* loadpng(MTFile *f)
+{
+	HBITMAP bmp = 0;
+	png_byte header[16];
+	png_byte **rows;
+	png_struct *png_ptr;
+	png_info *info_ptr,*end_info;
+	BITMAPINFO *bmi;
+	png_byte *mbits,*ptr;
+	int x;
+
+	f->read(header,16);
+	if (png_sig_cmp(header,0,16)!=0) return 0;
+
+	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,0,0,0);
+	if (!png_ptr) return 0;
+	info_ptr = png_create_info_struct(png_ptr);
+	if (!info_ptr){
+		png_destroy_read_struct(&png_ptr,0,0);
+		return 0;
+	};
+	end_info = png_create_info_struct(png_ptr);
+	if (!end_info){
+		png_destroy_read_struct(&png_ptr,&info_ptr,0);
+		return 0;
+	};
+	png_set_read_fn(png_ptr,f,mtpngread);
+	png_set_sig_bytes(png_ptr,16);
+
+	png_read_png(png_ptr,info_ptr,PNG_TRANSFORM_IDENTITY,0);
+
+	bmi = (BITMAPINFO*)si->memalloc(sizeof(BITMAPINFOHEADER)+sizeof(RGBQUAD)*256,MTM_ZERO);
+	BITMAPINFOHEADER &bih = bmi->bmiHeader;
+	bih.biSize = sizeof(bih);
+	bih.biWidth = info_ptr->width;
+	bih.biHeight = -(int)info_ptr->height;
+	bih.biPlanes = 1;
+	bih.biBitCount = info_ptr->bit_depth*info_ptr->channels;
+	bih.biCompression = BI_RGB;
+	bmp = CreateDIBSection(0,bmi,DIB_RGB_COLORS,(void**)&mbits,0,0);
+	rows = (png_byte**)si->memalloc(sizeof(png_byte*)*info_ptr->height,MTM_ZERO);
+	ptr = mbits;
+	for (x=0;x<info_ptr->height;x++,ptr += info_ptr->width*(bih.biBitCount/8)) rows[x] = ptr;
+	png_set_rows(png_ptr,info_ptr,rows);
+
+	si->memfree(rows);
+	si->memfree(bmi);
+	return bmp;
+}
+//---------------------------------------------------------------------------
+void* loadjpg(MTFile *f)
+{
+	HBITMAP bmp = 0;
+
 	return bmp;
 }
 //---------------------------------------------------------------------------
