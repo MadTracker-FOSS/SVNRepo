@@ -100,7 +100,7 @@ bool MTAudioInterface::init()
 	LOGD("%s - [Audio] Initializing..."NL);
 	mtmemzero(&output,sizeof(output));
 	output.lock = si->lockcreate();
-	output.event = si->eventcreate(true);
+	output.event = si->eventcreate(true,0,0,false,false);
 	output.frequency = 44100;
 	output.latency = 50.0;
 	output.interval = 50.0;
@@ -301,7 +301,7 @@ void MTAudioInterface::activatedevices()
 			if (cdev->init((float)output.frequency,2,16,output.latency)){
 				WaveDevice &cwdev = *mtnew(WaveDevice);
 				output.device[y++] = &cwdev;
-				cwdev.name = (char*)si->memalloc(strlen(devices[x]->devicename)+1);
+				cwdev.name = (char*)si->memalloc(strlen(devices[x]->devicename)+1,0);
 				strcpy(cwdev.name,devices[x]->devicename);
 				cwdev.device = cdev;
 				cwdev.manager = devices[x]->manager;

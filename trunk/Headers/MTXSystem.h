@@ -186,7 +186,7 @@ enum MTConfigType{
 #	define MTCATCH }__except(LPTOP_LEVEL_EXCEPTION_FILTER(si->onerror)(GetExceptionInformation())){
 #	define MTEND };
 #else
-	typedef	int (*_mt_try)(bool);
+	typedef	void* (*_mt_try)(bool);
 #	define MTTRY   try{if (sigsetjmp((__jmp_buf_tag*)((_mt_try)si->onerror)(false),1)==0){
 #	define MTCATCH }else{throw "Got signal!";}}catch(...){
 //#	define MTTRY   if (sigsetjmp((__jmp_buf_tag*)((_mt_try)si->onerror)(false),1)==0){

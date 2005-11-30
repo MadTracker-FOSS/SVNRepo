@@ -36,7 +36,7 @@ public:
 	Pin outputs[MAX_CONNECTIONS];
 	MTLock *_lock;
 
-	Node(MTModule *parent,int type,int i):MTObject(parent,type,i){ ninputs = noutputs = 2; mtmemzero(outputs,sizeof(outputs)); _lock = si->lockcreate(); };
+	Node(MTObject *parent,mt_uint32 type,mt_int32 i):MTObject(parent,type,i){ ninputs = noutputs = 2; mtmemzero(outputs,sizeof(outputs)); _lock = si->lockcreate(); };
 	virtual ~Node(){ si->lockdelete(_lock); };
 	virtual int MTCT process(int ooffset,int ioffset,int count,bool &silence) = 0;
 	virtual void MTCT preprocess(int count){  };

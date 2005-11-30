@@ -176,7 +176,7 @@ MTAudioDeviceManager()
 		else sprintf(buf,"/dev/dsp%d",x);
 		if (stat(buf,&es)==0){
 			FLOG1("[Audio] Found device: %s"NL,buf);
-			devicename[n] = (char*)si->memalloc(strlen(buf)+1);
+			devicename[n] = (char*)si->memalloc(strlen(buf)+1,0);
 			strcpy(devicename[n],buf);
 			n++;
 		};
