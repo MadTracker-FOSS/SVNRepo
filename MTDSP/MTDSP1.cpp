@@ -171,7 +171,7 @@ int MTDSPInterface::config(int command,int param)
 extern "C"
 {
 
-MTXInterfaces* MTCT MTXMain(MTInterface *mti)
+MTEXPORT MTXInterfaces* MTCT MTXMain(MTInterface *mti)
 {
 	mtinterface = mti;
 	if (!dspi) dspi = new MTDSPInterface();
