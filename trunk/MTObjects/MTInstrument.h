@@ -81,7 +81,7 @@ struct MTIEvent;
 //---------------------------------------------------------------------------
 class Instrument : public MTObject{
 public:
-	Instrument(MTModule *parent,int type,int i):MTObject(parent,type,i){	};
+	Instrument(MTObject *parent,mt_uint32 type,mt_int32 i):MTObject(parent,type,i){	};
 	virtual ~Instrument(){	};
 	
 	virtual InstrumentInstance* MTCT createinstance(Track *track,PatternInstance *caller,InstrumentInstance *previous) = 0;
@@ -165,7 +165,7 @@ public:
 	float mpanx,mpany,mpanz;
 	
 	InstrumentInstance(Instrument *p,Track *t,PatternInstance *c,int l,InstrumentInstance *previous){
-		flags = 0; cpu = 0; parent = p; module = p->parent; track = t; caller = c; layer = l; note = cpos = nextevent = 0.0;	gvol = mvol = 1.0; mpanx = mpany = mpanz = 0.0;
+		flags = 0; cpu = 0; parent = p; module = p->module; track = t; caller = c; layer = l; note = cpos = nextevent = 0.0;	gvol = mvol = 1.0; mpanx = mpany = mpanz = 0.0;
 	};
 	virtual ~InstrumentInstance(){
 	};
@@ -212,16 +212,16 @@ struct Group{
 	Oscillator *spl;
 	double vol;
 	float panx,pany,panz;
-	signed char pitch;
-	char reserved[3];
+	mt_int8 pitch;
+	mt_uint8 reserved[3];
 };
 
 // Instrument Envelope structure
 struct IEnvelope{
-	char flags;
-	char npoints;
-	char susts,suste,loops,loope;
-	short reserved;
+	mt_uint8 flags;
+	mt_uint8 npoints;
+	mt_uint8 susts,suste,loops,loope;
+	mt_uint16 reserved;
 	EnvPoint points[16];
 };
 
@@ -229,13 +229,13 @@ class InstrumentType : public ObjectType{
 public:
 	InstrumentType();
 
-	MTObject* MTCT create(MTModule *parent,int id,void *param);
+	MTObject* MTCT create(MTObject *parent,mt_int32 id,void *param);
 };
 
 // Instrument class
 class MTInstrument : public Instrument{
 public:
-	MTInstrument(MTModule *parent,int i);
+	MTInstrument(MTObject *parent,mt_int32 i);
 	~MTInstrument();
 	
 	double gvol;
@@ -277,7 +277,8 @@ public:
 	unsigned char grp[1];
 	double cfadeout;
 	double fadeout;
-	unsigned short iflags,nna;
+	mt_uint32 iflags;
+	unsigned short nna;
 	EnvStatus envs[8];
 	MTFilterInstance *filter;
 	sample *buffer[8];

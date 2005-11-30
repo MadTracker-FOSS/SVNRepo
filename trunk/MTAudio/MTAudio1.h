@@ -1,4 +1,15 @@
 //---------------------------------------------------------------------------
+//
+//	MadTracker Audio Core
+//
+//		Platforms:	All
+//		Processors: All
+//
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
+//
+//---------------------------------------------------------------------------
 #ifndef MTAUDIO1_INCLUDED
 #define MTAUDIO1_INCLUDED
 //---------------------------------------------------------------------------
@@ -6,7 +17,7 @@
 //---------------------------------------------------------------------------
 static const int audiotype = FOURCC('X','A','U','D');
 
-#define MAX_AUDIODEVICES 64
+#define MAX_AUDIODEVICES 256
 #define PRIVATE_BUFFER   4096
 
 #include "MTXSystem.h"
@@ -80,7 +91,7 @@ extern MTSystemInterface *si;
 extern MTObjectsInterface *oi;
 extern WaveOutput output;
 #ifdef _DEBUG
-extern MTFile *recf;
+	extern MTFile *recf;
 #endif
 //---------------------------------------------------------------------------
 #endif

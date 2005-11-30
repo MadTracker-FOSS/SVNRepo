@@ -13,6 +13,8 @@
 #ifndef MTOBJECTS1_INCLUDED
 #define MTOBJECTS1_INCLUDED
 //---------------------------------------------------------------------------
+#include "../MT3Config.h"
+//---------------------------------------------------------------------------
 #include "MTXExtension.h"
 //---------------------------------------------------------------------------
 static const int objectstype = FOURCC('X','O','B','J');
@@ -22,9 +24,9 @@ class MTModule;
 
 class ObjectType{
 public:
-	int type;
+	mt_uint32 type;
 	char *description;
-	virtual MTObject* MTCT create(MTModule *parent,int id,void *param) = 0;
+	virtual MTObject* MTCT create(MTObject *parent,mt_int32 id,void *param) = 0;
 };
 //---------------------------------------------------------------------------
 #include "MTObject.h"
@@ -42,14 +44,14 @@ typedef bool (MTCT *ObjectIOFunc)(MTObject *object,char *filename,void *process)
 typedef bool (MTCT *ObjectEditFunc)(MTObject *object,MTWindow *window,int flags,MTUser *user);
 
 struct ObjectIO{
-	int type;
+	mt_uint32 type;
 	ObjectIOFunc func;
 	char *filetypes;
 	char *description;
 };
 
 struct ObjectEdit{
-	int type;
+	mt_uint32 type;
 	ObjectEditFunc func;
 	char *description;
 };
@@ -64,7 +66,7 @@ public:
 	void MTCT processcmdline(void *params);
 	void MTCT showusage(void *out);
 	int MTCT config(int command,int param);
-	virtual MTObject* MTCT newobject(int type,MTModule *parent,int id,void *param = 0,bool locked = false,bool assign = true);
+	virtual MTObject* MTCT newobject(mt_uint32 type,MTObject *parent,mt_int32 id,void *param = 0,bool locked = false,bool assign = true);
 	virtual bool MTCT deleteobject(MTObject *object);
 	virtual bool MTCT loadobject(MTObject *object,const char *filename,void *process = 0);
 	virtual bool MTCT saveobject(MTObject *object,const char *filename,void *process = 0);
@@ -73,17 +75,17 @@ public:
 	virtual bool MTCT editobject(MTObject *object,MTWindow *window,int flags = 0);
 	virtual void MTCT closeobject(MTObject *object);
 	virtual int MTCT getnumtypes();
-	virtual int MTCT gettype(int id);
-	virtual ObjectType* MTCT getobjecttype(int type);
+	virtual mt_uint32 MTCT gettype(int id);
+	virtual ObjectType* MTCT getobjecttype(mt_uint32 type);
 	virtual ObjectType* MTCT getobjecttype(const char *description);
-	virtual int MTCT addobjecttype(ObjectType *type);
-	virtual bool MTCT addload(int type,ObjectIOFunc loadfunc,const char *filetypes,const char *description);
-	virtual bool MTCT addsave(int type,ObjectIOFunc savefunc,const char *filetypes,const char *description);
-	virtual bool MTCT addedit(int type,ObjectEditFunc editfunc,const char *description);
+	virtual mt_uint32 MTCT addobjecttype(ObjectType *type);
+	virtual bool MTCT addload(mt_uint32 type,ObjectIOFunc loadfunc,const char *filetypes,const char *description);
+	virtual bool MTCT addsave(mt_uint32 type,ObjectIOFunc savefunc,const char *filetypes,const char *description);
+	virtual bool MTCT addedit(mt_uint32 type,ObjectEditFunc editfunc,const char *description);
 	virtual void MTCT delobjecttype(ObjectType *type);
-	virtual void MTCT delload(int type,ObjectIOFunc loadfunc);
-	virtual void MTCT delsave(int type,ObjectIOFunc savefunc);
-	virtual void MTCT deledit(int type,ObjectEditFunc editfunc);
+	virtual void MTCT delload(mt_uint32 type,ObjectIOFunc loadfunc);
+	virtual void MTCT delsave(mt_uint32 type,ObjectIOFunc savefunc);
+	virtual void MTCT deledit(mt_uint32 type,ObjectEditFunc editfunc);
 };
 //---------------------------------------------------------------------------
 extern MTInterface *mtinterface;
@@ -94,14 +96,16 @@ extern MTDSPInterface *dspi;
 extern MTGUIInterface *gi;
 extern MTObjectsPreferences objectsprefs;
 extern Skin *skin;
-extern MTResources *res;
+#ifdef MTSYSTEM_RESOURCES
+	extern MTResources *res;
+#endif
 extern MTWindow *monitor;
 extern MTHash *objecttype;
 extern MTArray *load,*save,*edit;
 extern MTLock *objectlock;
 extern WaveOutput *output;
-#if MTLEVEL >= MTL_PROFESSIONAL
-extern bool smpsupport;
+#ifdef MTVERSION_PROFESSIONAL
+	extern bool smpsupport;
 #endif
 //---------------------------------------------------------------------------
 #endif

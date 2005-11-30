@@ -5,9 +5,12 @@
 //		Platforms:	Win32
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
+#ifdef _WIN32
 #include "MTWaveOut.h"
 #include "MTAudio1.h"
 //---------------------------------------------------------------------------
@@ -158,9 +161,7 @@ MTAudioDeviceManager()
 			cdev.name = (char*)si->memalloc(strlen(cdev.caps.szPname)+1);
 			strcpy(cdev.name,cdev.caps.szPname);
 			cdev.id = x;
-			LOG("[Audio] Found device (WO): ");
-			LOG(cdev.name);
-			LOG(NL);
+			FLOG1("[Audio] Found device (WO): %s"NL,cdev.name);
 		}
 		else{
 			si->memfree(&cdev);
@@ -197,3 +198,4 @@ void MTWaveOutDeviceManager::deldevice(MTAudioDevice *device)
 	delete (MTWaveOutDevice*)device;
 }
 //---------------------------------------------------------------------------
+#endif

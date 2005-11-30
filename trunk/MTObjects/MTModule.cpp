@@ -61,7 +61,7 @@ struct ThreadStatus{
 //---------------------------------------------------------------------------
 // MTModule functions
 //---------------------------------------------------------------------------
-MTModule::MTModule(int i):
+MTModule::MTModule(mt_int32 i):
 MTObject(0,MTO_MODULE,i),
 ntracks(8),
 nmtracks(1),
@@ -76,9 +76,12 @@ mts(0)
 {
 	int x;
 	
+	module = this;
 	mlock = si->lockcreate();
 	flags = -1;
-	res->loadstring(MTT_module,name,255);
+#	ifdef MTSYSTEM_RESOURCES
+		res->loadstring(MTT_module,name,255);
+#	endif
 	filename = (char*)si->memalloc(512,MTM_ZERO);
 	mtmemzero(&nsequ,sizeof(nsequ));
 	mtmemzero(&sequ,sizeof(sequ));
@@ -107,14 +110,14 @@ mts(0)
 	setstatus();
 	for (x=0;x<nmtracks;x++) master->a[x] = new Track(this,x+MAX_TRACKS);
 	for (x=0;x<ntracks;x++) trk->a[x] = new Track(this,x);
-#if MTLEVEL >= MTL_PROFESSIONAL
-	mts = si->memalloc(sizeof(ThreadStatus)*nthreads,MTM_ZERO);
-	for (x=1;x<nthreads;x++){
-		ThreadStatus &cts = ((ThreadStatus*)mts)[x];
-		cts.ready = si->eventcreate(true);
-		cts.go = si->eventcreate(true);
-	};
-#endif
+#	ifdef MTVERSION_PROFESSIONAL
+		mts = si->memalloc(sizeof(ThreadStatus)*nthreads,MTM_ZERO);
+		for (x=1;x<nthreads;x++){
+			ThreadStatus &cts = ((ThreadStatus*)mts)[x];
+			cts.ready = si->eventcreate(true);
+			cts.go = si->eventcreate(true);
+		};
+#	endif
 }
 
 void clearobject(void *o,void*)
@@ -148,7 +151,7 @@ MTModule::~MTModule()
 	for (x=0;x<MAX_LAYERS;x++){
 		if (playstatus.patti[x]) delete playstatus.patti[x];
 	};
-	si->memfree(playstatus.chan);
+	if (playstatus.chan) si->memfree(playstatus.chan);
 	if (message) si->memfree(message);
 	for (x=0;x<6;x++){
 		if (summary[x]!=0) si->memfree(summary[x]);
@@ -167,14 +170,16 @@ MTModule::~MTModule()
 	si->lockdelete(mlock);
 	si->memfree(filename);
 	delete cpu;
-	if (mts){
-		for (x=1;x<nthreads;x++){
-			ThreadStatus &cts = ((ThreadStatus*)mts)[x];
-			si->eventdelete(cts.ready);
-			si->eventdelete(cts.go);
+#	ifdef MTVERSION_PROFESSIONAL
+		if (mts){
+			for (x=1;x<nthreads;x++){
+				ThreadStatus &cts = ((ThreadStatus*)mts)[x];
+				si->eventdelete(cts.ready);
+				si->eventdelete(cts.go);
+			};
+			si->memfree(mts);
 		};
-		si->memfree(mts);
-	};
+#	endif
 }
 
 void MTModule::setmodified(int value,int flags)
@@ -336,7 +341,9 @@ void MTModule::getdisplayname(char *buffer,int cb)
 			if (x<id) y++;
 		};
 	};
-	if (!strlen(buffer)) res->loadresource(MTR_TEXT,0,buffer,cb);
+#	ifdef MTSYSTEM_RESOURCES
+		if (!strlen(buffer)) res->loadresource(MTR_TEXT,0,buffer,cb);
+#	endif
 	if (twins) sprintf(strrchr(buffer,'\0')," (%d)",y);
 }
 
@@ -356,7 +363,7 @@ void MTModule::updatelength()
 	double p;
 	bool critical = (output->ndevices>0);
 
-	MTTRY{
+	MTTRY
 		mlock->lock();
 		playstatus.length = 0;
 		for (x=0;x<MAX_LAYERS;x++){
@@ -366,9 +373,8 @@ void MTModule::updatelength()
 				if (p>playstatus.length) playstatus.length = p;
 			};
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	mlock->unlock();
 }
 
@@ -483,7 +489,7 @@ int MTModule::getsequence(int layer,double pos,int last)
 
 void MTModule::play(int mode)
 {
-	MTTRY{
+	MTTRY
 		mlock->lock();
 		playstatus.flags = mode;
 		if (mode==PLAY_STOP) resetchannels();
@@ -491,22 +497,20 @@ void MTModule::play(int mode)
 			playstatus.nextevent = 0.0;
 			notify(this,MTN_TEMPO,0,&playstatus.bpm);
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	mlock->unlock();
 }
 
 void MTModule::setpos(double pos)
 {
-	MTTRY{
+	MTTRY
 		mlock->lock();
 		resetchannels();
 		playstatus.pos = playstatus.nextevent = pos;
 		lastbeat = -1;
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	mlock->unlock();
 }
 
@@ -514,7 +518,7 @@ void MTModule::settempo(int ctempo,int param,void *value)
 {
 	bool change = false;
 
-	MTTRY{
+	MTTRY
 		mlock->lock();
 		if (D(tempo,Tempo)[ctempo].pos<=playstatus.pos){
 			if (ctempo==tempo->nitems-1) change = true;
@@ -535,9 +539,8 @@ void MTModule::settempo(int ctempo,int param,void *value)
 				else D(tempo,Tempo)[ctempo].flags &= (~TF_SLIDE);
 			};
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	mlock->unlock();
 }
 //---------------------------------------------------------------------------
@@ -553,7 +556,7 @@ bool MTModule::process(WaveOutput *output)
 
 	playstatus.coutput = output;
 	if (!objectlock) return false;
-	MTTRY{
+	MTTRY
 		objectlock->lock();
 		mlock->lock();
 		if ((!playstatus.flags) || (lockread) || ((access.caccess & MTOA_CANPLAY)==0)){
@@ -581,18 +584,17 @@ bool MTModule::process(WaveOutput *output)
 		locked = false;
 		x = 1;
 prebuffer:
-		MTTRY{
+		MTTRY
 			while (x<instr->nitems){
 				Instrument &ci = *A(instr,Instrument)[x];
 				if ((&ci) && (ci.flags & IF_NEEDPREBUFFER)) ci.prebuffer(output->playlng);
 				x++;
 			};
-		}
-		MTCATCH{
+		MTCATCH
 			LOGD("%s - [Objects] ERROR: Exception while pre-buffering instrument!"NL);
 			x++;
 			goto prebuffer;
-		};
+		MTEND
 		while (remain>0){
 			mlock->lock();
 			locked = true;
@@ -654,6 +656,7 @@ prebuffer:
 					};
 				};
 			};
+
 // Process events
 			inc = playstatus.nextevent-playstatus.pos;
 			for (x=0;x<MAX_LAYERS;x++){
@@ -681,67 +684,48 @@ prebuffer:
 			};
 			inc = i/playstatus.spb;
 			remain -= i;
+
 // Empty the tracks
-/*
-			cpu->startadd(2);	//Mix
-			for (x=0;x<ntracks;x++){
-				for (y=0;y<A(trk,Track)[x]->noutputs;y++){
-					dspi->emptybuffer(A(trk,Track)[x]->buffer[y],i);
-				};
+			cpu->startadd(2);	// Mix
+			for (y=0;y<A(master,Track)[0]->noutputs;y++){
+				dspi->emptybuffer(A(master,Track)[0]->buffer[y],i);
 			};
 			cpu->endadd(2);	// Mix
-*/
+
 // Process output signal
 			cpu->startadd(3);	// Output
 			x = 1;
 preprocess:
-			MTTRY{
+			MTTRY
 				while (x<instr->nitems){
 					Instrument &ci = *A(instr,Instrument)[x];
 					if ((&ci) && (ci.flags & IF_NEEDPREPROCESS)) ci.preprocess(i);
 					x++;
 				};
-			}
-			MTCATCH{
+			MTCATCH
 				LOGD("%s - [Objects] ERROR: Exception while pre-processing instrument!"NL);
 				x++;
 				goto preprocess;
-			};
-/*
-			for (x=0;x<playstatus.nchannels;x++){
-				InstrumentInstance &cchan = *playstatus.chan[x];
-				if ((&cchan) && (cchan.parent->lockread==0) && (cchan.parent->access.caccess & MTOA_CANPLAY)){
-					MTTRY{
-						cchan.process(i);
-					}
-					MTCATCH{
-						LOGD("%s - [Objects] ERROR: Exception while processing channel!"NL);
-						cchan.nextevent = -1.0;
-					};
-				};
-			};
-*/
+			MTEND
+
+// Compiled engine instructions
+			subprocess(output,0,i,silence);
+
 			x = 1;
 postprocess:
-			MTTRY{
+			MTTRY
 				while (x<instr->nitems){
 					Instrument &ci = *A(instr,Instrument)[x];
 					if ((&ci) && (ci.flags & IF_NEEDPOSTPROCESS)) ci.postprocess(i);
 					x++;
 				};
-			}
-			MTCATCH{
+			MTCATCH
 				LOGD("%s - [Objects] ERROR: Exception while post-processing instrument!"NL);
 				x++;
 				goto postprocess;
-			};
+			MTEND
 			cpu->endadd(3);	// Output
 			cpu->startadd(2);	// Mix
-			for (y=0;y<A(master,Track)[0]->noutputs;y++){
-				dspi->emptybuffer(A(master,Track)[0]->buffer[y],i);
-			};
-// Compiled engine instructions
-			subprocess(output,0,i,silence);
 // Out to the soundcard tracks
 			for (x=0;x<nmtracks;x++){
 				Track &ctrk = *A(master,Track)[x];
@@ -774,39 +758,37 @@ postprocess:
 		if (playstatus.pos*8>=lastbeat+1){
 			lastbeat = (int)(playstatus.pos*8);
 			cpu->flushcpu(-1);
-#ifdef _DEBUG
-			static int count;
-			if (++count>=128){
-				int nbackground = 0,nasleep = 0;
-				count = 0;
-				for (x=0;x<playstatus.nchannels;x++){
-					if (playstatus.chan[x]->flags & IIF_BACKGROUND) nbackground++;
-					if (playstatus.chan[x]->flags & IIF_SLEEPING) nasleep++;
+#			ifdef _DEBUG
+				static int count;
+				if (++count>=128){
+					int nbackground = 0,nasleep = 0;
+					count = 0;
+					for (x=0;x<playstatus.nchannels;x++){
+						if (playstatus.chan[x]->flags & IIF_BACKGROUND) nbackground++;
+						if (playstatus.chan[x]->flags & IIF_SLEEPING) nasleep++;
+					};
+					FLOGD4("%s - [Objects] Position: %09.4f - Channels: % 3d foreground % 3d background (% 3d asleep)"NL,playstatus.pos,playstatus.nchannels-nbackground,nbackground,nasleep);
+					FLOG5("  CPU: Total: %07.4f%% Events: %07.4f%% Mix: %07.4f%% Channels: %07.4f%% Effects: %07.4f%%"NL,cpu->getcpu(0)*100,cpu->getcpu(1)*100,cpu->getcpu(2)*100,cpu->getcpu(3)*100,cpu->getcpu(4)*100);
 				};
-				FLOGD4("%s - [Objects] Position: %09.4f - Channels: % 3d foreground % 3d background (% 3d asleep)"NL,playstatus.pos,playstatus.nchannels-nbackground,nbackground,nasleep);
-				FLOG5("  CPU: Total: %07.4f%% Events: %07.4f%% Mix: %07.4f%% Channels: %07.4f%% Effects: %07.4f%%"NL,cpu->getcpu(0)*100,cpu->getcpu(1)*100,cpu->getcpu(2)*100,cpu->getcpu(3)*100,cpu->getcpu(4)*100);
-			};
-#endif
+#			endif
 		};
 		x = 1;
 postbuffer:
-		MTTRY{
+		MTTRY
 			while (x<instr->nitems){
 				Instrument &ci = *A(instr,Instrument)[x];
 				if ((&ci) && (ci.flags & IF_NEEDPOSTBUFFER)) ci.postbuffer(output->playlng);
 				x++;
 			};
-		}
-		MTCATCH{
+		MTCATCH
 			LOGD("%s - [Objects] ERROR: Exception while post-buffering instrument!"NL);
 			x++;
 			goto postbuffer;
-		};
-	}
-	MTCATCH{
+		MTEND
+	MTCATCH
 		LOGD("%s - [Objects] ERROR: Exception while processing module!"NL);
 		crashcount--;
-	};
+	MTEND
 	objectlock->unlock();
 	if (locked) mlock->unlock();
 	return true;
@@ -817,39 +799,39 @@ bool MTModule::subprocess(WaveOutput *output,int cpuid,int lng,bool silence)
 	int x;
 	RI *ri;
 
-#if MT_LEVEL >= MTL_PROFESSIONAL
-	ThreadStatus *cts = (ThreadStatus*)mts;
-	MTEvent *events[32];
+#	ifdef MTVERSION_PROFESSIONAL
+		ThreadStatus *cts = (ThreadStatus*)mts;
+		MTEvent *events[32];
 
-	if ((smpsupport) && (cpuid==0)){
-		for (x=0;x<nthreads;x++){
-			cts[x].level = 65534;
-			events[x] = cts[x].ready;
-			if (x>0) thread[x]->postmessage(4096,(int)this,lng);
+		if ((smpsupport) && (cpuid==0)){
+			for (x=0;x<nthreads;x++){
+				cts[x].level = 65534;
+				events[x] = cts[x].ready;
+				if (x>0) thread[x]->postmessage(4096,(int)this,lng);
+			};
 		};
-	};
-#endif
+#	endif
 	ris->reset();
 routing:
-	MTTRY{
+	MTTRY
 		while ((ri = (RI*)ris->next())){
-#if MT_LEVEL >= MTL_PROFESSIONAL
-			if ((ri->cpu!=255) && (ri->cpu!=cpuid)) continue;
-			if ((smpsupport) && (ri->level<cts[cpuid].level)){
-				if (cpuid==0){
-					x = si->syswaitmultiple(nthreads-1,&events[1],true,1000);
-					if (x==-1) return false;
-					cts[0].level = ri->level;
-					for (x=1;x<nthreads;x++) cts[x].go->set();
-				}
-				else{
-					cts[cpuid].level = ri->level;
-					if (!cts[cpuid].ready->set()) return false;
-					if (!cts[cpuid].go->wait(1000)) return false;
+#			ifdef MTVERSION_PROFESSIONAL
+				if ((ri->cpu!=255) && (ri->cpu!=cpuid)) continue;
+				if ((smpsupport) && (ri->level<cts[cpuid].level)){
+					if (cpuid==0){
+						x = si->syswaitmultiple(nthreads-1,&events[1],true,1000);
+						if (x==-1) return false;
+						cts[0].level = ri->level;
+						for (x=1;x<nthreads;x++) cts[x].go->set();
+					}
+					else{
+						cts[cpuid].level = ri->level;
+						if (!cts[cpuid].ready->set()) return false;
+						if (!cts[cpuid].go->wait(1000)) return false;
+					};
 				};
-			};
-			if ((smpsupport) && (ri->lock) && (!ri->lock->lock())) continue;
-#endif
+				if ((smpsupport) && (ri->lock) && (!ri->lock->lock())) continue;
+#			endif
 			switch (ri->i){
 			case RI_CLEARBUFFER:
 				dspi->emptybuffer(ri->buffer,lng);
@@ -860,13 +842,12 @@ routing:
 				for (x=0;x<playstatus.nchannels;x++){
 					InstrumentInstance &cchan = *playstatus.chan[x];
 					if ((&cchan) && (cchan.track==ri->track) && (cchan.cpu==cpuid) && (cchan.parent->lockread==0) && (cchan.parent->access.caccess & MTOA_CANPLAY)){
-						MTTRY{
+						MTTRY
 							cchan.process(lng);
-						}
-						MTCATCH{
+						MTCATCH
 							LOGD("%s - [Objects] ERROR: Exception while processing channel!"NL);
 							cchan.nextevent = -1.0;
-						};
+						MTEND
 					};
 				};
 				break;
@@ -888,28 +869,27 @@ routing:
 			default:
 				break;
 			};
-#if MT_LEVEL >= MTL_PROFESSIONAL
-			if ((smpsupport) && (ri->lock)) ri->lock->unlock();
-#endif
+#			ifdef MTVERSION_PROFESSIONAL
+				if ((smpsupport) && (ri->lock)) ri->lock->unlock();
+#			endif
 		};
-#if MT_LEVEL >= MTL_PROFESSIONAL
-		if (smpsupport){
-			if (cpuid==0){
-				x = si->syswaitmultiple(nthreads-1,&events[1],true,1000);
-				if (x==-1) return false;
-				for (x=1;x<nthreads;x++) cts[x].go->set();
-			}
-			else{
-				if (!cts[cpuid].ready->set()) return false;
-				if (!cts[cpuid].go->wait(1000)) return false;
+#		ifdef MTVERSION_PROFESSIONAL
+			if (smpsupport){
+				if (cpuid==0){
+					x = si->syswaitmultiple(nthreads-1,&events[1],true,1000);
+					if (x==-1) return false;
+					for (x=1;x<nthreads;x++) cts[x].go->set();
+				}
+				else{
+					if (!cts[cpuid].ready->set()) return false;
+					if (!cts[cpuid].go->wait(1000)) return false;
+				};
 			};
-		};
-#endif
-	}
-	MTCATCH{
+#		endif
+	MTCATCH
 		LOGD("%s - [Objects] ERROR: Exception while sub-processing!"NL);
 		goto routing;
-	};
+	MTEND
 	return true;
 }
 //---------------------------------------------------------------------------
@@ -1168,23 +1148,24 @@ void MTModule::updaterouting()
 	MTArray *tmpbuf;
 	RI ri,iri;
 	RI *i;
-#if MTLEVEL >= MTL_PROFESSIONAL
+#ifdef MTVERSION_PROFESSIONAL
 	unsigned char ccpu = 0;
 	bool inlevel[256];
 #endif
 
-#ifdef _DEBUG
-	#ifdef _WIN32
-		if (GetKeyState(VK_SHIFT)<0) log = true;
-	#else
-		//TODO
-	#endif
-#endif
+#	ifdef _DEBUG
+#		ifdef _WIN32
+			if (GetKeyState(VK_SHIFT)<0) log = true;
+#		else
+			//TODO
+			log = true;
+#		endif
+#	endif
 	ENTER("MTModule::updaterouting");
 	needupdate = false;
 	mtmemzero(&ri,sizeof(ri));
 	mtmemzero(&iri,sizeof(iri));
-	MTTRY{
+	MTTRY
 		lock(MTOL_LOCK,true);
 		LOGD("%s - [Objects] Compiling route..."NL);
 		l = (output->buffersamples*2)*sizeof(sample);
@@ -1249,20 +1230,20 @@ void MTModule::updaterouting()
 		};
 // Sort nodes (track+effects) by output level importance
 		nodes->sort(sortnodes);
-#ifdef _DEBUG
-		if (log) printnodes(nodes);
-#endif
+#		ifdef _DEBUG
+			if (log) printnodes(nodes);
+#		endif
 		nodes->reset();
 // Empty the buffer of each track
 		ri.i = RI_CLEARBUFFER;
 		ri.level = 65534;
 		for (x=0;x<ntracks;x++){
-#if MTLEVEL >= MTL_PROFESSIONAL
-			ri.cpu = ccpu;
-			if ((smpsupport) && (++ccpu==nthreads)) ccpu = 0;
-#else
-			ri.cpu = 0;
-#endif
+#			ifdef MTVERSION_PROFESSIONAL
+				ri.cpu = ccpu;
+				if ((smpsupport) && (++ccpu==nthreads)) ccpu = 0;
+#			else
+				ri.cpu = 0;
+#			endif
 			for (y=0;y<A(trk,Track)[x]->noutputs;y++){
 				ri.buffer = A(trk,Track)[x]->buffer[y];
 				ris->push(&ri);
@@ -1282,19 +1263,19 @@ void MTModule::updaterouting()
 					};
 					if (A(tmpbuf,TmpBuf)[e.id]->buffer[pin->s]==0){
 						sample* buffer = (sample*)si->memalloc(l,MTM_ZERO);
-#ifdef _DEBUG
-						total += l;
-#endif
+#						ifdef _DEBUG
+							total += l;
+#						endif
 						buffers->push(buffer);
 						A(tmpbuf,TmpBuf)[e.id]->buffer[pin->s] = buffer;
 						ri.i = RI_CLEARBUFFER;
 						ri.level = 65533;
-#if MTLEVEL >= MTL_PROFESSIONAL
-						ri.cpu = ccpu;
-						if ((smpsupport) && (++ccpu==nthreads)) ccpu = 0;
-#else
-						ri.cpu = 0;
-#endif
+#						ifdef MTVERSION_PROFESSIONAL
+							ri.cpu = ccpu;
+							if ((smpsupport) && (++ccpu==nthreads)) ccpu = 0;
+#						else
+							ri.cpu = 0;
+#						endif
 						ri.buffer = buffer;
 						ris->push(&ri);
 					};
@@ -1307,12 +1288,12 @@ void MTModule::updaterouting()
 			sample *outputs[8] = {0,0,0,0,0,0,0,0};
 			b = A(nodes,RN)[x];
 			ri.level = b->level;
-#if MTLEVEL >= MTL_PROFESSIONAL
-			ri.cpu = ccpu;
-			if ((smpsupport) && (++ccpu==nthreads)) ccpu = 0;
-#else
-			ri.cpu = 0;
-#endif
+#			ifdef MTVERSION_PROFESSIONAL
+				ri.cpu = ccpu;
+				if ((smpsupport) && (++ccpu==nthreads)) ccpu = 0;
+#			else
+				ri.cpu = 0;
+#			endif
 			Node &cn = *(b->node);
 // Skip master tracks
 			if (((cn.objecttype & MTO_TYPEMASK)==MTO_TRACK) && (cn.id>=MAX_TRACKS)) continue;
@@ -1331,9 +1312,9 @@ void MTModule::updaterouting()
 			for (y=0;y<8;y++){
 				if (use[y]>1){
 					sample* buffer = (sample*)si->memalloc(l,MTM_ZERO);
-#ifdef _DEBUG
-					total += l;
-#endif
+#					ifdef _DEBUG
+						total += l;
+#					endif
 					buffers->push(buffer);
 					outputs[y] = buffer;
 				};
@@ -1385,47 +1366,47 @@ void MTModule::updaterouting()
 				if (y>=0) ris->push(&iri);
 // Process the tracks
 				ri.i = RI_MIXBUFFER;
-#ifdef _DEBUG
-				if (log){
-					FLOG1("Outputs of %s:"NL,t.name);
-					LOG("   Inputs    Outputs"NL);
-					LOG("---------------------"NL);
-				};
-#endif
+#				ifdef _DEBUG
+					if (log){
+						FLOG1("Outputs of %s:"NL,t.name);
+						LOG("   Inputs    Outputs"NL);
+						LOG("---------------------"NL);
+					};
+#				endif
 				for (y=0;y<8;y++){
 					if (!outputs[y]) continue;
-#ifdef _DEBUG
-					if (log) FLOG3("%d  %.8X  %.8X"NL,y,t.buffer[y],outputs[y]);
-#endif
+#					ifdef _DEBUG
+						if (log) FLOG3("%d  %.8X  %.8X"NL,y,t.buffer[y],outputs[y]);
+#					endif
 					ri.buffer = t.buffer[y];
 					ri.dest = outputs[y];
 					ri.lock = cn.outputs[y].n->_lock;
 					ris->push(&ri);
 				};
-#ifdef _DEBUG
-				if (log) LOG(NL);
-#endif
+#				ifdef _DEBUG
+					if (log) LOG(NL);
+#				endif
 			}
 			else{
 // Create the instance of each effect
 				Effect &e = *(Effect*)&cn;
 				e.createinstance(e.noutputs,outputs,e.ninputs,A(tmpbuf,TmpBuf)[e.id]->buffer);
-#ifdef _DEBUG
-				if (log){
-					FLOG1("Instanciating %s:"NL,e.name);
-					LOG("   Inputs    Outputs"NL);
-					LOG("---------------------"NL);
-				};
-#endif
+#				ifdef _DEBUG
+					if (log){
+						FLOG1("Instanciating %s:"NL,e.name);
+						LOG("   Inputs    Outputs"NL);
+						LOG("---------------------"NL);
+					};
+#				endif
 				for (y=0;y<8;y++){
 					if (!outputs[y]) continue;
-#ifdef _DEBUG
-					if (log) FLOG3("%d  %.8X  %.8X"NL,y,A(tmpbuf,TmpBuf)[e.id]->buffer[y],outputs[y]);
-#endif
+#					ifdef _DEBUG
+						if (log) FLOG3("%d  %.8X  %.8X"NL,y,A(tmpbuf,TmpBuf)[e.id]->buffer[y],outputs[y]);
+#					endif
 				};
-#ifdef _DEBUG
-				if (log) LOG(NL);
-#endif
+#				ifdef _DEBUG
+					if (log) LOG(NL);
+#				endif
 				ri.i = RI_PROCESSNODE;
 				ri.node = &cn;
 				ris->push(&ri);
@@ -1463,52 +1444,51 @@ void MTModule::updaterouting()
 				if (ri.factor!=1.0) ris->push(&ri);
 			};
 		};
-#if MTLEVEL >= MTL_PROFESSIONAL
+#		ifdef MTVERSION_PROFESSIONAL
 // Add NOOP instructions to empty levels for synchronization
-		if (smpsupport){
-			ri.i = RI_NOOP;
-			l = 65534;
-			mtmemzero(inlevel,sizeof(inlevel));
-			ris->reset();
-			x = 0;
-			while ((i = (RI*)ris->next())){
-				unsigned char ccpu = i->cpu;
-				if (i->level<l){
-					ri.level = l;
-					l = i->level;
-					for (y=0;y<nthreads;y++){
-						if (!inlevel[y]){
-							ri.cpu = y;
-							ris->additem(x,&ri);
-							ris->next();
-							x++;
+			if (smpsupport){
+				ri.i = RI_NOOP;
+				l = 65534;
+				mtmemzero(inlevel,sizeof(inlevel));
+				ris->reset();
+				x = 0;
+				while ((i = (RI*)ris->next())){
+					unsigned char ccpu = i->cpu;
+					if (i->level<l){
+						ri.level = l;
+						l = i->level;
+						for (y=0;y<nthreads;y++){
+							if (!inlevel[y]){
+								ri.cpu = y;
+								ris->additem(x,&ri);
+								ris->next();
+								x++;
+							};
 						};
+						mtmemzero(inlevel,sizeof(inlevel));
 					};
-					mtmemzero(inlevel,sizeof(inlevel));
+					inlevel[ccpu] = true;
+					x++;
 				};
-				inlevel[ccpu] = true;
-				x++;
-			};
-			ri.level = l;
-			for (y=0;y<nthreads;y++){
-				if (!inlevel[y]){
-					ri.cpu = y;
-					ris->push(&ri);
+				ri.level = l;
+				for (y=0;y<nthreads;y++){
+					if (!inlevel[y]){
+						ri.cpu = y;
+						ris->push(&ri);
+					};
 				};
 			};
-		};
-#endif
-#ifdef _DEBUG
-		if (log) printinstructions(ris);
-#endif
+#		endif
+#		ifdef _DEBUG
+			if (log) printinstructions(ris);
+#		endif
 		tmpbuf->clear(true);
 		nodes->clear(true,delitem);
 		si->arraydelete(nodes);
 		FLOG1("%d bytes allocated for buffers."NL,total);
 		LOGD("%s - [Objects] Route compiled."NL);
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	lock(MTOL_LOCK,false);
 	LEAVE();
 }

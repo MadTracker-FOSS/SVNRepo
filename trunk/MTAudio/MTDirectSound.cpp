@@ -5,13 +5,16 @@
 //		Platforms:	Win32
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
+#ifdef _WIN32
 #include <stdio.h>
 #include "MTDirectSound.h"
 #include "MTAudio1.h"
-#include "../Headers/MTXGUI.h"
+#include "MTXGUI.h"
 //---------------------------------------------------------------------------
 MTGUIInterface *gi;
 HMODULE hdsound;
@@ -20,7 +23,7 @@ HRESULT (WINAPI *dsenum)(LPDSENUMCALLBACK,LPVOID);
 DSDevice *dsdev[MAX_AUDIODEVICES];
 int ndsdev;
 //---------------------------------------------------------------------------
-int __stdcall dsenumproc(GUID *guid,const char *desc,const char *module,void*)
+int WINAPI dsenumproc(GUID *guid,const char *desc,const char *module,void*)
 {
 	IDirectSound *ds = 0;
 	
@@ -36,9 +39,7 @@ int __stdcall dsenumproc(GUID *guid,const char *desc,const char *module,void*)
 		memcpy(cdev.guid,guid,sizeof(GUID));
 	};
 	if (dscreate(guid,&ds,0)==0){
-		LOG("[Audio] Found device (DS): ");
-		LOG(cdev.name);
-		LOG(NL);
+		FLOG1("[Audio] Found device (DS): %s"NL,cdev.name);
 		ds->Release();
 		return 1;
 	};
@@ -228,21 +229,21 @@ MTAudioDeviceManager()
 	gi = (MTGUIInterface*)mtinterface->getinterface(guitype);
 	hdsound = LoadLibrary("DSOUND.DLL");
 	if (hdsound!=0){
-#ifdef _DEBUG
-		int infosize,fixedsize;
-		void *info;
-		VS_FIXEDFILEINFO *fixed;
+#		ifdef _DEBUG
+			int infosize,fixedsize;
+			void *info;
+			VS_FIXEDFILEINFO *fixed;
 
-		infosize = GetFileVersionInfoSize("DSOUND.DLL",(LPDWORD)&x);
-		if (infosize>0){
-			info = si->memalloc(infosize,MTM_ZERO);
-			*(short*)info = infosize;
-			if ((GetFileVersionInfo("DSOUND.DLL",0,infosize,info)) && (VerQueryValue(info,"\\",(void**)&fixed,(unsigned int*)&fixedsize))){
-				FLOG4("[Display] DirectSound version %d.%d.%d.%d"NL,fixed->dwFileVersionMS>>16,fixed->dwFileVersionMS & 0xFFFF,fixed->dwFileVersionLS>>16,fixed->dwFileVersionMS & 0xFFFF);
+			infosize = GetFileVersionInfoSize("DSOUND.DLL",(LPDWORD)&x);
+			if (infosize>0){
+				info = si->memalloc(infosize,MTM_ZERO);
+				*(short*)info = infosize;
+				if ((GetFileVersionInfo("DSOUND.DLL",0,infosize,info)) && (VerQueryValue(info,"\\",(void**)&fixed,(unsigned int*)&fixedsize))){
+					FLOG4("[Audio] DirectSound version %d.%d.%d.%d"NL,fixed->dwFileVersionMS>>16,fixed->dwFileVersionMS & 0xFFFF,fixed->dwFileVersionLS>>16,fixed->dwFileVersionMS & 0xFFFF);
+				};
+				si->memfree(info);
 			};
-			si->memfree(info);
-		};
-#endif
+#		endif
 		*(int*)&dscreate = (int)GetProcAddress(hdsound,"DirectSoundCreate");
 		*(int*)&dsenum = (int)GetProcAddress(hdsound,"DirectSoundEnumerateA");
 		if ((dscreate) && (dsenum)) dsenum(dsenumproc,0);
@@ -280,3 +281,4 @@ void MTDirectSoundDeviceManager::deldevice(MTAudioDevice *device)
 	delete (MTDirectSoundDevice*)device;
 }
 //---------------------------------------------------------------------------
+#endif

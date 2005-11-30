@@ -25,14 +25,14 @@ InstrumentType::InstrumentType()
 	description = "Instrument";
 }
 
-MTObject* InstrumentType::create(MTModule *parent,int id,void *param)
+MTObject* InstrumentType::create(MTObject *parent,mt_int32 id,void *param)
 {
 	return new MTInstrument(parent,id);
 }
 //---------------------------------------------------------------------------
 // MTInstrument functions
 //---------------------------------------------------------------------------
-MTInstrument::MTInstrument(MTModule *parent,int i):
+MTInstrument::MTInstrument(MTObject *parent,mt_int32 i):
 Instrument(parent,MTO_MTINSTRUMENT,i),
 gvol(1.0),
 gpanx(0.0),
@@ -56,7 +56,9 @@ decay(0)
 	for (x=0;x<96;x++) range[1][x] = 128;
 	mtmemzero(&env,sizeof(env));
 	mtmemzero(&grp,sizeof(grp));
-	res->loadstringf(MTT_instrument,name,255,id);
+#	ifdef MTSYSTEM_RESOURCES
+		res->loadstringf(MTT_instrument,name,255,id);
+#	endif
 }
 
 MTInstrument::~MTInstrument()
@@ -339,7 +341,7 @@ void MTInstrumentInstance::processevents()
 						osc[0]->setpanning(pan_mul(gpanx,tpanx),pan_mul(gpany,tpany),pan_mul(gpanz,tpanz),l,0);
 						break;
 					case 3:
-						if (filter) filter->setparam(0,ccutoff*cins.cutoff,l);
+						if (filter) filter->setparam(0,(int)(ccutoff*cins.cutoff),l);
 						break;
 					};
 				};

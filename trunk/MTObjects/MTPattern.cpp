@@ -29,7 +29,7 @@ Pattern::~Pattern()
 	int x,y;
 	
 	if (parent){
-		MTModule &cmodule = *parent;
+		MTModule &cmodule = *module;
 		cmodule.patt->a[id] = 0;
 		for (y=0;y<MAX_LAYERS;y++){
 			for (x=0;x<cmodule.nsequ[y];x++){
@@ -54,7 +54,7 @@ PatternType::~PatternType()
 	si->arraydelete(columns);
 }
 
-MTObject* PatternType::create(MTModule *parent,int id,void *param)
+MTObject* PatternType::create(MTObject *parent,mt_int32 id,void *param)
 {
 	return new MTPattern(parent,id);
 }
@@ -88,10 +88,14 @@ Column* PatternType::gethandler(const char *desc)
 
 int PatternType::getksgroup()
 {
-	return peksgroup;
+#	ifdef MTOBJECTS_EDITORS
+		return peksgroup;
+#	else
+		return 0;
+#	endif
 }
 //---------------------------------------------------------------------------
-MTPattern::MTPattern(MTModule *parent,int i):
+MTPattern::MTPattern(MTObject *parent,mt_int32 i):
 Pattern(parent,MTO_MTPATTERN,i),
 lpb(4),
 ticks(6),
@@ -109,32 +113,34 @@ linesize(0)
 	static char *columns[] = {"Note","Volume","Panning","Effect"};
 
 	mtmemzero(tracks,sizeof(tracks));
-	if ((conf = (MTConfigFile*)mtinterface->getconf("Global",true))){
-		if (conf->setsection("MTObjects")){
-			conf->getparameter("PatternTracks",&ntracks,MTCT_UINTEGER,sizeof(ntracks));
-			conf->getparameter("PatternLines",&nlines,MTCT_UINTEGER,sizeof(nlines));
-			conf->getparameter("PatternLPB",&lpb,MTCT_UINTEGER,sizeof(lpb));
-			conf->getparameter("PatternTicks",&ticks,MTCT_UINTEGER,sizeof(ticks));
-			strcpy(parameter,"PatternColumn");
-			id = strchr(parameter,0);
-			for (x=0;x<MAX_PATT_COLS;x++){
-				sprintf(id,"%02X",x);
-				if (!conf->getparameter(parameter,value,MTCT_STRING,sizeof(value))) break;
-				c = patterntype->gethandler(value);
-				if (c){
-					config = true;
-					for (y=0;y<ntracks;y++){
-						tracks[y].cols[x].celloffset = tracks[y].colsize;
-						tracks[y].cols[x].handler = c;
-						tracks[y].ncolumns++;
-						tracks[y].colsize += c->nbytes;
-						linesize += c->nbytes;
+#	ifdef MTSYSTEM_CONFIG
+		if ((conf = (MTConfigFile*)mtinterface->getconf("Global",true))){
+			if (conf->setsection("MTObjects")){
+				conf->getparameter("PatternTracks",&ntracks,MTCT_UINTEGER,sizeof(ntracks));
+				conf->getparameter("PatternLines",&nlines,MTCT_UINTEGER,sizeof(nlines));
+				conf->getparameter("PatternLPB",&lpb,MTCT_UINTEGER,sizeof(lpb));
+				conf->getparameter("PatternTicks",&ticks,MTCT_UINTEGER,sizeof(ticks));
+				strcpy(parameter,"PatternColumn");
+				id = strchr(parameter,0);
+				for (x=0;x<MAX_PATT_COLS;x++){
+					sprintf(id,"%02X",x);
+					if (!conf->getparameter(parameter,value,MTCT_STRING,sizeof(value))) break;
+					c = patterntype->gethandler(value);
+					if (c){
+						config = true;
+						for (y=0;y<ntracks;y++){
+							tracks[y].cols[x].celloffset = tracks[y].colsize;
+							tracks[y].cols[x].handler = c;
+							tracks[y].ncolumns++;
+							tracks[y].colsize += c->nbytes;
+							linesize += c->nbytes;
+						};
 					};
 				};
 			};
+			mtinterface->releaseconf(conf);
 		};
-		mtinterface->releaseconf(conf);
-	};
+#	endif
 	if (!config){
 		for (x=0;x<sizeof(columns)/sizeof(char*);x++){
 			c = patterntype->gethandler(columns[x]);
@@ -150,7 +156,9 @@ linesize(0)
 		};
 	};
 	data = (unsigned char*)si->memalloc(linesize*nlines,MTM_ZERO);
-	res->loadstringf(MTT_pattern,name,255,i);
+#	ifdef MTSYSTEM_RESOURCES
+		res->loadstringf(MTT_pattern,name,255,i);
+#	endif
 	for (x=0;x<MAX_PATT_TRACKS;x++){
 		tracks[x].id = x;
 		tracks[x].on = true;

@@ -25,7 +25,7 @@ public:
 	float dry,wet;
 	EffectInstance *ei;
 
-	Effect(MTModule *parent,int type,int i);
+	Effect(MTObject *parent,mt_uint32 type,mt_int32 i);
 	virtual ~Effect();
 
 	int MTCT process(int ooffset,int ioffset,int count,bool &silence);
@@ -48,7 +48,7 @@ public:
 	float quality;
 
 	EffectInstance(Effect *p,int no,sample **o,int ni,sample **i,InstrumentInstance *caller){
-		module = p->parent; parent = p; ninputs = ni; noutputs = no; memcpy(inputs,i,sizeof(sample*)*ninputs); memcpy(outputs,o,sizeof(sample*)*noutputs); quality = p->quality;
+		module = p->module; parent = p; ninputs = ni; noutputs = no; memcpy(inputs,i,sizeof(sample*)*ninputs); memcpy(outputs,o,sizeof(sample*)*noutputs); quality = p->quality;
 	};
 	virtual ~EffectInstance(){	};
 

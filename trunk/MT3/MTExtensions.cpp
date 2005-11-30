@@ -11,12 +11,13 @@
 //
 //---------------------------------------------------------------------------
 #ifdef _WIN32
-	#include <windows.h>
+#	include <windows.h>
 #else
-	#include <dlfcn.h>
-	#include <errno.h>
-	#include <sys/stat.h>
-	#include <dirent.h>
+#	include <dlfcn.h>
+#	include <errno.h>
+#	include <sys/stat.h>
+#	include <dirent.h>
+#	include <unistd.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -186,7 +187,7 @@ bool MT3Interface::addchannel()
 	InstrumentInstance *c[16];
 	
 	ENTER("MT3Interface::addchannel");
-	MTTRY{
+	MTTRY
 		if (output) output->lock->lock();
 		totchan = 0;
 		tot = 0.0;
@@ -218,10 +219,9 @@ bool MT3Interface::addchannel()
 			tot -= cpupchan;
 			if (++ndel==2) break;
 		};
-	}
-	MTCATCH{
+	MTCATCH
 		mc = 0;
-	};
+	MTEND
 	if (output) output->lock->unlock();
 	LEAVE();
 	return (mc>=0);
@@ -234,51 +234,51 @@ void MT3Interface::notify(void *object,int notify,int param)
 	MTWindow *window;
 	
 	FENTER3("MT3Interface::notify(%.8X,%d,%d)",object,notify,param);
-#if defined(_DEBUG) && defined(_DEBUG_NOTIFY)
-	char buffer[256],action[32],type[32];
-	switch (cobject.objecttype & MTO_TYPEMASK){
-	case MTO_MODULE:
-		strcpy(type,"module");
-		break;
-	case MTO_AUTOMATION:
-		strcpy(type,"automation");
-		break;
-	case MTO_PATTERN:
-		strcpy(type,"pattern");
-		break;
-	case MTO_INSTRUMENT:
-		strcpy(type,"instrument");
-		break;
-	case MTO_OSCILLATOR:
-		strcpy(type,"oscillator");
-		break;
-	case MTO_TRACK:
-		strcpy(type,"track");
-		break;
-	};
-	switch (notify){
-	case MTN_NEW:
-		strcpy(action,"Creating");
-		break;
-	case MTN_DELETE:
-		strcpy(action,"Deleting");
-		break;
-	case MTN_MODIFY:
-		strcpy(action,"Modifying");
-		break;
-	case MTN_LOCK:
-		strcpy(action,"Locking");
-		break;
-	case MTN_UNLOCK:
-		strcpy(action,"Unlocking");
-		break;
-	case MTN_RENAME:
-		strcpy(action,"Renaming");
-		break;
-	};
-	sprintf(buffer,"%%s - [Notify] %s %s #%d %s"NL,action,type,cobject.id,cobject.name);
-	LOGD(buffer);
-#endif
+#	if defined(_DEBUG) && defined(_DEBUG_NOTIFY)
+		char buffer[256],action[32],type[32];
+		switch (cobject.objecttype & MTO_TYPEMASK){
+		case MTO_MODULE:
+			strcpy(type,"module");
+			break;
+		case MTO_AUTOMATION:
+			strcpy(type,"automation");
+			break;
+		case MTO_PATTERN:
+			strcpy(type,"pattern");
+			break;
+		case MTO_INSTRUMENT:
+			strcpy(type,"instrument");
+			break;
+		case MTO_OSCILLATOR:
+			strcpy(type,"oscillator");
+			break;
+		case MTO_TRACK:
+			strcpy(type,"track");
+			break;
+		};
+		switch (notify){
+		case MTN_NEW:
+			strcpy(action,"Creating");
+			break;
+		case MTN_DELETE:
+			strcpy(action,"Deleting");
+			break;
+		case MTN_MODIFY:
+			strcpy(action,"Modifying");
+			break;
+		case MTN_LOCK:
+			strcpy(action,"Locking");
+			break;
+		case MTN_UNLOCK:
+			strcpy(action,"Unlocking");
+			break;
+		case MTN_RENAME:
+			strcpy(action,"Renaming");
+			break;
+		};
+		sprintf(buffer,"%%s - [Notify] %s %s #%d %s"NL,action,type,cobject.id,cobject.name);
+		LOGD(buffer);
+#	endif
 	switch (notify){
 	case MTN_DELETE:
 		window = 0;
@@ -324,7 +324,7 @@ bool MT3Interface::editobject(void *object,bool newwindow)
 	int type;
 	bool created = false;
 
-	if (!object) return false;
+	if ((!object) || (!gi)) return false;
 	FENTER2("MT3Interface::editobject(%.8X,%d)",object,newwindow);
 	switch (cobject.objecttype & MTO_TYPEMASK){
 	case MTO_MODULE:
@@ -410,7 +410,7 @@ void* MT3Interface::getconf(char *name,bool user)
 		cconf = (_MTConf*)confs->getitem(buf);
 		if (cconf){
 			if (si->sync_inc(&cconf->refcount)<=0){
-				LOGD("%s - [System] Info: Synchronization trigger 1 in getconf()"NL);
+				LOGD("%s - [MT3] INFO: Synchronization trigger 1 in getconf()"NL);
 				si->sync_dec(&cconf->refcount);
 				cconf = 0;
 			};
@@ -423,7 +423,7 @@ void* MT3Interface::getconf(char *name,bool user)
 					confs->delitemfromid(confs->getitemid(econf),true);
 				}
 				else{
-					LOGD("%s - [System] INFO: Synchronization trigger 2 in getconf()"NL);
+					LOGD("%s - [MT3] INFO: Synchronization trigger 2 in getconf()"NL);
 					si->sync_dec(&econf->refcount);
 				};
 			};
@@ -433,10 +433,14 @@ void* MT3Interface::getconf(char *name,bool user)
 		return si->configopen(buf);
 	};
 	if (cconf==0){
-		cconf = mtnew(_MTConf);
-		cconf->refcount = 1;
-		cconf->conf = si->configopen(buf);
-		confs->additem(buf,cconf);
+		MTConfigFile *conf = si->configopen(buf);
+		if (conf){
+			cconf = mtnew(_MTConf);
+			cconf->refcount = 1;
+			cconf->conf = conf;
+			confs->additem(buf,cconf);
+		}
+		else return 0;
 	};
 	cconf->lastuse = si->syscounter();
 	return cconf->conf;
@@ -547,18 +551,26 @@ void* MT3Interface::getconsole()
 
 int MT3Interface::processinput(const char *input)
 {
-	char *e;
+	char *param;
 	char command[256];
 
 	mtmemzero(command,sizeof(command));
 	strncpy(command,input,sizeof(command)-1);
-	e = strchr(command,' ');
-	if (!e) return 0;
-	*e = 0;
+	param = strchr(command,' ');
+	if (param){
+		*param++ = 0;
+	};
 	if ((stricmp(command,"open")==0) || (stricmp(command,"load")==0)){
+		if (param) loadmodule(param);
 		return 1;
 	}
 	else if ((stricmp(command,"exit")==0) || (stricmp(command,"quit")==0)){
+#		ifdef _WIN32
+			PostQuitMessage(0);
+#		else
+			extern bool running;
+			running = false;
+#		endif
 		return 1;
 	}
 	else{
@@ -588,17 +600,17 @@ bool loadExtension(const char *file)
 	MTXInterfaces *xis;
 	int x;
 	
-	#ifdef _WIN32
+#	ifdef _WIN32
 		HINSTANCE hi = LoadLibrary(file);
-	#else
+#	else
 		void *hi = dlopen(file,RTLD_LAZY);
-	#endif
+#	endif
 	if (hi){
-		#ifdef _WIN32
+#		ifdef _WIN32
 			mtxmain = (MTXMainCall*)GetProcAddress(hi,"MTXMain");
-		#else
+#		else
 			mtxmain = (MTXMainCall*)dlsym(hi,"MTXMain");
-		#endif
+#		endif
 		if (mtxmain){
 			MTExtension *cext = addextension();
 			cext->library = (void*)hi;
@@ -640,28 +652,28 @@ bool loadExtension(const char *file)
 		}
 		else{
 			char buf[1024];
-			#ifdef _WIN32
+#			ifdef _WIN32
 				sprintf(buf,"Cannot initialize %s!"NL"Error %d",file,GetLastError());
 				FreeLibrary(hi);
 				MessageBox(0,buf,"Error",MB_ICONERROR|MB_OK);
-			#else
+#			else
 				sprintf(buf,"Cannot initialize %s!"NL"%s",file,dlerror());
 				dlclose(hi);
 				fprintf(stderr,buf);
 				fprintf(stderr,NL);
-			#endif
+#			endif
 		};
 	}
 	else{
 		char buf[1024];
-		#ifdef _WIN32
+#		ifdef _WIN32
 			sprintf(buf,"Cannot load %s!"NL"Error %d",file,GetLastError());
 			MessageBox(0,buf,"Error",MB_ICONERROR|MB_OK);
-		#else
+#		else
 			sprintf(buf,"Cannot load %s!"NL"%s",file,dlerror());
 			fprintf(stderr,buf);
 			fprintf(stderr,NL);
-		#endif
+#		endif
 	};
 	return false;
 }
@@ -682,7 +694,7 @@ void loadDirectory(const char *dir)
 	
 	strcpy(find,dir);
 	e = strchr(find,0);
-	#ifdef _WIN32
+#	ifdef _WIN32
 		strcat(find,"*.*");
 		fh = FindFirstFile(find,&fd);
 		ok = (fh!=INVALID_HANDLE_VALUE);
@@ -691,6 +703,7 @@ void loadDirectory(const char *dir)
 				strcpy(e,fd.cFileName);
 				if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
 					strcat(e,"\\");
+					SetCurrentDirectory(find);
 					loadDirectory(find);
 				}
 				else{
@@ -703,7 +716,7 @@ void loadDirectory(const char *dir)
 			ok = FindNextFile(fh,&fd)!=0;
 		};
 		FindClose(fh);
-	#else
+#	else
 		if (*(e-1)!='/'){
 			*e++ = '/';
 			*e = 0;
@@ -714,6 +727,7 @@ void loadDirectory(const char *dir)
 				strcpy(e,de->d_name);
 				stat(find,&s);
 				if ((s.st_mode & S_IFMT)==S_IFDIR){
+					chdir(find);
 					loadDirectory(find);
 				}
 				else{
@@ -723,7 +737,7 @@ void loadDirectory(const char *dir)
 			};
 		};
 		closedir(d);
-	#endif
+#	endif
 }
 
 void loadExtensions()
@@ -733,32 +747,41 @@ void loadExtensions()
 #endif
 
 	mi = new MT3Interface();
-	#ifdef _WIN32
+#	ifdef _WIN32
 		oldmode = SetErrorMode(SEM_NOOPENFILEERRORBOX|SEM_FAILCRITICALERRORS);
-	#endif
+		SetCurrentDirectory(prefs.syspath[SP_EXTENSIONS]);
+#	else
+		chdir(prefs.syspath[SP_EXTENSIONS]);
+#	endif
 	loadDirectory(prefs.syspath[SP_EXTENSIONS]);
-	#ifdef _WIN32
+#	ifdef _WIN32
 		SetErrorMode(oldmode);
-	#endif
+		SetCurrentDirectory(prefs.syspath[SP_ROOT]);
+#	else
+		chdir(prefs.syspath[SP_ROOT]);
+#	endif
 }
 
 void unloadExtensions()
 {
 	while (next>0){
-		#ifdef _WIN32
+#		ifdef _WIN32
 			FreeLibrary((HINSTANCE)ext[0]->library);
-		#else
+#		else
 			dlclose(ext[0]->library);
-		#endif
+#		endif
 		free(ext[0]->filename);
 		delextension(ext[0]);
 	};
-	delete mi;
+	if (mi){
+		delete mi;
+		mi = 0;
+	};
 }
 
 bool initExtensions()
 {
-	int x,y,displayok;
+	int x,y,displayok,audiook;
 	bool ok = true;
 	bool ok2;
 	bool ok3 = true;
@@ -768,7 +791,7 @@ bool initExtensions()
 	static const char *sfailed = {"FAILED --"NL};
 	
 	ENTER("initExtensions");
-	displayok = 0;
+	displayok = audiook = 0;
 	error = (char*)si->memalloc(1024);
 	strcpy(error,"The following extensions could not be initialized:"NL);
 	LOGD("Found extensions:"NL);
@@ -793,11 +816,10 @@ bool initExtensions()
 	
 	ok2 = false;
 	if (di){
-		MTTRY{
+		MTTRY
 			ok2 = di->init();
-		}
-		MTCATCH{
-		};
+		MTCATCH
+		MTEND
 	};
 	if (!ok2){
 		ok = false;
@@ -810,11 +832,10 @@ bool initExtensions()
 	
 	ok2 = false;
 	if (gi){
-		MTTRY{
+		MTTRY
 			ok2 = gi->init();
-		}
-		MTCATCH{
-		};
+		MTCATCH
+		MTEND
 	};
 	if (!ok2){
 		ok = false;
@@ -826,28 +847,32 @@ bool initExtensions()
 	LOG((ok2)?sok:sfailed);
 
 	if ((displayok!=2) || (!initInterface())){
+		displayok = 0;
 		LOGD("%s - [MT3] ERROR: Cannot initialize the interface!"NL);
-		si->dialog("Cannot initialize the interface!","MadTracker",MTD_OK,MTD_ERROR,0);
-		if ((!ok) || (!ok3)){
-			strcat(error,"(*) = Required extensions"NL);
-			if (required) strcat(error,"One or more required extensions could not be found or initialized!"NL"You should re-install MadTracker.");
-			si->dialog(error,"MadTracker",MTD_OK,(required)?(MTD_ERROR|MTD_MODAL):MTD_EXCLAMATION,0);
-		};
-		si->memfree(error);
-		LEAVE();
-		return false;
+#		ifdef _WIN32
+			si->dialog("Cannot initialize the interface!","MadTracker",MTD_OK,MTD_ERROR,0);
+			if ((!ok) || (!ok3)){
+				strcat(error,"(*) = Required extensions"NL);
+				if (required) strcat(error,"One or more required extensions could not be found or initialized!"NL"You should re-install MadTracker.");
+				si->dialog(error,"MadTracker",MTD_OK,(required)?(MTD_ERROR|MTD_MODAL):MTD_EXCLAMATION,0);
+			};
+			si->memfree(error);
+			LEAVE();
+			return false;
+#		endif
 	};
-	ok &= startInterface();
+	if (displayok==2) ok &= startInterface();
 
-	if (outmsg) goto start;
+#	ifdef _WIN32
+		if (exitasap) goto start;
+#	endif
 
 	ok2 = false;
 	if (oi){
-		MTTRY{
+		MTTRY
 			ok2 = oi->init();
-		}
-		MTCATCH{
-		};
+		MTCATCH
+		MTEND
 	};
 	if (!ok2){
 		ok = false;
@@ -859,33 +884,33 @@ bool initExtensions()
 	
 	ok2 = false;
 	if (ai){
-		MTTRY{
+		MTTRY
 			ok2 = ai->init();
-		}
-		MTCATCH{
-		};
+		MTCATCH
+		MTEND
 	};
 	if (!ok2){
 		strcat(error,"MTXAudio"NL);
-	};
+	}
+	else audiook++;
 	LOG("-- Audio ");
 	LOG((ok2)?sok:sfailed);
 	
 	ok2 = false;
 	if (ai){
-		MTTRY{
+		MTTRY
 			ok2 = dspi->init();
-		}
-		MTCATCH{
-		};
+		MTCATCH
+		MTEND
 	};
 	if (!ok2){
 		strcat(error,"MTXDSP"NL);
-	};
+	}
+	else audiook++;
 	LOG("-- DSP ");
 	LOG((ok2)?sok:sfailed);
 	
-	if ((ok) && (ai)){
+	if (audiook==2){
 		output = ai->getoutput();
 		ai->activatedevices();
 	};
@@ -897,11 +922,10 @@ bool initExtensions()
 		if (!cext.system){
 			for (y=0;y<cext.i->ninterfaces;y++){
 				ok2 = false;
-				MTTRY{
+				MTTRY
 					ok2 = cext.i->interfaces[y]->init();
-				}
-				MTCATCH{
-				};
+				MTCATCH
+				MTEND
 				if (!ok2){
 					ok3 = false;
 					e = strrchr(cext.filename,'\\');
@@ -917,9 +941,9 @@ bool initExtensions()
 			};
 		};
 	};
-
+#ifdef _WIN32
 start:
-	
+#endif
 	if ((!ok) || (!ok3)){
 		strcat(error,"(*) = Required extensions"NL);
 		if (required) strcat(error,"One or more required extensions could not be found or initialized!"NL"You should re-install MadTracker.");
@@ -941,12 +965,11 @@ bool startExtensions()
 		for (y=0;y<cext.i->ninterfaces;y++){
 			if ((cext.i->interfaces[y]->status & MTX_INITIALIZED)==0) continue;
 			if (cext.i->interfaces[y]==gi) continue;
-			MTTRY{
+			MTTRY
 				cext.i->interfaces[y]->start();
-			}
-			MTCATCH{
+			MTCATCH
 				FLOGD1("%s - ERROR: Exception while starting '%s'!"NL,cext.i->interfaces[y]->name);
-			};
+			MTEND
 		};
 	};
 
@@ -972,14 +995,13 @@ void stopExtensions()
 		for (y=cext.i->ninterfaces-1;y>=0;y--){
 			MTXInterface *ci = cext.i->interfaces[y];
 			if ((ci==gi) || (ci==si)) continue;
-			MTTRY{
+			MTTRY
 				ci->stop();
-			}
-			MTCATCH{
+			MTCATCH
 				LOGD("%s - ERROR: Exception while stopping '");
 				LOG(cext.i->interfaces[y]->name);
 				LOG("'!"NL);
-			};
+			MTEND
 		};
 	};
 	LOGD("%s - Stopping interface..."NL);
@@ -997,51 +1019,45 @@ void uninitExtensions()
 		MTExtension &cext = *ext[x];
 		if (!cext.system){
 			for (y=cext.i->ninterfaces-1;y>=0;y--){
-				MTTRY{
+				MTTRY
 					if (cext.i->interfaces[y]->status & MTX_INITIALIZED){
 						cext.i->interfaces[y]->uninit();
 					};
-				}
-				MTCATCH{
+				MTCATCH
 					LOGD("%s - ERROR: Exception while uninitializing '");
 					LOG(cext.i->interfaces[y]->name);
 					LOG("'!"NL);
-				};
+				MTEND
 			};
 		};
 	};
-	MTTRY{
+	MTTRY
 		if ((dspi) && (dspi->status & MTX_INITIALIZED)) dspi->uninit();
-	}
-	MTCATCH{
+	MTCATCH
 		LOGD("%s - ERROR: Exception while uninitializing MTDSP!"NL);
-	};
-	MTTRY{
+	MTEND
+	MTTRY
 		if ((ai) && (ai->status & MTX_INITIALIZED)) ai->uninit();
-	}
-	MTCATCH{
+	MTCATCH
 		LOGD("%s - ERROR: Exception while uninitializing MTAudio!"NL);
-	};
+	MTEND
 	LOGD("%s - Uninitializing interface..."NL);
 	uninitInterface();
-	MTTRY{
+	MTTRY
 		if ((gi) && (gi->status & MTX_INITIALIZED)) gi->uninit();
-	}
-	MTCATCH{
+	MTCATCH
 		LOGD("%s - ERROR: Exception while uninitializing MTGUI!"NL);
-	};
-	MTTRY{
+	MTEND
+	MTTRY
 		if ((di) && (di->status & MTX_INITIALIZED)) di->uninit();
-	}
-	MTCATCH{
+	MTCATCH
 		LOGD("%s - ERROR: Exception while uninitializing MTDisplay!"NL);
-	};
-	MTTRY{
+	MTEND
+	MTTRY
 		if ((oi) && (oi->status & MTX_INITIALIZED)) oi->uninit();
-	}
-	MTCATCH{
+	MTCATCH
 		LOGD("%s - ERROR: Exception while uninitializing MTObjects!"NL);
-	};
+	MTEND
 	LEAVE();
 }
 
@@ -1051,11 +1067,11 @@ bool initSystem()
 		if (si) return si->init();
 	}
 	catch(...){
-		#ifdef _WIN32
+#		ifdef _WIN32
 			MessageBox(0,"Exception while initializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
-		#else
+#		else
 			fprintf(stderr,"Exception while initializing MTSystem!"NL);
-		#endif
+#		endif
 	};
 	return false;
 }
@@ -1066,11 +1082,11 @@ void uninitSystem()
 		if ((si) && (si->status & MTX_INITIALIZED)) si->uninit();
 	}
 	catch(...){
-		#ifdef _WIN32
+#		ifdef _WIN32
 			MessageBox(0,"Exception while uninitializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
-		#else
+#		else
 			fprintf(stderr,"Exception while uninitializing MTSystem!"NL);
-		#endif
+#		endif
 	};
 }
 //---------------------------------------------------------------------------

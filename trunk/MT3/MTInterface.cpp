@@ -11,10 +11,10 @@
 //
 //---------------------------------------------------------------------------
 #ifdef _WIN32
-	#ifdef _DEBUG
-		#include <windows.h>
-		#include <commdlg.h>
-	#endif
+#	ifdef _DEBUG
+#		include <windows.h>
+#		include <commdlg.h>
+#	endif
 #endif
 #include "MTInterface.h"
 #include "MTExtensions.h"
@@ -71,9 +71,9 @@ void MTCT designmode(MTShortcut*,MTControl*,MTUndo*)
 #ifdef _DEBUG
 void MTCT openresources(MTShortcut *s,MTControl *c,MTUndo*)
 {
-	#ifdef __linux
+#	ifdef __linux
 		return;
-	#else
+#	else
 		MTFile *f;
 		MTResources *res;
 		MTWindow *mtwnd;
@@ -117,14 +117,14 @@ void MTCT openresources(MTShortcut *s,MTControl *c,MTUndo*)
 		};
 		si->memfree(open.lpstrFile);
 		LEAVE();
-	#endif
+#	endif
 }
 
 void MTCT openskin(MTShortcut *s,MTControl *c,MTUndo*)
 {
-	#ifdef __linux
+#	ifdef __linux
 		return;
-	#else
+#	else
 		MTFile *sf;
 		MTResources *res;
 		OPENFILENAME open;
@@ -155,7 +155,7 @@ void MTCT openskin(MTShortcut *s,MTControl *c,MTUndo*)
 		};
 		si->memfree(open.lpstrFile);
 		LEAVE();
-	#endif
+#	endif
 }
 
 int MTCT loadprocess(MTThread *thread,void *param)
@@ -174,17 +174,23 @@ void MTCT loadprogress(MTProcess *process,void *param,float p)
 	bool locked = false;
 
 	FENTER3("loadprogress(%.8X,%.8X,%f)",process,param,p);
-	if (p<0){
+	if (p==-2.0){
+		LOGD("%s - [MT3] ERROR: An error occured while loading the module!"NL);
+	}
+	else if (p==-1.0){
 		MTModule *m = (MTModule*)param;
 		m->lock(MTOL_LOCK,false);
 		if (process->result<0){
-			oi->deleteobject(m);
+			MTTRY
+				oi->deleteobject(m);
+			MTCATCH
+			MTEND
 			si->memfree(process->data);
 			LEAVE();
 			return;
 		};
-		setmodule(m);
-		MTTRY{
+		if (gi) setmodule(m);
+		MTTRY
 			if (output){
 				output->lock->lock();
 				locked = true;
@@ -200,9 +206,8 @@ void MTCT loadprogress(MTProcess *process,void *param,float p)
 					oi->deleteobject(oldmodule);
 				};
 			};
-		}
-		MTCATCH{
-		};
+		MTCATCH
+		MTEND
 		if (locked) output->lock->unlock();
 		mi->editobject(m,false);
 		si->memfree(process->data);
@@ -217,15 +222,14 @@ void loadmodule(const char *filename)
 
 	if (!oi) return;
 	FENTER1("loadmodule(%s)",filename);
-	MTTRY{
+	MTTRY
 		if (output) output->lock->lock();
 		for (x=0;x<16;x++){
 			if (module[x]==0) break;
 		};
 		module[x] = (MTModule*)oi->newobject(MTO_MODULE,0,0,0,true);
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	if (output) output->lock->unlock();
 	file = (char*)si->memalloc(strlen(filename)+1);
 	strcpy(file,filename);
@@ -235,9 +239,9 @@ void loadmodule(const char *filename)
 
 void MTCT playmodule(MTShortcut *s,MTControl *c,MTUndo*)
 {
-	#ifdef __linux
+#	ifdef __linux
 		return;
-	#else
+#	else
 		OPENFILENAME open;
 		
 		if (!oi) return;
@@ -256,7 +260,7 @@ void MTCT playmodule(MTShortcut *s,MTControl *c,MTUndo*)
 		};
 		si->memfree(open.lpstrFile);
 		LEAVE();
-	#endif
+#	endif
 }
 
 void MTCT reset(MTShortcut*,MTControl*,MTUndo*)
@@ -278,9 +282,9 @@ void MTCT showall(MTShortcut *s,MTControl *c,MTUndo*)
 
 void MTCT setresolution(MTShortcut *s,MTControl *c,MTUndo*)
 {
-	#ifdef __linux
+#	ifdef __linux
 		return;
-	#else
+#	else
 		MTMenuItem *item = (MTMenuItem*)c;
 		static const int res[4][2] = {{640,480},{800,600},{1024,768},{1280,1024}};
 
@@ -288,27 +292,27 @@ void MTCT setresolution(MTShortcut *s,MTControl *c,MTUndo*)
 		if (IsZoomed((HWND)wnd)) ShowWindow((HWND)wnd,SW_RESTORE);
 		SetWindowPos((HWND)wnd,HWND_TOP,64,64,res[(int)item->data][0],res[(int)item->data][1],0);
 		LEAVE();
-	#endif
+#	endif
 }
 #endif
 
 bool MTCT msgproc(MTWinControl *window,MTCMessage &msg)
 {
-#ifdef _DEBUG
-	if (msg.msg==MTCM_KEYDOWN){
-		if (msg.repeat) return false;
-		if (msg.buttons & DB_CONTROL){
-			if ((msg.key>=KB_NUMPAD0) && (msg.key<=KB_NUMPAD9)){
-				di->setdevice(msg.key-KB_NUMPAD0);
+#	ifdef _DEBUG
+		if (msg.msg==MTCM_KEYDOWN){
+			if (msg.repeat) return false;
+			if (msg.buttons & DB_CONTROL){
+				if ((msg.key>=KB_NUMPAD0) && (msg.key<=KB_NUMPAD9)){
+					di->setdevice(msg.key-KB_NUMPAD0);
+					return true;
+				};
+			}
+			else if (msg.key==KB_F1){
+				si->dialog(help,"Help",MTD_OK,MTD_INFORMATION|MTD_MODAL,30000);
 				return true;
 			};
-		}
-		else if (msg.key==KB_F1){
-			si->dialog(help,"Help",MTD_OK,MTD_INFORMATION|MTD_MODAL,30000);
-			return true;
 		};
-	};
-#endif
+#	endif
 	if ((msg.msg==MTCM_BOUNDS) && (msg.ctrl==mtdsk)){
 		if (mtlogo){
 			mtlogo->setbounds((window->width-mtlogo->width)/2,(window->height-mtlogo->height)/2,mtlogo->width,mtlogo->height);
@@ -558,7 +562,7 @@ bool initInterface()
 // Initialize the skin
 	skin = gi->getskin();
 	sysimages = (MTImageList*)gi->getimagelist(0);
-	if (outmsg){
+	if (exitasap){
 		LEAVE();
 		return true;
 	};
@@ -601,62 +605,62 @@ bool initInterface()
 	};
 	gi->loadwindow(mtres,MTW_file,mtdsk);
 
-#ifdef _DEBUG
-	MTResources *res;
-	char *e;
-	int type,uid;
+#	ifdef _DEBUG
+		MTResources *res;
+		char *e;
+		int type,uid;
 
-	res = si->resfind("Debug.mtr",candesign);
-	if (res){
-		x = res->getnumresources();
-		while (--x>=0){
-			res->getresourceinfo(x,&type,&uid,&size);
-			switch (type){
-			case MTR_WINDOW:
-				gi->loadwindow(res,uid,mtdsk);
-				break;
-			case MTR_TEXT:
-				help = (char*)si->memalloc(size+1);
-				e = (char*)res->getresource(type,uid,&size);
-				if (e) strcpy(help,e);
-				res->releaseresource(e);
-				break;
+		res = si->resfind("Debug.mtr",candesign);
+		if (res){
+			x = res->getnumresources();
+			while (--x>=0){
+				res->getresourceinfo(x,&type,&uid,&size);
+				switch (type){
+				case MTR_WINDOW:
+					gi->loadwindow(res,uid,mtdsk);
+					break;
+				case MTR_TEXT:
+					help = (char*)si->memalloc(size+1);
+					e = (char*)res->getresource(type,uid,&size);
+					if (e) strcpy(help,e);
+					res->releaseresource(e);
+					break;
+				};
 			};
+			si->resclose(res);
 		};
-		si->resclose(res);
-	};
-	MTMenu &cmenu = *mtdsk->popup;
-	MTMenuItem *m_openres,*m_openskin,*m_playmod,*m_reset;
-	if (candesign) ((MTMenuItem*)cmenu.additem("Design Mode",-1,0,false,0))->command = designmode;
-	m_openres = (MTMenuItem*)cmenu.additem("Load Resources...",-1,0,false,0);
-	m_openskin = (MTMenuItem*)cmenu.additem("Load Skin...",-1,0,false,0);
-	m_playmod = (MTMenuItem*)cmenu.additem("Play a Module...",-1,0,false,0);
-	m_reset = (MTMenuItem*)cmenu.additem("Reset",-1,0,false,0);
-	m_openres->command = openresources;
-	m_openskin->command = openskin;
-	m_playmod->command = playmodule;
-	m_reset->command = reset;
-	s_openres.control = m_openres;
-	s_openskin.control = m_openskin;
-	s_playmod.control = m_playmod;
-	s_reset.control = m_reset;
-	m_openres->shortcut = &s_openres;
-	m_openskin->shortcut = &s_openskin;
-	m_playmod->shortcut = &s_playmod;
-	m_reset->shortcut = &s_reset;
-	((MTMenuItem*)cmenu.additem("Show All Windows",-1,0,false,0))->command = showall;
-	MTMenuItem &mmenu = *(MTMenuItem*)cmenu.additem("Resolution",-1,0,false,0);
-	MTMenu &menu = *(MTMenu*)gi->newcontrol(MTC_MENU,0,mtdsk,0,0,0,0,0);
-	menu.flags |= MTCF_DONTSAVE;
-	mmenu.submenu = &menu;
-	((MTMenuItem*)menu.additem("640x480",-1,0,false,0))->command = setresolution;
-	((MTMenuItem*)menu.additem("800x600",-1,0,false,(void*)1))->command = setresolution;
-	((MTMenuItem*)menu.additem("1024x768",-1,0,false,(void*)2))->command = setresolution;
-	gi->registershortcut(&s_openres);
-	gi->registershortcut(&s_openskin);
-	gi->registershortcut(&s_playmod);
-	gi->registershortcut(&s_reset);
-#endif
+		MTMenu &cmenu = *mtdsk->popup;
+		MTMenuItem *m_openres,*m_openskin,*m_playmod,*m_reset;
+		if (candesign) ((MTMenuItem*)cmenu.additem("Design Mode",-1,0,false,0))->command = designmode;
+		m_openres = (MTMenuItem*)cmenu.additem("Load Resources...",-1,0,false,0);
+		m_openskin = (MTMenuItem*)cmenu.additem("Load Skin...",-1,0,false,0);
+		m_playmod = (MTMenuItem*)cmenu.additem("Play a Module...",-1,0,false,0);
+		m_reset = (MTMenuItem*)cmenu.additem("Reset",-1,0,false,0);
+		m_openres->command = openresources;
+		m_openskin->command = openskin;
+		m_playmod->command = playmodule;
+		m_reset->command = reset;
+		s_openres.control = m_openres;
+		s_openskin.control = m_openskin;
+		s_playmod.control = m_playmod;
+		s_reset.control = m_reset;
+		m_openres->shortcut = &s_openres;
+		m_openskin->shortcut = &s_openskin;
+		m_playmod->shortcut = &s_playmod;
+		m_reset->shortcut = &s_reset;
+		((MTMenuItem*)cmenu.additem("Show All Windows",-1,0,false,0))->command = showall;
+		MTMenuItem &mmenu = *(MTMenuItem*)cmenu.additem("Resolution",-1,0,false,0);
+		MTMenu &menu = *(MTMenu*)gi->newcontrol(MTC_MENU,0,mtdsk,0,0,0,0,0);
+		menu.flags |= MTCF_DONTSAVE;
+		mmenu.submenu = &menu;
+		((MTMenuItem*)menu.additem("640x480",-1,0,false,0))->command = setresolution;
+		((MTMenuItem*)menu.additem("800x600",-1,0,false,(void*)1))->command = setresolution;
+		((MTMenuItem*)menu.additem("1024x768",-1,0,false,(void*)2))->command = setresolution;
+		gi->registershortcut(&s_openres);
+		gi->registershortcut(&s_openskin);
+		gi->registershortcut(&s_playmod);
+		gi->registershortcut(&s_reset);
+#	endif
 	if (candesign) gi->registershortcut(&s_design);
 	logotimer = si->timercreate(logotime,100,false,0,logoproc);
 
@@ -683,10 +687,10 @@ bool initInterface()
 void uninitInterface()
 {
 	ENTER("uninitInterface");
-#ifdef _DEBUG
-	si->memfree(help);
-	help = 0;
-#endif
+#	ifdef _DEBUG
+		si->memfree(help);
+		help = 0;
+#	endif
 	if (logotimer){
 		si->timerdelete(logotimer);
 		logotimer = 0;
@@ -776,31 +780,33 @@ void showInterface()
 	};
 	mtdsk->flags &= (~(MTCF_DONTDRAW|MTCF_DONTFLUSH));
 	mtdsk->draw(NORECT);
-	if (outmsg){
-		if (outmsg->seek(0,MTF_BEGIN)==0){
-			int l = outmsg->length();
-			if (l){
-				char *msg;
-				msg = (char*)si->memalloc(l+1,MTM_ZERO);
-				outmsg->read(msg,l);
-				si->dialog(msg,"MadTracker",MTD_OK,MTD_INFORMATION,0);
-				si->memfree(msg);
+#	ifdef _WIN32
+		if (outmsg){
+			if (outmsg->seek(0,MTF_BEGIN)==0){
+				int l = outmsg->length();
+				if (l){
+					char *msg;
+					msg = (char*)si->memalloc(l+1,MTM_ZERO);
+					outmsg->read(msg,l);
+					si->dialog(msg,"MadTracker",MTD_OK,MTD_INFORMATION,0);
+					si->memfree(msg);
+				};
 			};
-		};
-		si->fileclose(outmsg);
-		outmsg = 0;
-		#ifdef _WIN32
-			PostQuitMessage(0);
-		#endif
-	}
-	else{
-#ifdef _DEBUG
+			si->fileclose(outmsg);
+			outmsg = 0;
+			if (exitasap) PostQuitMessage(0);
+		}
+		else{
+#	endif
+#	ifdef _DEBUG
 		char file[256];
 		strcpy(file,prefs.syspath[SP_ROOT]);
 		strcat(file,"Debug.mt2");
 		loadmodule(file);
-#endif
-	};
+#	endif
+#	ifdef _WIN32
+		};
+#	endif
 	LEAVE();
 }
 //---------------------------------------------------------------------------

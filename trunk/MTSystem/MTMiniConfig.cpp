@@ -236,7 +236,7 @@ int MTMiniConfig::loadfromstream(MTFile *f,int flags)
 			}
 			else{
 				l += f->read(&cp->value,cp->size);
-#				ifdef BIG_ENDIAN
+#				if (BIG_ENDIAN==1234)
 					*(int*)cp->value = swap_dword(*(int*)cp->value);
 #				endif
 			};
@@ -285,7 +285,7 @@ int MTMiniConfig::savetostream(MTFile *f,int flags)
 				l += f->write(cp->value,cp->size);
 			}
 			else{
-#				ifdef BIG_ENDIAN
+#				if (BIG_ENDIAN==1234)
 					int _tmp = swap_dword(*(int*)cp->value);
 					l += f->write(&_tmp,cp->size);
 #				else

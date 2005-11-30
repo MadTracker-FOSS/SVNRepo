@@ -27,7 +27,7 @@ public:
 	bool MTCT filecopy(char *source,char *dest);
 	bool MTCT filerename(char *source,char *dest);
 	bool MTCT filedelete(char *url);
-	void MTCT filetype(char *url,char *type,int length);
+	void MTCT filetype(const char *url,char *type,int length);
 };
 
 class MTMemoryFile : public MTFile{

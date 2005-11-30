@@ -41,7 +41,7 @@ nitems(0),
 a(0),
 mallocby(allocby),
 na(0),
-is(itemsize)
+_is(itemsize)
 {
 	if (mallocby<=0) mallocby = 4;
 	countid = mtlocalalloc();
@@ -60,7 +60,7 @@ int MTArray::additem(int at,void *item)
 
 	cat = nitems;
 	nitems++;
-	if (is==0){
+	if (_is==0){
 		if (nitems>na){
 			while (nitems>na) na += mallocby;
 			if (a) a = (void**)mtmemrealloc(a,4*na);
@@ -76,20 +76,20 @@ int MTArray::additem(int at,void *item)
 	else{
 		if (nitems>na){
 			while (nitems>na) na += mallocby;
-			if (d) d = mtmemrealloc(d,is*na);
-			else d = mtmemalloc(is*na,MTM_ZERO);
+			if (d) d = mtmemrealloc(d,_is*na);
+			else d = mtmemalloc(_is*na,MTM_ZERO);
 		};
 		if ((at>=0) && (at<nitems-1)){
 			char *sp,*dp;
 			cat = at;
-			dp = (char*)d+(nitems-1)*is;
-			sp = dp-is;
+			dp = (char*)d+(nitems-1)*_is;
+			sp = dp-_is;
 			for (x=nitems-1;x>=cat+1;x--){
-				memcpy(dp,sp,is);
-				sp -= is;
-				dp -= is;
+				memcpy(dp,sp,_is);
+				sp -= _is;
+				dp -= _is;
 			};
-			memcpy((char*)d+cat*is,item,is);
+			memcpy((char*)d+cat*_is,item,_is);
 		};
 	};
 	return cat;
@@ -102,7 +102,7 @@ int MTArray::additems(int at,int count)
 
 	cat = nitems;
 	nitems += count;
-	if (is==0){
+	if (_is==0){
 		if (nitems>na){
 			while (nitems>na) na += mallocby;
 			if (a) a = (void**)mtmemrealloc(a,4*na);
@@ -117,20 +117,20 @@ int MTArray::additems(int at,int count)
 	else{
 		if (nitems>na){
 			while (nitems>na) na += mallocby;
-			if (d) d = mtmemrealloc(d,is*na);
-			else d = mtmemalloc(is*na,MTM_ZERO);
+			if (d) d = mtmemrealloc(d,_is*na);
+			else d = mtmemalloc(_is*na,MTM_ZERO);
 		};
 		if ((at>=0) && (at<nitems-count)){
 			char *sp,*dp;
 			cat = at;
-			dp = (char*)d+(nitems-1)*is;
-			sp = dp-count*is;
+			dp = (char*)d+(nitems-1)*_is;
+			sp = dp-count*_is;
 			for (x=nitems-1;x>=cat+count;x--){
-				memcpy(dp,sp,is);
-				sp -= is;
-				dp -= is;
+				memcpy(dp,sp,_is);
+				sp -= _is;
+				dp -= _is;
 			};
-			mtmemzero((char*)d+cat*is,count*is);
+			mtmemzero((char*)d+cat*_is,count*_is);
 		};
 	};
 	return cat;
@@ -141,7 +141,7 @@ void MTArray::delitems(int from,int count)
 	int x;
 
 	nitems -= count;
-	if (is==0){
+	if (_is==0){
 		for (x=from;x<nitems;x++) a[x] = a[x+count];
 		for (x=nitems;x<nitems+count;x++) a[x] = 0;
 		if (nitems<na-mallocby){
@@ -155,17 +155,17 @@ void MTArray::delitems(int from,int count)
 	}
 	else{
 		char *sp,*dp;
-		dp = (char*)d+from*is;
-		sp = dp+count*is;
+		dp = (char*)d+from*_is;
+		sp = dp+count*_is;
 		for (x=from;x<nitems;x++){
-			memcpy(dp,sp,is);
-			sp += is;
-			dp += is;
+			memcpy(dp,sp,_is);
+			sp += _is;
+			dp += _is;
 		};
-		mtmemzero((char*)d+nitems*is,count*is);
+		mtmemzero((char*)d+nitems*_is,count*_is);
 		if (nitems<na-mallocby){
 			while (nitems<na-mallocby) na -= mallocby;
-			if (na) d = mtmemrealloc(d,is*na);
+			if (na) d = mtmemrealloc(d,_is*na);
 			else{
 				mtmemfree(d);
 				d = 0;
@@ -176,8 +176,8 @@ void MTArray::delitems(int from,int count)
 
 int MTArray::setitem(int at,void *item)
 {
-	if ((is==0) || (at>=nitems)) return -1;
-	memcpy((char*)d+at*is,item,is);
+	if ((_is==0) || (at>=nitems)) return -1;
+	memcpy((char*)d+at*_is,item,_is);
 	return at;
 }
 
@@ -186,7 +186,7 @@ int MTArray::push(void *item)
 	int at;
 	
 	at = nitems++;
-	if (is==0){
+	if (_is==0){
 		if (nitems>na){
 			while (nitems>na) na += mallocby;
 			if (a) a = (void**)mtmemrealloc(a,4*na);
@@ -197,10 +197,10 @@ int MTArray::push(void *item)
 	else{
 		if (nitems>na){
 			while (nitems>na) na += mallocby;
-			if (d) d = mtmemrealloc(d,is*na);
-			else d = mtmemalloc(is*na,MTM_ZERO);
+			if (d) d = mtmemrealloc(d,_is*na);
+			else d = mtmemalloc(_is*na,MTM_ZERO);
 		};
-		memcpy((char*)d+at*is,item,is);
+		memcpy((char*)d+at*_is,item,_is);
 	};
 	return at;
 }
@@ -211,7 +211,7 @@ void* MTArray::pop()
 
 	if (nitems<1) return 0;
 	nitems--;
-	if (is==0){
+	if (_is==0){
 		item = a[nitems];
 		a[nitems] = 0;
 		if (nitems<na-mallocby){
@@ -224,11 +224,11 @@ void* MTArray::pop()
 		};
 	}
 	else{
-		item = (void*)((char*)d+nitems*is);
-		mtmemzero((char*)d+nitems*is,is);
+		item = (void*)((char*)d+nitems*_is);
+		mtmemzero((char*)d+nitems*_is,_is);
 		if (nitems<na-mallocby){
 			while (nitems<na-mallocby) na -= mallocby;
-			if (na) d = (void**)mtmemrealloc(d,is*na);
+			if (na) d = (void**)mtmemrealloc(d,_is*na);
 			else{
 				mtmemfree(d);
 				d = 0;
@@ -242,7 +242,7 @@ int MTArray::getitemid(void *item)
 {
 	int x;
 
-	if ((is>0) || (nitems<1)) return -1;
+	if ((_is>0) || (nitems<1)) return -1;
 	for (x=0;x<nitems;x++){
 		if (a[x]==item) return x;
 	};
@@ -253,7 +253,7 @@ void MTArray::remove(void *item)
 {
 	int x;
 
-	if ((is>0) || (nitems<1)) return;
+	if ((_is>0) || (nitems<1)) return;
 	for (x=0;x<nitems;x++){
 		if (a[x]==item){
 			for (;x<nitems-1;x++) a[x] = a[x+1];
@@ -280,7 +280,7 @@ void MTArray::clear(bool deldata,ItemProc proc,void *param)
 		if (proc){
 			for (x=0;x<nitems;x++) proc(a[x],param);
 		};
-		if ((!is) && (deldata)){
+		if ((!_is) && (deldata)){
 			for (x=0;x<nitems;x++) mtmemfree(a[x]);
 		};
 		mtmemfree(a);
@@ -300,8 +300,8 @@ void* MTArray::next()
 	int count = (int)mtlocalget(countid);
 	if (count>=nitems) return 0;
 	mtlocalset(countid,(void*)(count+1));
-	if (is==0) return a[count];
-	else return (char*)d+(count)*is;
+	if (_is==0) return a[count];
+	else return (char*)d+(count)*_is;
 }
 
 void MTArray::quicksort(int lo,int hi,SortProc proc)
@@ -348,37 +348,37 @@ void MTArray::quicksortf(int lo,int hi,SortProc proc)
 	static char t[4096];
 	static char t2[4096];
 
-	if (is>4096) return;
+	if (_is>4096) return;
 	if (lo<hi){
-		clo = (char*)d+lo*is;
-		chi = (char*)d+hi*is;
+		clo = (char*)d+lo*_is;
+		chi = (char*)d+hi*_is;
 		if (hi-lo==1){
 			if (proc(clo,chi)>0){
-				memcpy(t,clo,is);
-				memcpy(clo,chi,is);
-				memcpy(chi,t,is);
+				memcpy(t,clo,_is);
+				memcpy(clo,chi,_is);
+				memcpy(chi,t,_is);
 			};
 		}
 		else{
-			cpi = (char*)d+((lo+hi)>>1)*is;
-			memcpy(t,cpi,is);
-			memcpy(cpi,clo,is);
-			memcpy(clo,t,is);
+			cpi = (char*)d+((lo+hi)>>1)*_is;
+			memcpy(t,cpi,_is);
+			memcpy(cpi,clo,_is);
+			memcpy(clo,t,_is);
 			lo2 = lo+1;
 			hi2= hi;
 			do{
-				while ((lo2<hi2) && (proc((char*)d+lo2*is,t)<=0)) lo2++;
-				while (proc((char*)d+hi2*is,t)>0) hi2--;
-				clo2 = (char*)d+lo2*is;
-				chi2 = (char*)d+hi2*is;
+				while ((lo2<hi2) && (proc((char*)d+lo2*_is,t)<=0)) lo2++;
+				while (proc((char*)d+hi2*_is,t)>0) hi2--;
+				clo2 = (char*)d+lo2*_is;
+				chi2 = (char*)d+hi2*_is;
 				if (lo2<hi2){
-					memcpy(t2,clo2,is);
-					memcpy(clo2,chi2,is);
-					memcpy(chi2,t2,is);
+					memcpy(t2,clo2,_is);
+					memcpy(clo2,chi2,_is);
+					memcpy(chi2,t2,_is);
 				};
 			} while (lo2<hi2);
-			memcpy(clo,chi2,is);
-			memcpy(chi2,t,is);
+			memcpy(clo,chi2,_is);
+			memcpy(chi2,t,_is);
 			if (lo<hi2-1) quicksortf(lo,hi2-1,proc);
 			if (hi2+1<hi) quicksortf(hi2+1,hi,proc);
 		};
@@ -388,7 +388,7 @@ void MTArray::quicksortf(int lo,int hi,SortProc proc)
 void MTArray::sort(SortProc proc)
 {
 	if (nitems<2) return;
-	if (is==0) quicksort(0,nitems-1,proc);
+	if (_is==0) quicksort(0,nitems-1,proc);
 	else quicksortf(0,nitems-1,proc);
 }
 //---------------------------------------------------------------------------

@@ -20,11 +20,15 @@
 #include "MTXDisplay.h"
 #include "MTXGUI.h"
 #include "MTXControls.h"
-#include "MTInternet.h"
+#ifdef MTSYSTEM_INTERNET
+#	include "MTInternet.h"
+#endif
 #include "../../debug/Interface/MTSystemRES.h"
 #ifdef _WIN32
 #	include <shellapi.h>
 #	include <mmsystem.h>
+#	include <imagehlp.h>
+#	include <tlhelp32.h>
 #else
 #	include <setjmp.h>
 #	include <signal.h>
@@ -37,18 +41,35 @@
 static const char *sysname = {"MadTracker System Core"};
 static const int sysversion = 0x30000;
 static const MTXKey systemkey = {0,0,0,0};
-#ifdef MTSYSTEM_EXPORTS
-	MTXInterfaces i;
-	MTSystemInterface *si;
+#ifndef MTBUILTIN
+	#ifdef MTSYSTEM_EXPORTS
+		MTXInterfaces i;
+		MTSystemInterface *si;
+	#endif
+	MTInterface *mtinterface;
+	MTGUIInterface *gi;
+	MTDisplayInterface *di;
 #endif
-MTInterface *mtinterface;
-MTGUIInterface *gi;
-MTDisplayInterface *di;
-MTResources *sysres;
+#ifdef MTSYSTEM_RESOURCES
+	MTResources *sysres;
+#endif
 #ifdef _WIN32
 	OSVERSIONINFO osinfo;
 	SYSTEM_INFO sysinfo;
 	TIMECAPS timecaps;
+	DWORD mainthreadid;
+	HANDLE mainthreadh;
+	BOOL (WINAPI *MTSymCleanup)(HANDLE);
+	BOOL (WINAPI *MTSymGetSymFromAddr)(HANDLE,DWORD,LPDWORD,PIMAGEHLP_SYMBOL);
+	BOOL (WINAPI *MTStackWalk)(DWORD,HANDLE,HANDLE,LPSTACKFRAME,LPVOID,void*,void*,void*,void*);
+	BOOL (WINAPI *MTSymFunctionTableAccess)(HANDLE,DWORD);
+	BOOL (WINAPI *MTSymGetModuleBase)(HANDLE,DWORD);
+	BOOL (WINAPI *MTSymSetOptions)(DWORD);
+	BOOL (WINAPI *MTSymInitialize)(HANDLE,LPSTR,BOOL);
+	BOOL (WINAPI *MTSymLoadModule)(HANDLE,HANDLE,LPSTR,LPSTR,DWORD,DWORD);
+	HANDLE (WINAPI *MTCreateToolhelp32Snapshot)(DWORD,DWORD);
+	BOOL (WINAPI *MTModule32First)(HANDLE,LPMODULEENTRY32);
+	BOOL (WINAPI *MTModule32Next)(HANDLE,LPMODULEENTRY32);
 #else
 	struct timespec timerres;
 #endif
@@ -122,7 +143,7 @@ void startlog()
 		mtlog(si->platform);
 		mtlog(" ");
 		mtlog(si->build);
-		mtlog(NL"Processor:     ");
+		mtlog(NL"Processor(s):  ");
 		mtlog(si->processor);
 #		ifdef _WIN32
 			MEMORYSTATUS mem;
@@ -147,7 +168,7 @@ void startlog()
 			mtlog(mbuf);
 			mtlog(NL);			
 			mtlog("Capabilities:  Timer resolution: ");
-			sprintf(buf,"%d µsec"NL""NL,timerres.tv_nsec);
+			sprintf(buf,"%f msec"NL""NL,(double)timerres.tv_nsec/1000000);
 			mtlog(buf);
 #		endif
 	};
@@ -440,17 +461,72 @@ static struct{
 };
 char errorbuf[1024];
 
+void getmodule(void *addr,char *buf)
+{
+	MEMORY_BASIC_INFORMATION mbi;
+	char tmp[MAX_PATH+1];
+	char *e;
+
+	VirtualQuery(addr,&mbi,sizeof(mbi));
+	if ((&MTSymLoadModule) && (GetModuleFileName(HINSTANCE(mbi.AllocationBase),tmp,MAX_PATH)>0)){
+		e = strrchr(tmp,'\\');
+		if (!e) e = tmp;
+		else e++;
+		strcpy(buf,e);
+		MTSymLoadModule(GetCurrentProcess(),0,tmp,0,DWORD(mbi.AllocationBase),mbi.RegionSize);
+	}
+	else strcpy(buf,"<Unknown>");
+}
+
+void stackwalk(HANDLE hthread,CONTEXT *ctx)
+{
+	STACKFRAME sf;
+	int count = 0;
+	unsigned long so = 0;
+	IMAGEHLP_SYMBOL *sym;
+	char cmod[256];
+
+	mtmemzero(&sf,sizeof(sf));
+	sf.AddrPC.Offset = (long)ctx->Eip;
+	sf.AddrPC.Mode = AddrModeFlat;
+	sf.AddrStack.Offset = (long)ctx->Esp;
+	sf.AddrStack.Mode = AddrModeFlat;
+	sf.AddrFrame.Offset = (long)ctx->Ebp;
+	sf.AddrFrame.Mode = AddrModeFlat;
+	sym = (IMAGEHLP_SYMBOL*)mtmemalloc(sizeof(IMAGEHLP_SYMBOL)+1024);
+	while (MTStackWalk(IMAGE_FILE_MACHINE_I386,GetCurrentProcess(),hthread,&sf,ctx,0,MTSymFunctionTableAccess,MTSymGetModuleBase,0)){
+		mtmemzero(sym,sizeof(IMAGEHLP_SYMBOL));
+		sym->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL);
+		sym->MaxNameLength = 1024;
+		if (sf.AddrPC.Offset){
+			getmodule((void*)sf.AddrPC.Offset,cmod);
+			if (MTSymGetSymFromAddr(GetCurrentProcess(),sf.AddrPC.Offset,&so,sym)){
+				mtflog("  %08X: %16s %s + %d"NL,false,sf.AddrPC.Offset,cmod,sym->Name,so);
+			}
+			else{
+				mtflog("  %08X: %16s (No symbolic information)"NL,false,sf.AddrPC.Offset,cmod);
+			};
+		}
+		else{
+			mtflog("  (Error %d)"NL,false,GetLastError());
+		};
+		if (++count>=32) break;
+	};
+	mtmemfree(sym);
+}
+
 int WINAPI onexception(EXCEPTION_POINTERS *ep)
 {
 	static char *readwrite[2] = {"read","write"};
 
 	if (GetAsyncKeyState(VK_SHIFT)<0) return EXCEPTION_EXECUTE_HANDLER;
 	if (ep){
+		CONTEXT ctx,&c = *ep->ContextRecord;
 		int x;
-		CONTEXT &c = *ep->ContextRecord;
 		unsigned char *cip = (unsigned char*)c.Eip;
-		unsigned char *csp = (unsigned char*)c.Esp;
-		char *cecode,*cext,*e;
+		unsigned char *cbp = (unsigned char*)c.Ebp;
+		char *cecode;
+		char cext[256];
 		bool waslogging = logging;
 
 		if (!logging) startlog();
@@ -461,20 +537,8 @@ int WINAPI onexception(EXCEPTION_POINTERS *ep)
 				break;
 			};
 		};
-		strcpy(errorbuf,"%s - [EXCEPTION] %s at address %.8X");
-		if ((mtinterface) && ((cext = mtinterface->getextension((char*)ep->ExceptionRecord->ExceptionAddress)))){
-			e = strrchr(cext,'/');
-			if (!e) e = strrchr(cext,'\\');
-			if (e) cext = e+1;
-			strcat(errorbuf," in %s"NL);
-			mtflog(errorbuf,true,cecode,(char*)ep->ExceptionRecord->ExceptionAddress,cext);
-		}
-		else{
-			strcat(errorbuf,NL);
-			mtflog(errorbuf,true,cecode,(char*)ep->ExceptionRecord->ExceptionAddress);
-		};
-		strcpy(errorbuf,"Callstack:"NL"  %s"NL);
-		mtflog(errorbuf,false,mtgetcallstack());
+		getmodule(ep->ExceptionRecord->ExceptionAddress,cext);
+		mtflog("%s - [EXCEPTION] %s at address %.8X in %s"NL,true,cecode,(char*)ep->ExceptionRecord->ExceptionAddress,cext);
 		if ((x==0) && (ep->ExceptionRecord->NumberParameters>=2)){
 			mtflog("Cannot %s memory at address %.8X"NL""NL,false,readwrite[ep->ExceptionRecord->ExceptionInformation[0]],ep->ExceptionRecord->ExceptionInformation[1]);
 		};
@@ -489,27 +553,82 @@ int WINAPI onexception(EXCEPTION_POINTERS *ep)
 			cip += 8;
 			mtflog("  %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"NL""NL,false,cip[0],cip[1],cip[2],cip[3],cip[4],cip[5],cip[6],cip[7]);
 		};
-		mtlog("Stack dump:"NL);
-		mtdump(csp,64);
+		if (&MTSymInitialize){
+			mtlog("Stack trace:"NL);
+			MTSymSetOptions(SYMOPT_DEFERRED_LOADS|SYMOPT_LOAD_LINES|SYMOPT_CASE_INSENSITIVE|SYMOPT_UNDNAME);
+			if (MTSymInitialize(GetCurrentProcess(),0,true)){
+				MTSymSetOptions(SYMOPT_LOAD_LINES|SYMOPT_CASE_INSENSITIVE|SYMOPT_UNDNAME);
+				stackwalk(GetCurrentThread(),&c);
+				if (GetCurrentThreadId()!=mainthreadid){
+					SuspendThread(mainthreadh);
+					mtmemzero(&ctx,sizeof(ctx));
+					ctx.ContextFlags = CONTEXT_FULL;
+					if (GetThreadContext(mainthreadh,&ctx)){
+						ResumeThread(mainthreadh);
+						mtlog(NL"Main thread stack trace:"NL);
+						stackwalk(mainthreadh,&ctx);
+					}
+					else ResumeThread(mainthreadh);
+				};
+				MTSymCleanup(GetCurrentProcess());
+			}
+			else mtflog("  ERRO: SymInitialize failed with error %d!",false,GetLastError());
+			mtlog(NL);
+		};
+/*
+		if (&MTCreateToolhelp32Snapshot){
+			mtlog("Modules:"NL);
+			HANDLE hsnap = MTCreateToolhelp32Snapshot(TH32CS_SNAPMODULE,GetCurrentProcessId());
+			if (hsnap!=INVALID_HANDLE_VALUE){
+				MODULEENTRY32 minfo;
+				minfo.dwSize = sizeof(MODULEENTRY32);
+				if (MTModule32First(hsnap,&minfo)){
+					while (true){
+						if (minfo.dwSize==sizeof(MODULEENTRY32)){
+							mtflog("  %08x: %s"NL,false,minfo.modBaseAddr,minfo.szModule);
+						};
+						minfo.dwSize = sizeof(MODULEENTRY32);
+						if (!MTModule32Next(hsnap,&minfo)) break;
+					};
+				};
+				CloseHandle(hsnap);
+			}
+			else mtflog("  ERRO: CreateToolhelp32Snapshot failed with error %d!",false,GetLastError());
+			mtlog(NL);
+		};
+*/
 		if (!waslogging) stoplog();
 	};
 	return (debugged)?EXCEPTION_CONTINUE_SEARCH:EXCEPTION_EXECUTE_HANDLER;
 }
 #else
 #define SIG_MAX_FRAMES 64
-static char *_sigs[32] = {0,"SIGHUP","SIGINT","SIGQUIT","SIGILL","SIGTRAP","SIGABRT","SIGBUS","SIGFPE","SIGKILL","SIGUSR1","SIGSEGV","SIGUSR2","SIGPIPE","SIGALRM","SIGTERM","SIGSTKFLT","SIGCHLD","SIGCONT","SIGSTOP","SIGTSTP","SIGTTIN","SIGTTOU","SIGURG","SIGXCPU","SIGXFSZ","SIGVTALRM","SIGPROF","SIGWINCH","SIGIO","SIGPWR","SIGSYS"};
-static void *_rets[SIG_MAX_FRAMES];
 
 void onsignal(int sig,siginfo_t *info,void *context)
 {
+	static char *_sigs[32] = {0,"SIGHUP","SIGINT","SIGQUIT","SIGILL","SIGTRAP","SIGABRT","SIGBUS","SIGFPE","SIGKILL","SIGUSR1","SIGSEGV","SIGUSR2","SIGPIPE","SIGALRM","SIGTERM","SIGSTKFLT","SIGCHLD","SIGCONT","SIGSTOP","SIGTSTP","SIGTTIN","SIGTTOU","SIGURG","SIGXCPU","SIGXFSZ","SIGVTALRM","SIGPROF","SIGWINCH","SIGIO","SIGPWR","SIGSYS"};
+	static void *_rets[SIG_MAX_FRAMES];
+	static int nsignals;
+
 	int x,n;
 	char **symbols;
 	char *e;
 	mcontext_t &ctx = ((ucontext_t*)context)->uc_mcontext;
 	unsigned char *cip = (unsigned char*)ctx.gregs[REG_EIP];
+	bool btok = false;
 
+	if (++nsignals>10){
+		mtlog("ERROR: More than 10 signals have been sent. Exiting."NL);
+		sigaction(SIGSEGV,0,0);
+		sigaction(SIGBUS,0,0);
+		sigaction(SIGILL,0,0);
+		sigaction(SIGABRT,0,0);
+		sigaction(SIGFPE,0,0);
+		abort();
+		return;
+	};
 	n = backtrace(_rets,SIG_MAX_FRAMES);
-	mtflog("%s - [SIGNAL] Received signal %s with code %d at address %08X"NL"Callstack:"NL"  %s"NL""NL,true,_sigs[sig & 31],info->si_code,ctx.gregs[REG_EIP],mtgetcallstack());
+	mtflog("%s - [SIGNAL] Received signal %s with code %d at address %08X"NL"Callstack:"NL"  %s"NL""NL,true,_sigs[sig & 31],info->si_code,cip,mtgetcallstack());
 	mtflog("Context:"NL"  EAX: %.8X  ESI: %.8X"NL"\
   EBX: %.8X  EDI: %.8X"NL"\
   ECX: %.8X  ESP: %.8X"NL"\
@@ -527,6 +646,8 @@ void onsignal(int sig,siginfo_t *info,void *context)
 	symbols = backtrace_symbols(_rets,n);
 	if (symbols){
 		for (x=0;x<n;x++){
+			if (_rets[x]==cip) btok = true;
+			if (!btok) continue;
 			e = strrchr(symbols[x],'/');
 			if (e) e++;
 			else e = symbols[x];
@@ -536,6 +657,8 @@ void onsignal(int sig,siginfo_t *info,void *context)
 	}
 	else{
 		for (x=0;x<n;x++){
+			if (_rets[x]==cip) btok = true;
+			if (!btok) continue;
 			mtflog("  %08X"NL,false,_rets[x]);
 		};
 	};
@@ -621,7 +744,7 @@ void* mtmemalloc(int size,int flags)
 	
 #	ifdef _DEBUG
 		if (size>0x2000000){
-			LOGD("%s - [System] ERROR: Too big memory allocation!"NL);
+			FLOGD1("%s - [System] ERROR: Too big memory allocation! (%d)"NL,size);
 			return 0;
 		};
 #	endif
@@ -641,6 +764,7 @@ void* mtmemalloc(int size,int flags)
 			calloc.address = mem;
 			calloc.size = size;
 			calloc.caller = *((void**)(((char*)(&size))-4));
+			calloc.callstack = 0;
 #			ifdef MTSYSTEM_EXPORTS
 				cs = mtgetcallstack();
 				if ((cs) && (strlen(cs)>0)){
@@ -655,7 +779,7 @@ void* mtmemalloc(int size,int flags)
 			memlock.unlock();
 		}
 		else{
-			LOGD("%s - [System] ERROR: Cannot allocate memory!"NL);
+			FLOGD1("%s - [System] ERROR: Cannot allocate memory! (Requested size: %d)"NL,size);
 		};
 #	endif
 	return mem;
@@ -765,11 +889,11 @@ char mtgetchar()
 
 int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 {
+#ifdef MTSYSTEM_RESOURCES
+	char *e;
 	MTDesktop *dsk;
 	int x,y,l,t,h,r,size,cbutton;
-	char *e;
 	char buf[128];
-	
 	if ((sysres) && ((dsk = (MTDesktop*)di->getdefaultdesktop())) && ((dsk->flags & MTCF_HIDDEN)==0)){
 		MTFile *wf = sysres->getresourcefile(MTR_WINDOW,MTW_dialog,&size);
 		if (wf){
@@ -905,7 +1029,9 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 		return MTDR_NULL;
 	}
 	else if ((int)buttons>=256) return MTDR_NULL;
-	else{
+	else
+#endif
+	{
 #		ifdef _WIN32
 			int wflags = 0;
 			int res;
@@ -1009,6 +1135,7 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 	};
 }
 
+#ifdef MTSYSTEM_RESOURCES
 int mtresdialog(MTResources *res,int id,char *caption,char *buttons,int flags,int timeout,...)
 {
 	int ret;
@@ -1061,6 +1188,7 @@ int mtauthdialog(char *message,char *login,char *password)
 	};
 	return -1;
 }
+#endif
 
 void mtshowoserror(int error)
 {
@@ -1094,7 +1222,7 @@ int mtsync_inc(int *value)
 		int r;
 		asm ("\
 			movl %[value],%%ecx\n\
-			movl 1,%%eax\n\
+			movl $1,%%eax\n\
 			lock xaddl %%eax,(%%ecx)\n\
 			incl %%eax\n\
 			"
@@ -1155,14 +1283,24 @@ arraycreate(mtarraycreate),
 arraydelete(mtarraydelete),
 hashcreate(mthashcreate),
 hashdelete(mthashdelete),
-resfind(mtresfind),
-resopen(mtresopen),
-resclose(mtresclose),
-configfind(mtconfigfind),
-configopen(mtconfigopen),
-configclose(mtconfigclose),
-miniconfigcreate(mtminiconfigcreate),
-miniconfigdelete(mtminiconfigdelete),
+#ifdef MTSYSTEM_RESOURCES
+	resfind(mtresfind),
+	resopen(mtresopen),
+	resclose(mtresclose),
+#endif
+#ifdef MTSYSTEM_CONFIG
+	configfind(mtconfigfind),
+	configopen(mtconfigopen),
+	configclose(mtconfigclose),
+#endif
+#ifdef MTSYSTEM_MINICONFIG
+	miniconfigcreate(mtminiconfigcreate),
+	miniconfigdelete(mtminiconfigdelete),
+#endif
+#ifdef MTSYSTEM_XML
+	xmlcreate(mtxmlcreate),
+	xmldelete(mtxmldelete),
+#endif
 lockcreate(mtlockcreate),
 lockdelete(mtlockdelete),
 eventcreate(mteventcreate),
@@ -1176,8 +1314,10 @@ syscounterex(mtsyscounterex),
 syswait(mtsyswait),
 syswaitmultiple(mtsyswaitmultiple),
 dialog(mtdialog),
-resdialog(mtresdialog),
-authdialog(mtauthdialog),
+#ifdef MTSYSTEM_RESOURCES
+	resdialog(mtresdialog),
+	authdialog(mtauthdialog),
+#endif
 showoserror(mtshowoserror),
 showlastoserror(mtshowlastoserror),
 log(mtlog),
@@ -1200,13 +1340,15 @@ sync_dec(mtsync_dec)
 
 bool MTSystemInterface::init()
 {
+#ifdef MTSYSTEM_CONFIG
 	MTFile *f;
 	MTConfigFile *conf;
+#endif
 	char *e;
 	tm *lts;
 	time_t lt;
 	char lorev,hirev;
-	unsigned int cpuflags,cpuver;
+	unsigned int cpuflags,cpuflags2,cpuver;
 	bool savecpu = true;
 	char buf[256],proctype[256];
 	static int cpu_wait = 500;
@@ -1220,8 +1362,14 @@ bool MTSystemInterface::init()
 #	ifdef _WIN32
 		onerror = onexception;
 		SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)::onexception);
+		mainthreadid = GetCurrentThreadId();
+		DuplicateHandle(GetCurrentProcess(),GetCurrentThread(),GetCurrentProcess(),&mainthreadh,0,false,DUPLICATE_SAME_ACCESS);
 		HMODULE hkernel = GetModuleHandle("KERNEL32.DLL");
+		HMODULE hdbg = LoadLibrary("DBGHELP.DLL");
 		if (hkernel){
+			*(int*)&MTCreateToolhelp32Snapshot = (int)GetProcAddress(hkernel,"CreateToolhelp32Snapshot");
+			*(int*)&MTModule32First = (int)GetProcAddress(hkernel,"Module32First");
+			*(int*)&MTModule32Next = (int)GetProcAddress(hkernel,"Module32Next");
 			BOOL (*isdebugger)();
 			*(int*)&isdebugger = (int)GetProcAddress(hkernel,"IsDebuggerPresent");
 			if (isdebugger){
@@ -1230,6 +1378,16 @@ bool MTSystemInterface::init()
 					if (debugged) sysflags |= MTS_DEBUGGED;
 				};
 			};
+		};
+		if (hdbg){
+			*(int*)&MTSymCleanup = (int)GetProcAddress(hdbg,"SymCleanup");
+			*(int*)&MTSymGetSymFromAddr = (int)GetProcAddress(hdbg,"SymGetSymFromAddr");
+			*(int*)&MTStackWalk = (int)GetProcAddress(hdbg,"StackWalk");
+			*(int*)&MTSymFunctionTableAccess = (int)GetProcAddress(hdbg,"SymFunctionTableAccess");
+			*(int*)&MTSymGetModuleBase = (int)GetProcAddress(hdbg,"SymGetModuleBase");
+			*(int*)&MTSymSetOptions = (int)GetProcAddress(hdbg,"SymSetOptions");
+			*(int*)&MTSymInitialize = (int)GetProcAddress(hdbg,"SymInitialize");
+			*(int*)&MTSymLoadModule = (int)GetProcAddress(hdbg,"SymLoadModule");
 		};
 #	else
 		struct sigaction sa;
@@ -1352,6 +1510,7 @@ bool MTSystemInterface::init()
 				cpuid
 				mov		cpuver,eax
 				mov		cpuflags,edx
+				mov		cpuflags2,ecx
 			_nommx:
 				pop		ebx
 			};
@@ -1473,9 +1632,10 @@ bool MTSystemInterface::init()
 				cpuid\n\
 				movl	%%eax,%[cpuver]\n\
 				movl	%%edx,%[cpuflags]\n\
+				movl	%%ecx,%[cpuflags2]\n\
 			_nommx:\n\
 				"
-				:[cpuver]"=m"(cpuver),[cpuflags]"=m"(cpuflags)
+				:[cpuver]"=m"(cpuver),[cpuflags]"=m"(cpuflags),[cpuflags2]"=m"(cpuflags2)
 				:"S"(_buf)
 				:"eax","ebx","ecx","edx"
 			);
@@ -1489,17 +1649,19 @@ bool MTSystemInterface::init()
 			cpuver &= 0xF;
 			sprintf(e," Level %d Model %d Stepping %d",cpuver,hirev,lorev);
 #		endif
-		if ((conf = (MTConfigFile*)mtinterface->getconf("Global",false))){
-			if (conf->setsection("MTSystem")){
-				if (conf->getparameter("CPUType",&buf,MTCT_STRING,sizeof(buf))){
-					if (strcmp(buf,proctype)==0){
-						if (conf->getparameter("CPUFrequency",&cpufrequ,MTCT_UINTEGER,sizeof(cpufrequ))){
-							savecpu = false;
+#		ifdef MTSYSTEM_CONFIG
+			if ((conf = (MTConfigFile*)mtinterface->getconf("Global",false))){
+				if (conf->setsection("MTSystem")){
+					if (conf->getparameter("CPUType",&buf,MTCT_STRING,sizeof(buf))){
+						if (strcmp(buf,proctype)==0){
+							if (conf->getparameter("CPUFrequency",&cpufrequ,MTCT_UINTEGER,sizeof(cpufrequ))){
+								savecpu = false;
+							};
 						};
 					};
 				};
 			};
-		};
+#		endif
 		cpufrequ = 1000;
 		if (cpufrequ==0){
 #			ifndef __GNUC__
@@ -1549,17 +1711,24 @@ bool MTSystemInterface::init()
 #			endif
 			cpufrequ = (cpufrequ/3)*3;
 		};
-		if (conf){
-			if (savecpu){
-				if (conf->createsection("MTSystem")){
-					conf->setparameter("CPUType",&proctype,MTCT_STRING,sizeof(proctype));
-					conf->setparameter("CPUFrequency",&cpufrequ,MTCT_UINTEGER,sizeof(cpufrequ));
+#		ifdef MTSYSTEM_CONFIG
+			if (conf){
+				if (savecpu){
+					if (conf->createsection("MTSystem")){
+						conf->setparameter("CPUType",&proctype,MTCT_STRING,sizeof(proctype));
+						conf->setparameter("CPUFrequency",&cpufrequ,MTCT_UINTEGER,sizeof(cpufrequ));
+					};
 				};
+				mtinterface->releaseconf(conf);
 			};
-			mtinterface->releaseconf(conf);
-		};
-		if (cpuflags& 0x800000) sysflags |= MTS_MMX;
-		if (cpuflags & 0x1000000) sysflags |= MTS_SIMD;
+#		endif
+		if (cpuflags & 0x00000100) sysflags |= MTS_CX8;
+		if (cpuflags & 0x00008000) sysflags |= MTS_CMOV;
+		if (cpuflags & 0x00800000) sysflags |= MTS_MMX;
+		if (cpuflags & 0x02000000) sysflags |= MTS_SSE;
+		if (cpuflags & 0x04000000) sysflags |= MTS_SSE2;
+		if (cpuflags & 0x10000000) sysflags |= MTS_HT;
+		if (cpuflags2 & 0x00000001) sysflags |= MTS_SSE3;
 		e = strchr(processor,0);
 		sprintf(e,"%d MHz (%s)",cpufrequ,proctype);
 #		ifdef _WIN32
@@ -1569,12 +1738,14 @@ bool MTSystemInterface::init()
 #		endif
 		di = (MTDisplayInterface*)mtinterface->getinterface(displaytype);
 		gi = (MTGUIInterface*)mtinterface->getinterface(guitype);
-		strcpy(buf,mtinterface->getprefs()->syspath[SP_INTERFACE]);
-		strcat(buf,"MTSystem.mtr");
-		if ((gi) && (di) && (mtinterface->type!=FOURCC('G','U','I','E'))){
-			f = mtfileopen(buf,MTF_READ|MTF_SHAREREAD);
-			if (f) sysres = new MTResources(f,true);
-		};
+#		ifdef MTSYSTEM_RESOURCES
+			if ((gi) && (di) && (mtinterface->type!=FOURCC('G','U','I','E'))){
+				strcpy(buf,mtinterface->getprefs()->syspath[SP_INTERFACE]);
+				strcat(buf,"MTSystem.mtr");
+				f = mtfileopen(buf,MTF_READ|MTF_SHAREREAD);
+				if (f) sysres = new MTResources(f,true);
+			};
+#		endif
 		strcpy(logpath,mtinterface->getprefs()->syspath[SP_USER]);
 		strcat(logpath,"LOG_");
 		e = strrchr(logpath,0);
@@ -1588,9 +1759,16 @@ bool MTSystemInterface::init()
 #		ifdef _DEBUG
 			startlog();
 #		endif
-		if (sysres) sysres->loadstring(MTT_storage,rootn,sizeof(rootn));
+#		ifdef MTSYSTEM_RESOURCES
+			if (sysres) sysres->loadstring(MTT_storage,rootn,sizeof(rootn));
+#		endif
 	};
-	initInternet();
+#	ifdef MTSYSTEM_INTERNET
+		initInternet();
+#	endif
+#	ifdef MTSYSTEM_XML
+		initXML();
+#	endif
 	status |= MTX_INITIALIZED;
 	return true;
 }
@@ -1606,17 +1784,31 @@ void MTSystemInterface::uninit()
 	mtmemfree(platform);
 	mtmemfree(build);
 	mtmemfree(processor);
-	uninitInternet();
-	uninitSocket();
-	if (sysres){
-		delete sysres;
-		sysres = 0;
-	};
+#	ifdef MTSYSTEM_XML
+		uninitXML();
+#	endif
+#	ifdef MTSYSTEM_INTERNET
+		uninitInternet();
+		uninitSocket();
+#	endif
+#	ifdef MTSYSTEM_RESOURCES
+		if (sysres){
+			delete sysres;
+			sysres = 0;
+		};
+#	endif
 	uninitFiles();
 	if (logfile){
 		mtmemfree(logfile->url);
 		logfile->url = 0;
 	};
+#	ifndef _WIN32
+		sigaction(SIGSEGV,0,0);
+		sigaction(SIGBUS,0,0);
+		sigaction(SIGILL,0,0);
+		sigaction(SIGABRT,0,0);
+		sigaction(SIGFPE,0,0);
+#	endif
 	uninitKernel();
 #	ifdef _DEBUG
 		if (nallocs!=0){
@@ -1654,16 +1846,18 @@ void MTSystemInterface::uninit()
 void MTSystemInterface::start()
 {
 #	ifdef _DEBUG
-		MTMiniConfig *mc = new MTMiniConfig();
-		MTFile *mf = mtfileopen("mem://",MTF_CREATE|MTF_READ|MTF_WRITE);
-		int test = 43234;
-		char buf[256];
-		mc->setparameter("Test",&test,MTCT_UINTEGER,4);
-		mc->setparameter("Bla.Test","Hello there",MTCT_STRING,-1);
-		mc->getparameter("Bla",buf,MTCT_STRING,sizeof(buf));
-		mc->savetostream(mf);
-		mtfileclose(mf);
-		delete mc;
+#		if defined(MTSYSTEM_CONFIG) && defined(MTSYSTEM_MEMORYFILE)
+			MTMiniConfig *mc = new MTMiniConfig();
+			MTFile *mf = mtfileopen("mem://",MTF_CREATE|MTF_READ|MTF_WRITE);
+			int test = 43234;
+			char buf[256];
+			mc->setparameter("Test",&test,MTCT_UINTEGER,4);
+			mc->setparameter("Bla.Test","Hello there",MTCT_STRING,-1);
+			mc->getparameter("Bla",buf,MTCT_STRING,sizeof(buf));
+			mc->savetostream(mf);
+			mtfileclose(mf);
+			delete mc;
+#		endif
 #	endif
 }
 
@@ -1711,10 +1905,11 @@ void MTSystemInterface::delfilehook(char *type,MTFileHook *hook)
 	hooks->delitem(type);
 }
 //---------------------------------------------------------------------------
+#ifndef MTBUILTIN
 extern "C"
 {
 
-MTXInterfaces* MTACT MTXMain(MTInterface *mti)
+MTXInterfaces* MTCT MTXMain(MTInterface *mti)
 {
 	mtinterface = mti;
 	if (!si) si = new MTSystemInterface();
@@ -1724,5 +1919,6 @@ MTXInterfaces* MTACT MTXMain(MTInterface *mti)
 }
 
 }
+#endif
 #endif
 //---------------------------------------------------------------------------

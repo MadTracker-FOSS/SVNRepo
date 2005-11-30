@@ -2,7 +2,7 @@
 //
 //	MadTracker Audio Core
 //
-//		Platforms:	Win32
+//		Platforms:	Linux
 //		Processors: All
 //
 //	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
@@ -10,23 +10,15 @@
 //	$Id$
 //
 //---------------------------------------------------------------------------
-#ifndef MTWAVEOUT_INCLUDED
-#define MTWAVEOUT_INCLUDED
+#ifndef MTDEVDSP_INCLUDED
+#define MTDEVDSP_INCLUDED
 //---------------------------------------------------------------------------
 #include "MTAudioDevice.h"
-#include <windows.h>
-#include <mmsystem.h>
 //---------------------------------------------------------------------------
-struct WODevice{
-	int id;
-	char *name;
-	WAVEOUTCAPS caps;
-};
-
-class MTWaveOutDevice : public MTAudioDevice{
+class MTDevDSPDevice : public MTAudioDevice{
 public:
-	MTWaveOutDevice(WODevice *dev);
-	~MTWaveOutDevice();
+	MTDevDSPDevice(const char *dev);
+	~MTDevDSPDevice();
 	bool MTCT init(float frequency,int nchannels,int bits,double latency);
 	void MTCT uninit();
 	bool MTCT play();
@@ -35,18 +27,15 @@ public:
 	bool MTCT getdata(int position,int length,void **ptr1,void **ptr2,unsigned long *lng1,unsigned long *lng2);
 	bool MTCT writedata(void *ptr1,void *ptr2,unsigned long lng1,unsigned long lng2);
 private:
-	WODevice *device;
-	int datalength,delay;
-	void *data;
-	WAVEFORMATEX format;
-	HWAVEOUT hwo;
-	WAVEHDR header;
+	int f;
+	void *buffer;
+	int bsize,dbits,dchannels,drate;
 };
 
-class MTWaveOutDeviceManager : public MTAudioDeviceManager{
+class MTDevDSPDeviceManager : public MTAudioDeviceManager{
 public:
-	MTWaveOutDeviceManager();
-	~MTWaveOutDeviceManager();
+	MTDevDSPDeviceManager();
+	~MTDevDSPDeviceManager();
 	MTAudioDevice* MTCT newdevice(int id);
 	void MTCT deldevice(MTAudioDevice *device);
 };

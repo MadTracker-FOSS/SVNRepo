@@ -29,7 +29,7 @@ class Oscillator : public MTObject{
 public:
 	float quality;
 
-	Oscillator(MTModule *parent,int type,int i):MTObject(parent,type,i){
+	Oscillator(MTObject *parent,mt_uint32 type,mt_int32 i):MTObject(parent,type,i){
 		quality = 0.125;
 	};
 	virtual ~Oscillator(){	};
@@ -51,7 +51,7 @@ public:
 	float quality;
 	
 	OscillatorInstance(Oscillator *p,int no,sample **o,InstrumentInstance *caller){
-		module = p->parent; parent = p; noutputs = no; outputs = o; volume = 1.0 ;pitch = 1.0; panx = pany = panz = 0.0; quality = p->quality;
+		module = p->module; parent = p; noutputs = no; outputs = o; volume = 1.0 ;pitch = 1.0; panx = pany = panz = 0.0; quality = p->quality;
 	};
 	virtual ~OscillatorInstance(){	};
 	
@@ -99,13 +99,13 @@ class SampleType : public ObjectType{
 public:
 	SampleType();
 
-	MTObject* MTCT create(MTModule *parent,int id,void *param);
+	MTObject* MTCT create(MTObject *parent,mt_int32 id,void *param);
 };
 
 // Sample class
 class MTSample : public Oscillator{
 public:
-	MTSample(MTModule *parent,int i);
+	MTSample(MTObject *parent,mt_int32 i);
 	~MTSample();
 	
 	char *filename;
@@ -156,8 +156,8 @@ public:
 private:
 	int nstatus;
 	int divider;
-	int pitchi;
-	unsigned int pitchd;
+//	int pitchi;
+//	unsigned int pitchd;
 	int volvarlng;
 	double volvar;
 	int panvarlng;

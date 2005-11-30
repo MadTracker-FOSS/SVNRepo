@@ -22,6 +22,7 @@ typedef int (MTCT *SortProc)(void *item1,void *item2);
 //---------------------------------------------------------------------------
 class MTArray{
 public:
+	int _is;
 	int nitems;
 	union{
 		void **a;
@@ -31,7 +32,7 @@ public:
 	MTArray(int allocby,int itemsize = 0);
 	virtual ~MTArray();
 
-	inline void* operator[](int i){ return a[i]; };
+	inline void* operator[](unsigned int i){ return (a)?a[i]:((d)?(char*)d+_is*i:0); };
 	virtual int MTCT additem(int at,void *item);
 	virtual int MTCT additems(int at,int count);
 	virtual void MTCT delitems(int from,int count);
@@ -47,7 +48,6 @@ public:
 private:
 	int mallocby;
 	int na;
-	int is;
 	int countid;
 	void quicksort(int lo,int hi,SortProc proc);
 	void quicksortf(int lo,int hi,SortProc proc);

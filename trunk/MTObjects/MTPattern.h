@@ -29,7 +29,7 @@ class Pattern : public MTObject{
 public:
 	double nbeats;
 	
-	Pattern(MTModule *parent,int type,int i):MTObject(parent,type,i){
+	Pattern(MTObject *parent,mt_uint32 type,mt_int32 i):MTObject(parent,type,i){
 		nbeats = 8.0;
 	};
 	virtual ~Pattern();
@@ -48,7 +48,7 @@ public:
 	double nextevent;
 	
 	PatternInstance(Pattern *p,Sequence *s,int l,PatternInstance *previous){
-		module = p->parent; parent = p; sequ = s; layer = l; cpos = nextevent = 0.0;
+		module = p->module; parent = p; sequ = s; layer = l; cpos = nextevent = 0.0;
 	};
 	virtual ~PatternInstance(){	};
 
@@ -122,7 +122,7 @@ public:
 
 	PatternType();
 	~PatternType();
-	MTObject* MTCT create(MTModule *parent,int id,void *param);
+	MTObject* MTCT create(MTObject *parent,mt_int32 id,void *param);
 	virtual bool MTCT registercolumn(Column *column);
 	virtual void MTCT unregistercolumn(Column *column);
 	virtual Column* MTCT gethandler(const char *desc);
@@ -155,7 +155,7 @@ struct TrackInfo{
 
 class MTPattern : public Pattern{
 public:
-	MTPattern(MTModule *parent,int i);
+	MTPattern(MTObject *parent,mt_int32 i);
 	~MTPattern();
 	
 	unsigned char lpb,ticks;

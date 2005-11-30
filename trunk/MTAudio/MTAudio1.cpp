@@ -2,22 +2,27 @@
 //
 //	MadTracker Audio Core
 //
-//		Platforms:	Win32
+//		Platforms:	All
 //		Processors: All
 //
-//	Copyright © 1999-2003 Yannick Delwiche. All rights reserved.
+//	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
+//
+//	$Id$
 //
 //---------------------------------------------------------------------------
-#include <windows.h>
 #include <stdio.h>
 #include "MTAudio1.h"
 #include "MTAudio2.h"
-#include "../Headers/MTXGUI.h"
-#include "../Headers/MTXControls.h"
-#include "../Headers/MTXModule.h"
-#include "../Headers/MTXSystem2.h"
-#include "MTWaveOut.h"
-#include "MTDirectSound.h"
+#include "MTXGUI.h"
+#include "MTXControls.h"
+#include "MTXModule.h"
+#include "MTXSystem2.h"
+#ifdef _WIN32
+#	include "MTWaveOut.h"
+#	include "MTDirectSound.h"
+#else
+#	include "MTDevDSP.h"
+#endif
 //---------------------------------------------------------------------------
 static const char *audioname = {"MadTracker Audio Core"};
 static const int audioversion = 0x30000;
@@ -28,18 +33,23 @@ MTInterface *mtinterface;
 MTSystemInterface *si;
 MTObjectsInterface *oi;
 WaveOutput output;
-MTWaveOutDeviceManager *womanager;
-MTDirectSoundDeviceManager *dsmanager;
+#ifdef _WIN32
+	MTWaveOutDeviceManager *womanager;
+	MTDirectSoundDeviceManager *dsmanager;
+#else
+	MTDevDSPDeviceManager *devdspmanager;
+#endif
 MTDevice *devices[32];
 int ndevices;
 #ifdef _DEBUG
-MTFile *recf;
+	MTFile *recf;
 #endif
 //---------------------------------------------------------------------------
 int AudioThread(MTThread*,void* pool)
 {
 	double oldc,curc,intc,usec;
 	
+	ENTER("AudioThread");
 	si->setprivatedata(0,si->memalloc(sizeof(sample)*PRIVATE_BUFFER,MTM_ZERO));
 	oldc = 0;
 	while (ai->running){
@@ -52,17 +62,17 @@ int AudioThread(MTThread*,void* pool)
 				intc = -1;
 			oldc = curc;
 			output.lock->lock();
-			MTTRY{
+			MTTRY
 				generateoutput();
-			}
-			MTCATCH{
-			};
+			MTCATCH
+			MTEND
 			output.lock->unlock();
 			si->syscounterex(&usec);
 			usec -= curc;
 		};
 	};
 	si->memfree(si->getprivatedata(0));
+	LEAVE();
 	return 0;
 }
 //---------------------------------------------------------------------------
@@ -96,10 +106,15 @@ bool MTAudioInterface::init()
 	output.interval = 50.0;
 	output.mincpu = 0.0;
 	output.maxcpu = 0.75;
-	womanager = new MTWaveOutDeviceManager();
-	dsmanager = new MTDirectSoundDeviceManager();
-	adddevicemanager(womanager);
-	adddevicemanager(dsmanager);
+#	ifdef _WIN32
+		womanager = new MTWaveOutDeviceManager();
+		dsmanager = new MTDirectSoundDeviceManager();
+		adddevicemanager(womanager);
+		adddevicemanager(dsmanager);
+#	else
+		devdspmanager = new MTDevDSPDeviceManager();
+		adddevicemanager(devdspmanager);
+#	endif
 	if ((conf = (MTConfigFile*)mtinterface->getconf("Global",false))){
 		if (conf->setsection("MTAudio")){
 			conf->getparameter("Frequency",&output.frequency,MTCT_SINTEGER,sizeof(output.frequency));
@@ -134,12 +149,12 @@ bool MTAudioInterface::init()
 void MTAudioInterface::uninit()
 {
 	ENTER("MTAudioInterface::uninit");
-#ifdef _DEBUG
-	if (recf){
-		si->fileclose(recf);
-		recf = 0;
-	};
-#endif
+#	ifdef _DEBUG
+		if (recf){
+			si->fileclose(recf);
+			recf = 0;
+		};
+#	endif
 	LOGD("%s - [Audio] Uninitializing..."NL);
 	status &= (~MTX_INITIALIZED);
 	LOGD("%s - [Audio] Stopping audio thread..."NL);
@@ -151,10 +166,15 @@ void MTAudioInterface::uninit()
 	};
 	LOGD("%s - [Audio] Freeing all devices..."NL);
 	deactivatedevices();
-	deldevicemanager(womanager);
-	deldevicemanager(dsmanager);
-	delete womanager;
-	delete dsmanager;
+#	ifdef _WIN32
+		deldevicemanager(womanager);
+		deldevicemanager(dsmanager);
+		delete womanager;
+		delete dsmanager;
+#	else
+		deldevicemanager(devdspmanager);
+		delete devdspmanager;
+#	endif
 	si->lockdelete(output.lock);
 	si->eventdelete(output.event);
 	LEAVE();
@@ -167,7 +187,7 @@ void menurecord(MTShortcut *s,MTControl *c,MTUndo*)
 	char file[512];
 
 	if ((!c) || (c->guiid!=MTC_MENUITEM)) return;
-	MTTRY{
+	MTTRY
 		output.lock->lock();
 		if (item->tag==0){
 			item->setcaption("Stop Recording");
@@ -182,29 +202,28 @@ void menurecord(MTShortcut *s,MTControl *c,MTUndo*)
 			item->setcaption("Start Recording");
 			item->tag = 0;
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	output.lock->unlock();
 }
 #endif
 
 void MTAudioInterface::start()
 {
-#ifdef _DEBUG
-	MTDesktop *dsk;
-	MTMenuItem *item;
-	MTGUIInterface *gi = (MTGUIInterface*)mtinterface->getinterface(guitype);
-	if (gi){
-		dsk = gi->getdesktop(0);
-		if (dsk){
-			dsk->popup->additem("|MTAudio",0,0,false,0);
-			item = (MTMenuItem*)dsk->popup->additem("Start Recording",23,0,false,0);
-			item->tag = 0;
-			item->command = menurecord;
+#	ifdef _DEBUG
+		MTDesktop *dsk;
+		MTMenuItem *item;
+		MTGUIInterface *gi = (MTGUIInterface*)mtinterface->getinterface(guitype);
+		if (gi){
+			dsk = gi->getdesktop(0);
+			if (dsk){
+				dsk->popup->additem("|MTAudio",0,0,false,0);
+				item = (MTMenuItem*)dsk->popup->additem("Start Recording",23,0,false,0);
+				item->tag = 0;
+				item->command = menurecord;
+			};
 		};
-	};
-#endif
+#	endif
 }
 
 void MTAudioInterface::stop()
@@ -259,7 +278,7 @@ void MTAudioInterface::activatedevices()
 	bool ok = true;
 	
 	ENTER("MTAudioInterface::activatedevices");
-	MTTRY{
+	MTTRY
 		output.lock->lock();
 		output.ndevices = 0;
 		output.sync = 0;
@@ -268,9 +287,8 @@ void MTAudioInterface::activatedevices()
 			MTModule *module = (MTModule*)mtinterface->getmodule(--x);
 			module->disabletracks();
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	output.lock->unlock();
 	mtmemzero(&output.device,sizeof(output.device));
 	output.timer = 0;
@@ -294,7 +312,7 @@ void MTAudioInterface::activatedevices()
 			};
 		};
 	};
-	MTTRY{
+	MTTRY
 		output.lock->lock();
 		output.ndevices = y;
 		if (y){
@@ -317,9 +335,8 @@ void MTAudioInterface::activatedevices()
 			MTModule *module = (MTModule*)mtinterface->getmodule(--x);
 			module->enabletracks();
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	output.lock->unlock();
 	LEAVE();
 }
@@ -334,7 +351,7 @@ void MTAudioInterface::deactivatedevices()
 		si->timerdelete(output.timer);
 		output.timer = 0;
 	};
-	MTTRY{
+	MTTRY
 		output.lock->lock();
 		y = output.ndevices;
 		output.ndevices = 0;
@@ -353,9 +370,8 @@ void MTAudioInterface::deactivatedevices()
 			si->memfree(&cdev);
 			output.device[x] = 0;
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	output.lock->unlock();
 	LEAVE();
 }
@@ -406,7 +422,7 @@ WaveOutput* MTAudioInterface::getoutput()
 extern "C"
 {
 
-MTXInterfaces* __stdcall MTXMain(MTInterface *mti)
+MTXInterfaces* MTCT MTXMain(MTInterface *mti)
 {
 	mtinterface = mti;
 	if (!ai) ai = new MTAudioInterface();

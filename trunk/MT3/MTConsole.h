@@ -27,8 +27,6 @@ public:
 	bool MTCT settime(int *modified,int *accessed);
 	MTFile* MTCT subclass(int start,int length,int access);
 	virtual int MTCT userinput(const char *input);
-private:
-	MTArray *input;
 };
 //---------------------------------------------------------------------------
 #endif

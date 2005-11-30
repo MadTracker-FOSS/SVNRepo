@@ -24,7 +24,7 @@ public:
 	float frequency;
 	float resonance;
 
-	MTFilter(MTModule *parent,int i);
+	MTFilter(MTObject *parent,mt_int32 i);
 	EffectInstance* MTCT createinstance(int noutputs,sample **outputs,int ninputs,sample **inputs,InstrumentInstance *caller = 0);
 	void MTCT deleteinstance(EffectInstance *i);
 	int MTCT getnumparams(int cat);

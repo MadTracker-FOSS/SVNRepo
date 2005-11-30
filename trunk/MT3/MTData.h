@@ -28,5 +28,6 @@ extern MTUser cuser;
 extern MTFile *outmsg;
 extern MTHash *confs;
 extern bool wantreset;
+extern bool exitasap;
 //---------------------------------------------------------------------------
 #endif

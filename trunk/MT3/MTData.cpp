@@ -11,8 +11,13 @@
 //
 //---------------------------------------------------------------------------
 #ifdef _WIN32
-	#include <windows.h>
-	#include <iostream.h>
+#	include <windows.h>
+#	include <iostream.h>
+#	include <shlobj.h>
+#else
+#	include <sys/stat.h>
+#	include <stdlib.h>
+#	include <unistd.h>
 #endif
 #include <string.h>
 #include <malloc.h>
@@ -24,11 +29,12 @@
 MTPreferences prefs;
 MTModule *module[16];
 WaveOutput *output;
-MTUser cuser = {0,"Unregistered User","","","","",""};
+MTUser cuser = {0,0,"Unregistered User","","","","",""};
 MTConfigFile *globalconf,*userconf;
 MTFile *outmsg;
 MTHash *confs;
 bool wantreset = false;
+bool exitasap = false;
 //---------------------------------------------------------------------------
 int newmodule()
 //
@@ -114,7 +120,22 @@ void finishbackup(char *filename,bool revert,int &time)
 	LEAVE();
 }
 
-bool processCommandline(char *cmd)
+void initConsole()
+{
+	if (!si) return;
+#	ifdef _WIN32
+		outmsg = si->fileopen("mem://",MTF_READ|MTF_WRITE);
+#	else
+		outmsg = si->fileopen("stdout",MTF_READ|MTF_WRITE);
+#	endif
+}
+
+void uninitConsole()
+{
+	if ((si) && (outmsg)) si->fileclose(outmsg);
+}
+
+bool processCommandline(const char *cmd)
 {
 	static char pcmd[1024];
 	char *e,*e2,*p,*v;
@@ -177,8 +198,6 @@ bool processCommandline(char *cmd)
 			};
 		};
 		if (showhelp){
-//			outmsg = si->fileopen("pipe://stdout",0);
-			outmsg = si->fileopen("mem://",MTF_READ|MTF_WRITE);
 			if (outmsg) outmsg->write(usage1,strlen(usage1));
 		};
 		if ((!showhelp) || (outmsg)){
@@ -191,12 +210,10 @@ bool processCommandline(char *cmd)
 				};
 			};
 		};
-		if (outmsg) outmsg->write(usage2,strlen(usage2));
-//		si->fileclose(outmsg);
+		if ((showhelp) && (outmsg)) outmsg->write(usage2,strlen(usage2));
 	};
 	si->arraydelete(pa);
-//	return showhelp;
-	return false;
+	return showhelp;
 }
 //---------------------------------------------------------------------------
 void MTCT ConfDelete(void *item,void *param)
@@ -209,11 +226,11 @@ bool init()
 //	Main initialization
 //
 {
-	bool quote = false;
 	char *cmd,*e;
-	char applpath[512];
+	char applpath[512],userpath[512];
 	
 	prefs.syspath[SP_ROOT] = (char*)malloc(512);
+	prefs.syspath[SP_USER] = (char*)malloc(512);
 	prefs.syspath[SP_CONFIG] = (char*)malloc(512);
 	prefs.syspath[SP_USERCONFIG] = (char*)malloc(512);
 	prefs.syspath[SP_EXTENSIONS] = (char*)malloc(512);
@@ -224,7 +241,8 @@ bool init()
 	prefs.path[UP_TEMP] = (char*)malloc(512);
 	prefs.path[UP_CACHE] = (char*)malloc(512);
 
-	#ifdef _WIN32
+#	ifdef _WIN32
+		bool quote = false;
 		cmd = GetCommandLine();
 		if (*cmd=='"'){
 			cmd++;
@@ -255,23 +273,49 @@ bool init()
 		};
 		if ((cmd) && (e>=cmd)) e = cmd-1;
 		while ((e>applpath) && (*e!='\\') && (*e!='/')) *e-- = 0;
-	#else
-		extern const char **cargv;
-		strcpy(applpath,cargv[0]);
+		SHGetSpecialFolderPath(0,userpath,CSIDL_APPDATA,false);
+		e = strchr(userpath,0);
+		if (*(e-1)!='\\'){
+			*e++ = '\\';
+			*e = 0;
+		};
+		strcpy(e,"MadTracker/");
+#	else
+		extern const char *argv0;
+		extern char *cmdline;
+		const char *binpath = getenv("_");
+		char *b1 = strrchr(binpath,'/')+1;
+		int l;
+		if (!b1) binpath = argv0;
+		else if (!strstr(argv0,b1)) binpath = argv0;
+		l = readlink(binpath,applpath,sizeof(applpath)-1);
+		if (l==-1) strcpy(applpath,binpath);
+		else applpath[l] = 0;
 		e = strchr(applpath,0)-1;
 		while (*e!='/') *e-- = 0;
-	#endif
+		cmd = cmdline;
+		strcpy(userpath,getenv("HOME"));
+		e = strchr(userpath,0);
+		if (*(e-1)!='/'){
+			*e++ = '/';
+			*e = 0;
+		};
+		strcpy(e,".MadTracker/");
+#	endif
 	strcpy(prefs.syspath[SP_ROOT],applpath);
+	strcpy(prefs.syspath[SP_USER],userpath);
 	strcpy(prefs.syspath[SP_CONFIG],applpath);
-	strcpy(prefs.syspath[SP_USERCONFIG],applpath);
+	strcpy(prefs.syspath[SP_USERCONFIG],userpath);
 	strcpy(prefs.syspath[SP_EXTENSIONS],applpath);
 	strcpy(prefs.syspath[SP_INTERFACE],applpath);
 	strcpy(prefs.syspath[SP_SKINS],applpath);
 	strcpy(prefs.syspath[SP_HELP],applpath);
 	strcat(prefs.syspath[SP_CONFIG],"Conf/System/");
 	strcat(prefs.syspath[SP_USERCONFIG],"Conf/");
+/*
 	strcat(prefs.syspath[SP_USERCONFIG],cuser.name);
 	strcat(prefs.syspath[SP_USERCONFIG],"/");
+*/
 	strcat(prefs.syspath[SP_EXTENSIONS],"Extensions/");
 	strcat(prefs.syspath[SP_INTERFACE],"Interface/");
 	strcat(prefs.syspath[SP_SKINS],"Skins/");
@@ -282,17 +326,32 @@ bool init()
 	strcat(prefs.path[UP_TEMP],"Temp/");
 	strcat(prefs.path[UP_CACHE],"Cache/");
 
+#	ifdef _WIN32
+		CreateDirectory(prefs.syspath[SP_USER],0);
+		CreateDirectory(prefs.syspath[SP_USERCONFIG],0);
+#	else
+		mkdir(prefs.syspath[SP_USER],0700);
+		mkdir(prefs.syspath[SP_USERCONFIG],0700);
+#	endif
+
 	loadExtensions();
 	if (!initSystem()){
-		#ifdef _WIN32
+#		ifdef _WIN32
 			MessageBox(0,"Cannot initialize the MTSystem extension!","System Error",MB_ICONEXCLAMATION|MB_OK);
-		#else
+#		else
 			fprintf(stderr,"Cannot initialize the MTSystem extension!"NL);
-		#endif
+#		endif
 		return false;
 	};
 	confs = si->hashcreate(4);
-	if ((cmd) && (processCommandline(cmd))) return false;
+	initConsole();
+	if ((cmd) && (processCommandline(cmd))){
+#		ifdef _WIN32
+			exitasap = true;
+#		else
+			return false;
+#		endif
+	};
 
 	LOGD("%s - Initializing..."NL);
 	if (!initExtensions()){
@@ -301,6 +360,7 @@ bool init()
 	};
 	startExtensions();
 	LOGD("%s - Initialized."NL);
+	oi->deleteobject(oi->newobject(MTO_MODULE,0,0,0));
 	return true;
 }
 
@@ -315,9 +375,10 @@ void uninit()
 	if (!si) return;
 	LOGD("%s - Uninitializing..."NL);
 	mtmemzero(del,sizeof(del));
+	uninitConsole();
 	si->stop();
 	stopExtensions();
-	MTTRY{
+	MTTRY
 		if (output) output->lock->lock();
 		for (x=0;x<16;x++){
 			if (module[x]){
@@ -325,19 +386,17 @@ void uninit()
 				module[x] = 0;
 			};
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	if (output) output->lock->unlock();
-	MTTRY{
+	MTTRY
 		for (x=0;x<16;x++){
 			if (del[x]){
 				oi->deleteobject(del[x]);
 			};
 		};
-	}
-	MTCATCH{
-	};
+	MTCATCH
+	MTEND
 	uninitExtensions();
 	si->configclose(globalconf);
 	si->configclose(userconf);
@@ -350,6 +409,7 @@ void uninit()
 	uninitSystem();
 	unloadExtensions();
 	free(prefs.syspath[SP_ROOT]);
+	free(prefs.syspath[SP_USER]);
 	free(prefs.syspath[SP_CONFIG]);
 	free(prefs.syspath[SP_USERCONFIG]);
 	free(prefs.syspath[SP_EXTENSIONS]);

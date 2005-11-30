@@ -5,8 +5,8 @@
 class MTAudioDevice;
 class MTAudioDeviceManager;
 //---------------------------------------------------------------------------
-#include "../Headers/MTXSystem.h"
-#include "../Headers/MTXSystem2.h"
+#include "MTXSystem.h"
+#include "MTXSystem2.h"
 #include "MTAudio1.h"
 //---------------------------------------------------------------------------
 class MTAudioDevice{

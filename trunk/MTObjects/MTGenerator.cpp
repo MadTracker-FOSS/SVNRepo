@@ -25,14 +25,14 @@ GeneratorType::GeneratorType()
 	description = "Generator";
 }
 
-MTObject* GeneratorType::create(MTModule *parent,int id,void *param)
+MTObject* GeneratorType::create(MTObject *parent,mt_int32 id,void *param)
 {
 	return new MTGenerator(parent,id);
 }
 //---------------------------------------------------------------------------
 // MTGenerator functions
 //---------------------------------------------------------------------------
-MTGenerator::MTGenerator(MTModule *parent,int i):
+MTGenerator::MTGenerator(MTObject *parent,mt_int32 i):
 Oscillator(parent,MTO_MTSAMPLE,i)
 {
 
@@ -86,7 +86,7 @@ bool MTGeneratorInstance::process(int offset,int count,bool &silence)
 	for (x=0;x<noutputs;x++){
 		cphase = _phase;
 		for (i=0;i<count;i++){
-			*cp[x]++ = volume*sin(cphase);
+			*cp[x]++ = (float)(volume*sin(cphase));
 			cphase += pitch;
 		};
 	};

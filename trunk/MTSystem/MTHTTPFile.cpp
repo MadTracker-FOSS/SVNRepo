@@ -23,16 +23,17 @@ MTThread *http_thread[32];
 //---------------------------------------------------------------------------
 bool initHTTP()
 {
-	MTConfigFile *conf;
-
-	if ((mtinterface) && ((conf = (MTConfigFile*)mtinterface->getconf("Global",false)))){
-		if (conf->setsection("MTSystem")){
-			conf->getparameter("HTTPVersion",http_version,MTCT_STRING,sizeof(http_version));
-			conf->getparameter("HTTPAgent",http_agent,MTCT_STRING,sizeof(http_agent));
-			conf->getparameter("HTTPThreads",&http_threads,MTCT_UINTEGER,sizeof(http_threads));
+#	ifdef MTSYSTEM_CONFIG
+		MTConfigFile *conf;
+		if ((mtinterface) && ((conf = (MTConfigFile*)mtinterface->getconf("Global",false)))){
+			if (conf->setsection("MTSystem")){
+				conf->getparameter("HTTPVersion",http_version,MTCT_STRING,sizeof(http_version));
+				conf->getparameter("HTTPAgent",http_agent,MTCT_STRING,sizeof(http_agent));
+				conf->getparameter("HTTPThreads",&http_threads,MTCT_UINTEGER,sizeof(http_threads));
+			};
+			mtinterface->releaseconf(conf);
 		};
-		mtinterface->releaseconf(conf);
-	};
+#	endif
 #	ifdef _DEBUG
 		MTHTTPFile *test = new MTHTTPFile("http://195.95.38.138",MTF_READ);
 		if (test) delete test;
@@ -81,7 +82,7 @@ bool MTHTTPHook::filedelete(char *url)
 	return false;
 }
 
-void MTHTTPHook::filetype(char *url,char *type,int length)
+void MTHTTPHook::filetype(const char *url,char *type,int length)
 {
 	char *e;
 	

@@ -2,7 +2,7 @@
 //
 //	MadTracker Audio Core
 //
-//		Platforms:	Win32
+//		Platforms:	Linux
 //		Processors: All
 //
 //	Copyright © 1999-2006 Yannick Delwiche. All rights reserved.
@@ -10,194 +10,197 @@
 //	$Id$
 //
 //---------------------------------------------------------------------------
-#ifdef _WIN32
-#include "MTWaveOut.h"
+#ifndef _WIN32
+#include "MTXSystem.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <linux/soundcard.h>
+#include <errno.h>
+#include "MTDevDSP.h"
 #include "MTAudio1.h"
 //---------------------------------------------------------------------------
-WODevice *wodev[MAX_AUDIODEVICES];
-int nwodev;
-//---------------------------------------------------------------------------
-void showerror(int error,WODevice *device)
+MTDevDSPDevice::MTDevDSPDevice(const char *dev):
+buffer(0),
+bsize(0)
 {
-	char tmp[512];
-	char *errt;
+/*
 	int l;
-	
-	strcpy(tmp,device->name);
-	strcat(tmp,"\n");
-	errt = strchr(tmp,'\0');
-	l = 512-((int)errt-(int)&tmp);
-	if (waveOutGetErrorText(error,errt,l)==0){
-		LOGD("%s - [Audio] WARNING (WO): ");
-		LOG(errt);
-		LOG(NL);
-		si->dialog(tmp,"MadTracker - WaveOut Error",MTD_OK,MTD_EXCLAMATION,0);
-	};
-}
-//---------------------------------------------------------------------------
-MTWaveOutDevice::MTWaveOutDevice(WODevice *dev):
-hwo(0),
-device(dev),
-delay(0)
-{
-	mtmemzero(&format,sizeof(format));
-	mtmemzero(&header,sizeof(header));
-}
-
-MTWaveOutDevice::~MTWaveOutDevice()
-{
-
-}
-
-bool MTWaveOutDevice::init(float frequency,int nchannels,int bits,double latency)
-{
-	int res;
-
-	FENTER4("MTWaveOutDevice::init(%f,%d,%d,%f)",frequency,nchannels,bits,latency);
-	format.wBitsPerSample = bits;
-	format.nChannels = nchannels;
-	format.nSamplesPerSec = (int)frequency;
-	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.nBlockAlign = (bits*nchannels)>>3;
-	format.nAvgBytesPerSec = (int)frequency*format.nBlockAlign;
-	format.cbSize = 0;
-	delay = (int)(latency*frequency/1000.0);
-	res = waveOutOpen(&hwo,device->id,&format,0,0,0);
-	if (res==0){
-		mtmemzero(&header,sizeof(WAVEHDR));
-		datasamples = delay*8;
-		datalength = datasamples*format.nBlockAlign;
-		data = si->memalloc(datalength,MTM_ZERO);
-		header.lpData = (char*)data;
-		header.dwBufferLength = datalength;
-		header.dwFlags = WHDR_BEGINLOOP|WHDR_ENDLOOP;
-		header.dwLoops = -1;
-		res = waveOutPrepareHeader(hwo,&header,sizeof(WAVEHDR));
-		if (res==0){
-			LEAVE();
-			return true;
+	char *e;
+	char rdev[256];
+*/
+	dbits = 8;
+	dchannels = 1;
+	drate = 8000;
+/*	
+	rdev[255] = 0;
+	l = readlink(dev,rdev,1);
+	if (l!=-1){
+		if (rdev[0]=='/'){
+			l = readlink(dev,rdev,sizeof(rdev)-1);
+			if (l>=0) rdev[l] = 0;
+		}
+		else{
+			strcpy(rdev,dev);
+			e = strrchr(rdev,'/');
+			if (!e) l = -1;
+			else{
+				e++;
+				l = readlink(dev,e,sizeof(rdev)-1-(e-rdev));
+			};
 		};
-		si->memfree(data);
-		data = 0;
 	};
-	hwo = 0;
-	showerror(res,device);
+	if (l==-1) strcpy(rdev,dev);
+*/
+	f = open(dev,O_WRONLY);
+	if (f<0) FLOGD2("%s - [Audio] ERROR: Cannot open %s! %s"NL,dev,strerror(errno));
+}
+
+MTDevDSPDevice::~MTDevDSPDevice()
+{
+	if (f>=0) close(f);
+	if (buffer) si->memfree(buffer);
+}
+
+bool MTDevDSPDevice::init(float frequency,int nchannels,int bits,double latency)
+{
+	int status,arg;
+
+	if (f<0) return false;
+	FENTER4("MTDevDSPDevice::init(%f,%d,%d,%f)",frequency,nchannels,bits,latency);
+	dbits = bits;
+	dchannels = nchannels;
+	drate = (int)frequency;
+	arg = dbits;
+	status = ioctl(f,SOUND_PCM_WRITE_BITS,&arg);
+	if ((status!=0) || (arg!=dbits)){
+		FLOGD2("%s - [Audio] ERROR: Cannot set sample size! Status: %d Error: %d"NL,status,errno);
+		LEAVE();
+		return false;
+	};
+	arg = dchannels;
+	status = ioctl(f,SOUND_PCM_WRITE_CHANNELS,&arg);
+	if ((status!=0) || (arg!=dchannels)){
+		FLOGD2("%s - [Audio] ERROR: Cannot set number of channels! Status: %d Error: %d"NL,status,errno);
+		LEAVE();
+		return false;
+	};
+	arg = drate;
+	status = ioctl(f,SOUND_PCM_WRITE_RATE,&arg);
+	if ((status!=0) || (arg!=drate)){
+		FLOGD2("%s - [Audio] ERROR: Cannot set sample rate! Status: %d Error: %d"NL,status,errno);
+		LEAVE();
+		return false;
+	};
+/*
+	bsize = 1024;
+	if (ioctl(f,SNDCTL_DSP_SETFRAGMENT,&bsize)==-1){
+		FLOGD2("%s - [Audio] ERROR: Cannot set block size! Status: %d Error: %d"NL,status,errno);
+		LEAVE();
+		return false;
+	};
+*/
+	if (ioctl(f,SNDCTL_DSP_GETBLKSIZE,&bsize)==-1){
+		FLOGD2("%s - [Audio] ERROR: Cannot determine block size! Status: %d Error: %d"NL,status,errno);
+		LEAVE();
+		return false;
+	};
+	datasamples = bsize/(dbits*dchannels/8);
+	buffer = si->memalloc(bsize,MTM_ZERO);
 	LEAVE();
+	return true;
+}
+
+void MTDevDSPDevice::uninit()
+{
+	ENTER("MTWaveOutDevice::uninit");
+	if (buffer){
+		si->memfree(buffer);
+		buffer = 0;
+	};
+	LEAVE();
+}
+
+bool MTDevDSPDevice::play()
+{
+	if (f<0) return false;
+
 	return false;
 }
 
-void MTWaveOutDevice::uninit()
+bool MTDevDSPDevice::stop()
 {
-	if (!hwo) return;
-	ENTER("MTWaveOutDevice::uninit");
-	waveOutUnprepareHeader(hwo,&header,sizeof(WAVEHDR));
-	waveOutClose(hwo);
-	hwo = 0;
-	if (data){
-		si->memfree(data);
-		data = 0;
-	};
-	LEAVE();
+	if (f<0) return false;
+
+	return false;
 }
 
-bool MTWaveOutDevice::play()
+int MTDevDSPDevice::getposition(bool playback)
 {
-	if (!hwo) return false;
-	return (waveOutWrite(hwo,&header,sizeof(WAVEHDR))==0);
+	if (f<0) return -1;
+
+	return 0;
 }
 
-bool MTWaveOutDevice::stop()
+bool MTDevDSPDevice::getdata(int position,int length,void **ptr1,void **ptr2,unsigned long *lng1,unsigned long *lng2)
 {
-	if (!hwo) return false;
-	return (waveOutReset(hwo)==0);
-}
-
-int MTWaveOutDevice::getposition(bool playback)
-{
-	MMTIME cpos;
-
-	if (!hwo) return -1;
-	cpos.u.sample = 0;
-	cpos.wType = TIME_SAMPLES;
-	if (waveOutGetPosition(hwo,&cpos,sizeof(MMTIME))==0){
-		return cpos.u.sample+((playback)?0:delay);
-	};
-	return -1;
-}
-
-bool MTWaveOutDevice::getdata(int position,int length,void **ptr1,void **ptr2,unsigned long *lng1,unsigned long *lng2)
-{
-	int x;
-
-	*ptr1 = (char*)data+position*format.nBlockAlign;
-	*ptr2 = data;
-	*lng1 = length;
+	if (f<0) return false;
+	*ptr1 = buffer;
+	*ptr2 = 0;
+	*lng1 = bsize/(dbits*dchannels/8);
 	*lng2 = 0;
-	x = position+length-datasamples;
-	if (x>0){
-		*lng1 -= x;
-		*lng2 = x;
-	};
 	return true;
 }
 
-bool MTWaveOutDevice::writedata(void *ptr1,void *ptr2,unsigned long lng1,unsigned long lng2)
+bool MTDevDSPDevice::writedata(void *ptr1,void *ptr2,unsigned long lng1,unsigned long lng2)
 {
+	if (f<0) return false;
+	write(f,ptr1,lng1);
+	write(f,ptr2,lng2);
+	printf("%d",ioctl(f,SOUND_PCM_SYNC,0));
 	return true;
 }
 //---------------------------------------------------------------------------
-MTWaveOutDeviceManager::MTWaveOutDeviceManager():
+MTDevDSPDeviceManager::MTDevDSPDeviceManager():
 MTAudioDeviceManager()
 {
 	int x,n;
+	char buf[256];
+	struct stat es;
 
-	nwodev = 0;
-	n = waveOutGetNumDevs();
-	for (x=0;x<n;x++){
-		if (nwodev==MAX_AUDIODEVICES) break;
-		wodev[nwodev] = mtnew(WODevice);
-		WODevice &cdev = *wodev[nwodev++];
-		if ((waveOutGetDevCaps(x,&cdev.caps,sizeof(WAVEOUTCAPS))==0) && (cdev.caps.dwFormats)){
-			cdev.name = (char*)si->memalloc(strlen(cdev.caps.szPname)+1);
-			strcpy(cdev.name,cdev.caps.szPname);
-			cdev.id = x;
-			LOG("[Audio] Found device (WO): ");
-			LOG(cdev.name);
-			LOG(NL);
-		}
-		else{
-			si->memfree(&cdev);
-			wodev[--nwodev] = 0;
+	n = 0;
+	for (x=0;x<16;x++){
+		if (x==0) strcpy(buf,"/dev/dsp");
+		else sprintf(buf,"/dev/dsp%d",x);
+		if (stat(buf,&es)==0){
+			FLOG1("[Audio] Found device: %s"NL,buf);
+			devicename[n] = (char*)si->memalloc(strlen(buf)+1);
+			strcpy(devicename[n],buf);
+			n++;
 		};
-	};
-	for (x=0;x<nwodev;x++){
-		devicename[x] = wodev[x]->name;
 	};
 }
 
-MTWaveOutDeviceManager::~MTWaveOutDeviceManager()
+MTDevDSPDeviceManager::~MTDevDSPDeviceManager()
 {
 	int x;
 
-	for (x=0;x<nwodev;x++){
-		WODevice &cdev = *wodev[x];
-		si->memfree(cdev.name);
-		si->memfree(&cdev);
-		wodev[x] = 0;
+	for (x=0;x<16;x++){
+		if (devicename[x]) si->memfree(devicename[x]);
 	};
-	mtmemzero(devicename,sizeof(devicename));
-	nwodev = 0;
 }
 
-MTAudioDevice* MTWaveOutDeviceManager::newdevice(int id)
+MTAudioDevice* MTDevDSPDeviceManager::newdevice(int id)
 {
-	if ((id<0) || (id>nwodev)) return 0;
-	return new MTWaveOutDevice(wodev[id]);
+	if (devicename[id]) return new MTDevDSPDevice(devicename[id]);
+	else return 0;
 }
 
-void MTWaveOutDeviceManager::deldevice(MTAudioDevice *device)
+void MTDevDSPDeviceManager::deldevice(MTAudioDevice *device)
 {
-	delete (MTWaveOutDevice*)device;
+	delete (MTDevDSPDevice*)device;
 }
 //---------------------------------------------------------------------------
 #endif
