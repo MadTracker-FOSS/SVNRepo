@@ -387,6 +387,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 			module.needupdaterouting();
 			break;
 		case FOURCC('T','R','K','L'):
+/*
 			tmpc = (char*)si->memalloc(csize);
 			for (x=0;x<header.ntracks+ndtracks;x++){
 				Track &ctrk = *A(module.trk,Track)[x];
@@ -394,6 +395,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 				if (tmpc[0]) ctrk.setname(tmpc);
 			};
 			si->memfree(tmpc);
+*/
 			break;
 		case FOURCC('P','A','T','N'):
 			break;
