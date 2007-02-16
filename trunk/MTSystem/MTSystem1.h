@@ -164,6 +164,7 @@ public:
 	char *platform;
 	char *build;
 	char *processor;
+	char *hostname;
 	int ncpu;
 	int cpufrequ;
 	void *onerror;
@@ -181,9 +182,7 @@ public:
 	virtual void MTCT addfilehook(char *type,MTFileHook *hook);
 	virtual void MTCT delfilehook(char *type,MTFileHook *hook);
 
-	typedef void* (MTCT *MTmemalloc)(int size,int flags = 0);
-	MTmemalloc memalloc;
-//	void* (MTCT *memalloc)(int size,int flags = 0);
+	void* (MTCT *memalloc)(int size,int flags = 0);
 	bool (MTCT *memfree)(void *mem);
 	void* (MTCT *memrealloc)(void *mem,int size);
 	MTThread* (MTCT *getsysthread)();

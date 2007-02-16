@@ -141,7 +141,7 @@ public:
 	int layer;
 	double note;
 	double cpos;
-	double nextevent;
+	double nextevent,sleepingtime;
 	double gvol;
 	double mvol;
 	float gpanx,gpany,gpanz;

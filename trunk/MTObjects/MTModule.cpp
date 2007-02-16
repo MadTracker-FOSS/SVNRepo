@@ -85,13 +85,13 @@ mts(0)
 	filename = (char*)si->memalloc(512,MTM_ZERO);
 	mtmemzero(&nsequ,sizeof(nsequ));
 	mtmemzero(&sequ,sizeof(sequ));
-	patt = si->arraycreate(4);
-	apatt = si->arraycreate(4);
-	instr = si->arraycreate(8);
-	spl = si->arraycreate(8);
-	master = si->arraycreate(1);
-	trk = si->arraycreate(4);
-	fx = si->arraycreate(4);
+	patt = si->arraycreate(4,0);
+	apatt = si->arraycreate(4,0);
+	instr = si->arraycreate(8,0);
+	spl = si->arraycreate(8,0);
+	master = si->arraycreate(1,0);
+	trk = si->arraycreate(4,0);
+	fx = si->arraycreate(4,0);
 	tempo = si->arraycreate(4,sizeof(Tempo));
 	patt->additems(0,MAX_PATT);
 	apatt->additems(0,MAX_PATT);
@@ -105,7 +105,7 @@ mts(0)
 	mtmemzero(&summary,sizeof(summary));
 	mtmemzero(&playstatus,sizeof(playstatus));
 	cpu = si->cpumonitorcreate(8);
-	buffers = si->arraycreate(32);
+	buffers = si->arraycreate(32,0);
 	ris = si->arraycreate(32,sizeof(RI));
 	setstatus();
 	for (x=0;x<nmtracks;x++) master->a[x] = new Track(this,x+MAX_TRACKS);
@@ -114,8 +114,8 @@ mts(0)
 		mts = si->memalloc(sizeof(ThreadStatus)*nthreads,MTM_ZERO);
 		for (x=1;x<nthreads;x++){
 			ThreadStatus &cts = ((ThreadStatus*)mts)[x];
-			cts.ready = si->eventcreate(true);
-			cts.go = si->eventcreate(true);
+			cts.ready = si->eventcreate(true,0,0,true,false);
+			cts.go = si->eventcreate(true,0,0,true,false);
 		};
 #	endif
 }
@@ -319,7 +319,8 @@ void MTModule::getdisplayname(char *buffer,int cb)
 	if (strlen(name))
 		strcpy(buffer,name);
 	else{
-		tmps = strrchr(filename,'\\');
+		tmps = strrchr(filename,'/');
+		if (!tmps) tmps = strrchr(filename,'\\');
 		if (tmps) strcpy(buffer,tmps+1);
 		else strcpy(buffer,filename);
 	};
@@ -332,7 +333,8 @@ void MTModule::getdisplayname(char *buffer,int cb)
 		if (strlen(module->name))
 			tmps2 = module->name;
 		else{
-			tmps = strrchr(module->filename,'\\');
+			tmps = strrchr(module->filename,'/');
+			if (!tmps) tmps = strrchr(module->filename,'\\');
 			if (tmps) tmps2 = tmps;
 			else tmps2 = module->filename;
 		};
@@ -350,6 +352,7 @@ void MTModule::getdisplayname(char *buffer,int cb)
 void MTModule::setstatus()
 {
 	resetchannels();
+	resetpatterns();
 	playstatus.pos = playstatus.nextevent = playstatus.length = 0.0;
 	playstatus.bpm = D(tempo,Tempo)[0].bpm;
 	playstatus.loopfrom = loops;
@@ -487,12 +490,17 @@ int MTModule::getsequence(int layer,double pos,int last)
 	return -1;
 }
 
-void MTModule::play(int mode)
+void MTModule::play(int mode,bool fromengine)
 {
 	MTTRY
 		mlock->lock();
 		playstatus.flags = mode;
-		if (mode==PLAY_STOP) resetchannels();
+		if (mode==PLAY_STOP){
+			if (!fromengine){
+				resetchannels();
+				resetpatterns();
+			};
+		}
 		else{
 			playstatus.nextevent = 0.0;
 			notify(this,MTN_TEMPO,0,&playstatus.bpm);
@@ -502,19 +510,25 @@ void MTModule::play(int mode)
 	mlock->unlock();
 }
 
-void MTModule::setpos(double pos)
+void MTModule::setpos(double pos,bool fromengine)
 {
+	int x;
+
 	MTTRY
 		mlock->lock();
-		resetchannels();
+		if (!fromengine){
+			resetchannels();
+			resetpatterns();
+		};
 		playstatus.pos = playstatus.nextevent = pos;
 		lastbeat = -1;
+		for (x=0;x<MAX_LAYERS;x++) playstatus.cseq[x] = -1;
 	MTCATCH
 	MTEND
 	mlock->unlock();
 }
 
-void MTModule::settempo(int ctempo,int param,void *value)
+void MTModule::settempo(int ctempo,int param,void *value,bool fromengine)
 {
 	bool change = false;
 
@@ -553,6 +567,8 @@ bool MTModule::process(WaveOutput *output)
 	int remain = output->playlng;
 	bool locked = false;
 	bool silence = false;
+	bool needposchange = false;
+	int poschanges = 0;
 
 	playstatus.coutput = output;
 	if (!objectlock) return false;
@@ -599,17 +615,22 @@ prebuffer:
 			mlock->lock();
 			locked = true;
 			cpu->startadd(1);	// Events
+poschange:
 // Anything to do in the sequencer?
 			if (playstatus.nextevent<=playstatus.pos){
-				if (playstatus.pos>=playstatus.loopto){
-					playstatus.pos = playstatus.nextevent = playstatus.loopfrom;
-					lastbeat = -1;
-					for (x=0;x<MAX_LAYERS;x++) playstatus.cseq[x] = -1;
+				if ((playstatus.flags==PLAY_LOOP) && (playstatus.pos>=playstatus.loopto)){
+					setpos(playstatus.loopfrom,true);
+				};
+				if (playstatus.pos>=loope){
+					playstatus.flags = 0;
+					resetchannels();
+					resetpatterns();
 				};
 				playstatus.nextevent = playstatus.loopto;
 				if (playstatus.loopto<=playstatus.loopfrom){
 					playstatus.flags = 0;
 					resetchannels();
+					resetpatterns();
 				};
 				for (x=0;x<MAX_LAYERS;x++){
 					y = -1;
@@ -664,6 +685,7 @@ prebuffer:
 				if ((&cpatti) && (cpatti.parent->lockread==0) && (cpatti.parent->access.caccess & MTOA_CANPLAY)){
 					if (cpatti.nextevent<=cpatti.cpos) cpatti.processevents();
 					if ((cpatti.nextevent>0) && (cpatti.nextevent-cpatti.cpos<inc)) inc = cpatti.nextevent-cpatti.cpos;
+					else if (cpatti.nextevent==-2.0) needposchange = true;
 				};
 			};
 			for (x=0;x<playstatus.nchannels;x++){
@@ -671,7 +693,12 @@ prebuffer:
 				if ((&cchan) && (cchan.parent->lockread==0) && (cchan.parent->access.caccess & MTOA_CANPLAY)){
 					if (cchan.nextevent<=cchan.cpos) cchan.processevents();
 					if ((cchan.nextevent>0) && (cchan.nextevent-cchan.cpos<inc)) inc = cchan.nextevent-cchan.cpos;
+					else if (cchan.nextevent==-2.0) needposchange = true;
 				};
+			};
+			if (needposchange){
+				needposchange = false;
+				if (++poschanges<1000) goto poschange;
 			};
 			cpu->endadd(1);	// Events
 			i = (int)ceil(inc*playstatus.spb);
@@ -709,7 +736,7 @@ preprocess:
 			MTEND
 
 // Compiled engine instructions
-			subprocess(output,0,i,silence);
+			subprocess(output,0,inc,i,silence);
 
 			x = 1;
 postprocess:
@@ -767,8 +794,8 @@ postprocess:
 						if (playstatus.chan[x]->flags & IIF_BACKGROUND) nbackground++;
 						if (playstatus.chan[x]->flags & IIF_SLEEPING) nasleep++;
 					};
-					FLOGD4("%s - [Objects] Position: %09.4f - Channels: % 3d foreground % 3d background (% 3d asleep)"NL,playstatus.pos,playstatus.nchannels-nbackground,nbackground,nasleep);
-					FLOG5("  CPU: Total: %07.4f%% Events: %07.4f%% Mix: %07.4f%% Channels: %07.4f%% Effects: %07.4f%%"NL,cpu->getcpu(0)*100,cpu->getcpu(1)*100,cpu->getcpu(2)*100,cpu->getcpu(3)*100,cpu->getcpu(4)*100);
+					FLOGD4("%s - [Objects] Position: %9.4f - Channels: % 3d foreground % 3d background (% 3d asleep)"NL,playstatus.pos,playstatus.nchannels-nbackground,nbackground,nasleep);
+					FLOG5("  CPU: Total: %7.4f%% Events: %7.4f%% Mix: %7.4f%% Channels: %7.4f%% Effects: %7.4f%%"NL,cpu->getcpu(0)*100,cpu->getcpu(1)*100,cpu->getcpu(2)*100,cpu->getcpu(3)*100,cpu->getcpu(4)*100);
 				};
 #			endif
 		};
@@ -794,7 +821,7 @@ postbuffer:
 	return true;
 }
 
-bool MTModule::subprocess(WaveOutput *output,int cpuid,int lng,bool silence)
+bool MTModule::subprocess(WaveOutput *output,int cpuid,double inc,int lng,bool silence)
 {
 	int x;
 	RI *ri;
@@ -843,6 +870,10 @@ routing:
 					InstrumentInstance &cchan = *playstatus.chan[x];
 					if ((&cchan) && (cchan.track==ri->track) && (cchan.cpu==cpuid) && (cchan.parent->lockread==0) && (cchan.parent->access.caccess & MTOA_CANPLAY)){
 						MTTRY
+							if (cchan.flags & IIF_SLEEPING){
+								cchan.sleepingtime += inc;
+								if (cchan.sleepingtime>=objectsprefs.maxsleeptime) cchan.nextevent = -1.0;
+							};
 							cchan.process(lng);
 						MTCATCH
 							LOGD("%s - [Objects] ERROR: Exception while processing channel!"NL);
@@ -947,6 +978,17 @@ void MTModule::resetchannels()
 		};
 		si->memfree(playstatus.chan);
 	};
+	playstatus.nchannels = 0;
+	playstatus.nachannels = 8;
+	playstatus.chan = (InstrumentInstance**)si->memalloc(4*playstatus.nachannels,MTM_ZERO);
+	LEAVE();
+}
+
+void MTModule::resetpatterns()
+{
+	int x;
+
+	ENTER("MTModule::resetpatterns");
 	for (x=0;x<MAX_LAYERS;x++){
 		if (playstatus.patti[x]){
 			delete playstatus.patti[x];
@@ -954,9 +996,6 @@ void MTModule::resetchannels()
 		};
 		playstatus.cseq[x] = -1;
 	};
-	playstatus.nchannels = 0;
-	playstatus.nachannels = 8;
-	playstatus.chan = (InstrumentInstance**)si->memalloc(4*playstatus.nachannels,MTM_ZERO);
 	LEAVE();
 }
 
@@ -1082,7 +1121,7 @@ void checknode(RN *rn,Node *n,int level)
 
 	if ((n->noutputs==0) || (!n->outputs[0].n)) return;
 	if (level+1>rn->level) rn->level = level+1;
-	outputs = si->arraycreate(4);
+	outputs = si->arraycreate(4,0);
 	for (x=0;x<n->noutputs;x++){
 		o = n->outputs[x].n;
 		if (o==n){
@@ -1171,14 +1210,14 @@ void MTModule::updaterouting()
 		l = (output->buffersamples*2)*sizeof(sample);
 		buffers->clear(true);
 		ris->clear();
-		nodes = si->arraycreate(8);
+		nodes = si->arraycreate(8,0);
 		for (x=0;x<master->nitems;x++){
 			if (master->a[x]){
 				b = mtnew(RN);
 				b->level = 0;
 				b->node = A(master,Node)[x];
-				b->ins = si->arraycreate(4);
-				b->outs = si->arraycreate(4);
+				b->ins = si->arraycreate(4,0);
+				b->outs = si->arraycreate(4,0);
 				nodes->push(b);
 			};
 		};
@@ -1188,8 +1227,8 @@ void MTModule::updaterouting()
 				b = mtnew(RN);
 				b->level = 0;
 				b->node = A(trk,Node)[x];
-				b->ins = si->arraycreate(4);
-				b->outs = si->arraycreate(4);
+				b->ins = si->arraycreate(4,0);
+				b->outs = si->arraycreate(4,0);
 				nodes->push(b);
 				checknode(b,A(trk,Node)[x],0);
 			};
@@ -1201,8 +1240,8 @@ void MTModule::updaterouting()
 				b = mtnew(RN);
 				b->level = 0;
 				b->node = A(fx,Node)[x];
-				b->ins = si->arraycreate(4);
-				b->outs = si->arraycreate(4);
+				b->ins = si->arraycreate(4,0);
+				b->outs = si->arraycreate(4,0);
 				nodes->push(b);
 				checknode(b,A(fx,Node)[x],0);
 			};
@@ -1250,7 +1289,7 @@ void MTModule::updaterouting()
 			};
 		};
 // Prepare the input buffers of each effect
-		tmpbuf = si->arraycreate(fx->nitems);
+		tmpbuf = si->arraycreate(fx->nitems,0);
 		tmpbuf->additems(0,fx->nitems);
 		while ((b = (RN*)nodes->next())){
 			if ((b->node->objecttype & MTO_TYPEMASK)!=MTO_TRACK){

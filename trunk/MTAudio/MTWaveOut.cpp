@@ -158,7 +158,7 @@ MTAudioDeviceManager()
 		wodev[nwodev] = mtnew(WODevice);
 		WODevice &cdev = *wodev[nwodev++];
 		if ((waveOutGetDevCaps(x,&cdev.caps,sizeof(WAVEOUTCAPS))==0) && (cdev.caps.dwFormats)){
-			cdev.name = (char*)si->memalloc(strlen(cdev.caps.szPname)+1);
+			cdev.name = (char*)si->memalloc(strlen(cdev.caps.szPname)+1,0);
 			strcpy(cdev.name,cdev.caps.szPname);
 			cdev.id = x;
 			FLOG1("[Audio] Found device (WO): %s"NL,cdev.name);

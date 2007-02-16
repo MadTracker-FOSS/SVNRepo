@@ -32,7 +32,7 @@ int WINAPI dsenumproc(GUID *guid,const char *desc,const char *module,void*)
 	DSDevice &cdev = *dsdev[ndsdev++];
 	cdev.caps.dwSize = sizeof(DSCAPS);
 	cdev.bcaps.dwSize = sizeof(DSBCAPS);
-	cdev.name = (char*)si->memalloc(strlen(desc)+1);
+	cdev.name = (char*)si->memalloc(strlen(desc)+1,0);
 	strcpy(cdev.name,desc);
 	if (guid){
 		cdev.guid = mtnew(GUID);

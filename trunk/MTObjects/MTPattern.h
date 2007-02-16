@@ -109,6 +109,7 @@ public:
 	int id;
 	char *description;
 	unsigned char type,nbytes,ndata,ncpos;
+	virtual void MTCT init(MTPatternInstance*,ColumnStatus &status) = 0;
 	virtual void MTCT firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks) = 0;
 	virtual void MTCT columnhandle(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks) = 0;
 	virtual int MTCT getwidth(int charwidth) = 0;
@@ -153,6 +154,8 @@ struct TrackInfo{
 	ColInfo cols[MAX_PATT_COLS];
 };
 
+#define MTPF_INHERIT_TICKS 1
+
 class MTPattern : public Pattern{
 public:
 	MTPattern(MTObject *parent,mt_int32 i);
@@ -172,6 +175,7 @@ public:
 
 class MTPatternInstance : public PatternInstance{
 public:
+	int nticks;
 	int cline,ctick,ctrack;
 	ColumnStatus **cols[MAX_PATT_TRACKS];
 	

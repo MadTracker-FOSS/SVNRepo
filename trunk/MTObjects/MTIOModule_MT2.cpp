@@ -255,7 +255,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 	MTModule &module = *(MTModule*)object;
 	MTFile *f;
 	MTProcess *p = (MTProcess*)process;
-	int x,y,z,incl,size,csize,pc,ac,dc,max,nvst;
+	int x,y,z,incl,size,csize,pc,ac,dc,max,nvst,eox;
 	mt_uint32 tmpl;
 	_MT2Header header;
 	_MT2DrumsData drums;
@@ -364,7 +364,11 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 						break;
 					};
 				};
-				if ((x>=header.ntracks) && (trk.output>32)) trk.output = trk.output-32+header.ntracks;
+				if ((x>=header.ntracks) && (trk.output>header.ntracks)){
+					if (trk.output>64) trk.output = trk.output-64+header.ntracks;
+					else trk.output = trk.output-32+header.ntracks;
+				};
+				if (trk.output>=module.trk->nitems) trk.output = 0;
 				if (e){
 					module.fx->a[x] = e;
 					ctrk.outputs[0].n = e;
@@ -387,21 +391,19 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 			module.needupdaterouting();
 			break;
 		case FOURCC('T','R','K','L'):
-/*
-			tmpc = (char*)si->memalloc(csize);
+			tmpc = (char*)si->memalloc(csize,0);
 			for (x=0;x<header.ntracks+ndtracks;x++){
 				Track &ctrk = *A(module.trk,Track)[x];
 				f->readln(tmpc,csize);
 				if (tmpc[0]) ctrk.setname(tmpc);
 			};
 			si->memfree(tmpc);
-*/
 			break;
 		case FOURCC('P','A','T','N'):
 			break;
 		case FOURCC('M','S','G','\0'):
 			f->read(&module.showmessage,1);
-			module.message = (char*)si->memalloc(csize);
+			module.message = (char*)si->memalloc(csize,0);
 			f->read(module.message,csize-1);
 			break;
 		case FOURCC('P','I','C','T'):
@@ -411,12 +413,12 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 				f->read(&tmpb,1);
 				if (tmpb) module.summarymask |= (1<<x);
 			};
-			tmpc = (char*)si->memalloc(csize-6);
+			tmpc = (char*)si->memalloc(csize-6,0);
 			tmpc2 = tmpc;
 			f->read(tmpc,csize-6);
 			for (x=0;x<6;x++){
 				if ((tmpl = strlen(tmpc))!=0){
-					module.summary[x] = (char*)si->memalloc(tmpl+1);
+					module.summary[x] = (char*)si->memalloc(tmpl+1,0);
 					strcpy(module.summary[x],tmpc);
 				};
 				tmpc = strchr(tmpc,'\0')+1;
@@ -435,6 +437,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 		};
 		f->seek(z+csize,MTF_BEGIN);
 	};
+	FLOG1("  BPM: %0.4f"NL,D(module.tempo,Tempo)[0].bpm);
 	if (p) p->setprogress((float)f->seek(0,MTF_CURRENT)/max);
 // Patterns
 	for (x=0;x<header.npatts;x++){
@@ -442,6 +445,7 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 		module.patt->a[x] = &cpatt;
 		cpatt.lpb = header.lpb;
 		cpatt.ticks = header.ticks;
+		cpatt.flags |= MTPF_INHERIT_TICKS;
 		tmpl = 0;
 		f->read(&tmpl,2);
 		f->read(&size,4);
@@ -491,7 +495,6 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 					f->read(&cauto,sizeof(cauto));
 					if (cauto.flags){
 						tmpl = cauto.flags;
-						z = 0;
 						while (tmpl!=0){
 							_MT2EnvPoint tmpp[64];
 							if (tmpl & 1){
@@ -512,7 +515,6 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 					f->read(&cauto,sizeof(cauto));
 					tmpl = cauto.flags;
 				};
-				z = 0;
 				while (tmpl!=0){
 					_MT2EnvPoint tmpp[64];
 					if (tmpl & 1){
@@ -526,7 +528,6 @@ bool loadMT2(MTObject *object,char *filename,void *process)
 							ctrkauto.env.points[incl].y = (float)tmpp[incl].y;
 						};
 						pauto->envelopes->push(&ctrkauto);
-						z++;
 					};
 					tmpl >>= 1;
 					ok = true;
@@ -538,8 +539,8 @@ autoskip:
 				}
 				else if (y==MAX_TRACKS+1){
 					if (header.version<0x250) break;
-				}
-				else if (y>=MAX_TRACKS+1+nvst) break;
+				};
+				if (y>=MAX_TRACKS+1+nvst) break;
 			};
 			if (!ok){
 				delete pauto;
@@ -629,9 +630,10 @@ autoskip:
 			cinstr.vibsweep = idata.vibsweep;
 			cinstr.vibdepth = idata.vibdepth;
 			cinstr.vibrate = idata.vibrate;
-			cinstr.fadeout = -(double)idata.fadeout*(header.ticks*header.lpb)/65536;
+			cinstr.fadeout = -(double)idata.fadeout*(header.ticks*header.lpb)/32768;
 			cinstr.nna = idata.nna;
 			tmpl = idata.envmask;
+			cinstr.tpb = header.ticks*header.lpb;
 			for (y=0;y<4;y++){
 				_MT2IEnvelope iedata;
 				if (tmpl & 1){
@@ -642,9 +644,23 @@ autoskip:
 					cenv.loops = iedata.loops;
 					cenv.loope = iedata.loope;
 					cenv.susts = cenv.suste = iedata.sust;
-					for (incl=0;incl<16;incl++){
-						cenv.points[incl].x = (float)iedata.points[incl].x/(header.ticks*header.lpb);
-						cenv.points[incl].y = (float)iedata.points[incl].y/64;
+					incl = 0;
+					eox = 0;
+//					if ((y<2) && (((cenv.flags & EF_SUSTAIN)==0) || (cenv.susts>0))){
+					if (y<2){
+						cenv.points[0].x = (float)(iedata.points[0].x+eox)/cinstr.tpb;
+						cenv.points[0].y = (float)iedata.points[0].y/64;
+						incl = 1;
+						eox = 1;
+						cenv.npoints++;
+						cenv.loops++;
+						cenv.loope++;
+						cenv.susts++;
+						cenv.suste++;
+					};
+					for (z=0;z<16;z++,incl++){
+						cenv.points[incl].x = (float)(iedata.points[z].x+eox)/cinstr.tpb;
+						cenv.points[incl].y = (float)iedata.points[z].y/64;
 					};
 				};
 				tmpl >>= 1;
@@ -694,7 +710,7 @@ autoskip:
 		if (p) p->setprogress((float)f->seek(0,MTF_CURRENT)/max);
 	};
 // Groups
-	tmpc = (char*)si->memalloc(8);
+	tmpc = (char*)si->memalloc(8,0);
 	for (x=1;x<=header.ninstr;x++){
 		MTInstrument &cinstr = *A(module.instr,MTInstrument)[x];
 		if (&cinstr){
@@ -765,12 +781,12 @@ autoskip:
 				f->read(tmpc,size);
 				if (tmpc[1]!=':'){
 					tmpl = strlen(filename)+strlen(tmpc)+1;
-					cspl.filename = (char*)si->memalloc(tmpl);
+					cspl.filename = (char*)si->memalloc(tmpl,0);
 					strcpy(cspl.filename,filename);
 					strcat(cspl.filename,tmpc);
 				}
 				else{
-					cspl.filename = (char*)si->memalloc(strlen(tmpc)+1);
+					cspl.filename = (char*)si->memalloc(strlen(tmpc)+1,0);
 					strcpy(cspl.filename,tmpc);
 				};
 				si->memfree(tmpc);
@@ -802,6 +818,132 @@ autoskip:
 	si->fileclose(f);
 	return true;
 abort:
+error:
+	si->fileclose(f);
+	return false;
+}
+
+bool infoMT2(MTMiniConfig *data,char *filename,void *process)
+{
+	MTFile *f;
+	_MT2Header header;
+	_MT2DrumsData drums;
+	char *e;
+	int x,y,ndtracks;
+	mt_uint32 incl,orig,tmpl,size,csize;
+	mt_uint32 nvst = 0;
+	double tmpd;
+	double pattbeats[256];
+
+	if ((f = si->fileopen(filename,MTF_READ|MTF_SHAREREAD))==0) return false;
+	mtmemzero(pattbeats,sizeof(pattbeats));
+	f->read(&header,sizeof(header));
+	if (strncmp(header.id,"MT20",4)) goto error;
+	if (header.title[0]!=0) e = header.title;
+	else{
+		e = strrchr(filename,'/');
+		if (!e) e = strrchr(filename,'\\');
+		if (e) e++;
+		else e = filename;
+	};
+	data->setparameter("title",e,MTCT_STRING,-1);
+	tmpd = 44100.0*60.0/(header.ticks*header.lpb*header.spt);
+	data->setparameter("bpm",&tmpd,MTCT_FLOAT,sizeof(tmpd));
+	if (header.ddl){
+		ndtracks = 8;
+		f->read(&drums,sizeof(drums));
+	}
+	else{
+		ndtracks = 0;
+		mtmemzero(&drums,sizeof(drums));
+	};
+	f->read(&size,4);
+	incl = 0;
+	while (incl<size){
+		f->read(&tmpl,4);
+		f->read(&csize,4);
+		orig = f->pos();
+		incl += csize+8;
+		switch (tmpl){
+		case FOURCC('B','P','M','+'):
+			f->read(&tmpd,8);
+			tmpd = 44100.0*60.0/(header.ticks*header.lpb*tmpd);
+			data->setparameter("bpm",&tmpd,MTCT_FLOAT,sizeof(tmpd));
+			break;
+		case FOURCC('V','S','T','2'):
+			f->read(&nvst,4);
+			break;
+		};
+		f->seek(orig+csize,MTF_BEGIN);
+	};	
+	for (x=0;x<header.npatts;x++){
+		tmpl = 0;
+		f->read(&tmpl,2);
+		pattbeats[x] = (double)tmpl/header.lpb;
+		f->read(&size,4);
+		if (size & 1) size++;
+		f->seek(size,MTF_CURRENT);
+	};
+	for (x=0;x<drums.ndpatts;x++){
+		tmpl = 0;
+		f->read(&tmpl,2);
+		f->seek(tmpl*8*4,MTF_CURRENT);
+	};
+	if (header.flags & MF_AUTOMATION){
+		for (x=0;x<header.npatts;x++){
+			y = 0;
+			while (true){
+				if (y>MAX_TRACKS+1){
+					_MT2Automation203 cauto;
+					f->read(&cauto,sizeof(cauto));
+					if (cauto.flags){
+						tmpl = cauto.flags;
+						while (tmpl!=0){
+							_MT2EnvPoint tmpp[64];
+							if (tmpl & 1){
+								f->seek(4+sizeof(_MT2EnvPoint)*64,MTF_CURRENT);
+							};
+							tmpl >>= 1;
+						};
+					};
+					goto autoskip;
+				};
+				if (header.version>=0x203){
+					_MT2Automation203 cauto;
+					f->read(&cauto,sizeof(cauto));
+					tmpl = cauto.flags;
+				}
+				else{
+					_MT2Automation cauto;
+					f->read(&cauto,sizeof(cauto));
+					tmpl = cauto.flags;
+				};
+				while (tmpl!=0){
+					_MT2EnvPoint tmpp[64];
+					if (tmpl & 1){
+						f->seek(4+sizeof(_MT2EnvPoint)*64,MTF_CURRENT);
+					};
+					tmpl >>= 1;
+				};
+autoskip:
+				y++;
+				if (y==header.ntracks+ndtracks){
+					y = MAX_TRACKS;
+				}
+				else if (y==MAX_TRACKS+1){
+					if (header.version<0x250) break;
+				};
+				if (y>=MAX_TRACKS+1+nvst) break;
+			};
+		};
+	};
+	tmpd = 0.0;
+	for (x=0;x<header.npos;x++){
+		tmpd += pattbeats[header.pl[x]];
+	};
+	data->setparameter("beats",&tmpd,MTCT_FLOAT,sizeof(tmpd));
+	si->fileclose(f);
+	return true;
 error:
 	si->fileclose(f);
 	return false;

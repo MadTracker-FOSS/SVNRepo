@@ -1034,7 +1034,7 @@ void MTPattManager::gettrackrect(int t,int w,MTRect &r)
 	r.left = pattx;
 	for (x=otrack;x<otrack+t;x++) r.left += cellwidth[x];
 	r.right = r.left;
-	for (x=otrack+t;x<otrack+w;x++) r.right += cellwidth[x];
+	for (x=otrack+t;x<otrack+t+w;x++) r.right += cellwidth[x];
 	r.top = 0;
 	r.bottom = patty;
 }

@@ -141,7 +141,7 @@ int lzhdecode2(void *stream,int length,void *bits)
 	register unsigned long code,len;
 
 	ENTER("lzhdecode2");
-	codetab = (code_t*)si->memalloc(CSIZE*sizeof(code_t));
+	codetab = (code_t*)si->memalloc(CSIZE*sizeof(code_t),0);
 	for (code=0;code<256;code++){
 		codetab[code].value = (unsigned char)code;
 		codetab[code].firstchar = (unsigned char)code;
@@ -267,7 +267,7 @@ void* loadgif(MTFile *f,int &colorkey)
 					if (f->read(buf,1)!=1) break;
 				};
 				f->seek(x,MTF_BEGIN);
-				stream = si->memalloc(y);
+				stream = si->memalloc(y,0);
 				sp = (char*)stream;
 				f->read(buf,1);
 				while (buf[0]){
@@ -427,7 +427,7 @@ void* loadtif(MTFile *f,int &colorkey)
 						break;
 					case 273:	// StripOffsets
 						if (translated){
-							stripoffsets = (int*)si->memalloc(sizeof(int));
+							stripoffsets = (int*)si->memalloc(sizeof(int),0);
 							stripsperimage = 1;
 							*stripoffsets = eoffset;
 						}
@@ -461,7 +461,7 @@ void* loadtif(MTFile *f,int &colorkey)
 						break;
 					case 279:	// StripByteCounts
 						if (translated){
-							striplengths = (int*)si->memalloc(sizeof(int));
+							striplengths = (int*)si->memalloc(sizeof(int),0);
 							stripsperimage = 1;
 							*striplengths = eoffset;
 						}
@@ -490,7 +490,7 @@ void* loadtif(MTFile *f,int &colorkey)
 						predictor = eoffset;
 						break;
 					case 320:	// ColorMap
-						pal = (Palette*)si->memalloc((1<<bps[0])*sizeof(Palette));
+						pal = (Palette*)si->memalloc((1<<bps[0])*sizeof(Palette),0);
 						f->seek(eoffset,MTF_BEGIN);
 						f->read(pal,elength*sizeof(short));
 						f->seek(offset,MTF_BEGIN);
@@ -510,8 +510,8 @@ void* loadtif(MTFile *f,int &colorkey)
 						if (striplengths[x]>maxlength) maxlength = striplengths[x];
 					};
 					elength = (bps[0]>>3)*spp*w*(h+1);
-					tmp = si->memalloc(maxlength);
-					stream = si->memalloc(elength);
+					tmp = si->memalloc(maxlength,0);
+					stream = si->memalloc(elength,0);
 					sp = (char*)stream;
 					ep = sp;
 					for (x=0;x<stripsperimage;x++){
@@ -558,7 +558,7 @@ void* loadtif(MTFile *f,int &colorkey)
 				}
 				else{
 					for (x=0;x<stripsperimage;x++) elength += striplengths[x];
-					stream = si->memalloc(elength);
+					stream = si->memalloc(elength,0);
 					sp = (char*)stream;
 					ep = sp;
 					for (x=0;x<stripsperimage;x++){

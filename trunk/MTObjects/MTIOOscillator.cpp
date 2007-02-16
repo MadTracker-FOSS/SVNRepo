@@ -41,9 +41,10 @@ bool loadWAV(MTObject *object,char *filename,void *process)
 	};
 	f->releasepointer(&criff);
 	f->seek(12,MTF_CURRENT);
-	sample.filename = (char*)si->memalloc(strlen(filename)+1);
+	sample.filename = (char*)si->memalloc(strlen(filename)+1,0);
 	strcpy(sample.filename,filename);
-	e = strrchr(filename,'\\');
+	e = strrchr(filename,'/');
+	if (!e) e = strrchr(filename,'\\');
 	if (e) strcpy(tmpc,e+1);
 	else strcpy(tmpc,filename);
 	tmpl = (int)strchr(tmpc,'.')-(int)tmpc;

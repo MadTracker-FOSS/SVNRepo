@@ -13,7 +13,7 @@
 #include "MTXObject.h"
 #include "MTXEffect.h"
 //---------------------------------------------------------------------------
-Effect::Effect(MTModule *parent,int type,int i):
+Effect::Effect(MTObject *parent,int type,int i):
 Node(parent,type,i),
 ei(0)
 {

@@ -35,6 +35,7 @@
 #define MTAUDIO_EXPORTS
 
 #define MT3CONFIG_INCLUDED
+#define MTSYSTEM_MINICONFIG
 //---------------------------------------------------------------------------
 #include "../MTSystem/MTSystem1.h"
 #include "../MTDSP/MTDSP1.h"

@@ -64,6 +64,8 @@ struct MTDevice{
 
 class MTAudioInterface : public MTXInterface{
 public:
+	bool running,recording;
+
 	MTAudioInterface();
 	bool MTCT init();
 	void MTCT uninit();
@@ -81,7 +83,8 @@ public:
 	virtual bool MTCT adddevicemanager(MTAudioDeviceManager *manager);
 	virtual void MTCT deldevicemanager(MTAudioDeviceManager *manager);
 	virtual WaveOutput* MTCT getoutput();
-	bool running;
+	virtual void MTCT debugpoint(int offset,const char *text);
+	MTArray *_dp;
 private:
 	MTThread *thread;
 };

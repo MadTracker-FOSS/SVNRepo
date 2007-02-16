@@ -36,6 +36,8 @@
 #	include <dlfcn.h>
 #	include <termios.h>
 #	include <execinfo.h>
+#	include <sys/utsname.h>
+#	include <sys/sysinfo.h>
 #endif
 //---------------------------------------------------------------------------
 static const char *sysname = {"MadTracker System Core"};
@@ -137,9 +139,11 @@ void startlog()
 		if (mtinterface){
 			mtlog("Application:   ");
 			mtlog(mtinterface->name);
-			mtflog(" %d.%d.%d"NL,false,mtinterface->version>>16,(mtinterface->version>>8) & 0xFF,mtinterface->version & 0xFF);
+			mtflog(" %d.%d.%d",false,mtinterface->version>>16,(mtinterface->version>>8) & 0xFF,mtinterface->version & 0xFF);
 		};
-		mtlog("Platform:      ");
+		mtlog(NL"Hostname:      ");
+		mtlog(si->hostname);
+		mtlog(NL"Platform:      ");
 		mtlog(si->platform);
 		mtlog(" ");
 		mtlog(si->build);
@@ -158,15 +162,16 @@ void startlog()
 			sprintf(buf,"%d msec"NL""NL,timecaps.wPeriodMin);
 			mtlog(buf);
 #		else
-			char mbuf[4096+1];
 			int fd,len;
-			mtlog(NL"Memory:"NL);
-			fd = open("/proc/meminfo",O_RDONLY);
-			len = read(fd,mbuf,sizeof(buf)-1);
-			mbuf[len] = 0;
-			close(fd);
-			mtlog(mbuf);
-			mtlog(NL);			
+			sysinfo si;
+			if (sysinfo(&si)==0){
+				mtlog(NL"Memory:        Total: ");
+				sprintf(buf,"%d MB (%d MB)",si.totalram/1048576,mem.totalswap/1048576);
+				mtlog(buf);
+				mtlog(NL"               Free:  ");
+				sprintf(buf,"%d MB (%d MB)"NL,mem.freeram/1048576,mem.freeswap/1048576);
+				mtlog(buf);
+			};
 			mtlog("Capabilities:  Timer resolution: ");
 			sprintf(buf,"%f msec"NL""NL,(double)timerres.tv_nsec/1000000);
 			mtlog(buf);
@@ -230,7 +235,7 @@ void mtlog(const char *log,char date)
 #			ifdef _WIN32
 				if (debugged) OutputDebugString(logbuf);
 #			else
-				if (debugged) fprintf(stdout,logbuf);
+				if (debugged) fputs(logbuf,stdout);
 #			endif
 			logfile->write(logbuf,strlen(logbuf));
 		}
@@ -238,7 +243,7 @@ void mtlog(const char *log,char date)
 #			ifdef _WIN32
 				if (debugged) OutputDebugString(log);
 #			else
-				if (debugged) fprintf(stdout,log);
+				if (debugged) fputs(log,stdout);
 #			endif
 			logfile->write(log,strlen(log));
 		};
@@ -1078,7 +1083,7 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 			fprintf(stdout,"-- %s --"NL"%s"NL"--"NL,caption,message);
 			switch ((int)buttons){
 			case (int)MTD_OKCANCEL:
-				fprintf(stdout,"[Ok][Cancel]?");
+				fputs("[Ok][Cancel]?",stdout);
 				while (true){
 					c = mtgetchar();
 					if ((c=='o') || (c=='O')){
@@ -1092,7 +1097,7 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 				};
 				break;
 			case (int)MTD_YESNO:
-				fprintf(stdout,"[Yes][No]?");
+				fputs("[Yes][No]?",stdout);
 				while (true){
 					c = mtgetchar();
 					if ((c=='y') || (c=='Y')){
@@ -1106,7 +1111,7 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 				};
 				break;
 			case (int)MTD_YESNOCANCEL:
-				fprintf(stdout,"[Yes][No][Cancel]?");
+				fputs("[Yes][No][Cancel]?",stdout);
 				while (true){
 					c = mtgetchar();
 					if ((c=='y') || (c=='Y')){
@@ -1124,7 +1129,7 @@ int mtdialog(char *message,char *caption,char *buttons,int flags,int timeout)
 				};
 				break;
 			default:
-				fprintf(stdout,"Press any key to continue...");
+				fputs("Press any key to continue...",stdout);
 				mtgetchar();
 				ret = 0;
 				break;
@@ -1312,7 +1317,7 @@ cpumonitorcreate(mtcpumonitorcreate),
 syscounter(mtsyscounter),
 syscounterex(mtsyscounterex),
 syswait(mtsyswait),
-syswaitmultiple(mtsyswaitmultiple),
+//syswaitmultiple(mtsyswaitmultiple),
 dialog(mtdialog),
 #ifdef MTSYSTEM_RESOURCES
 	resdialog(mtresdialog),
@@ -1356,6 +1361,7 @@ bool MTSystemInterface::init()
 #ifdef _WIN32
 #else
 	int fd,len;
+	utsname un;
 #endif
 
 //fprintf(stderr,"ERROR CHECK: %d"NL,IsBadReadPtr((void*)0,128));
@@ -1409,9 +1415,12 @@ bool MTSystemInterface::init()
 		platform = (char*)mtmemalloc(512);
 		build = (char*)mtmemalloc(512);
 		processor = (char*)mtmemalloc(512);
+		hostname = (char*)mtmemalloc(512);
 #		ifdef _WIN32
+			DWORD hns = 512;
 			osinfo.dwOSVersionInfoSize = sizeof(osinfo);
 			GetVersionEx(&osinfo);
+			GetComputerName(hostname,&hns);
 			GetSystemInfo(&sysinfo);
 			ncpu = sysinfo.dwNumberOfProcessors;
 			strcpy(platform,"Windows ");
@@ -1563,6 +1572,17 @@ bool MTSystemInterface::init()
 			if (len==0) len = 1;
 			sprintf(processor,"%d x ",len);
 		staterror:
+			if (uname(&un)==0){
+				strcpy(hostname,un.node);
+				strcpy(platform,un.sysname);
+				strcat(platform," ");
+				strcat(platform,un.machine);
+				strcat(platform," Version ");
+				strcat(platform,un.release);
+				strcpy(build,"Build ");
+				strcat(build,un.version);
+			};
+/*			
 			e = platform;
 			fd = open("/proc/sys/kernel/ostype",O_RDONLY);
 			len = read(fd,e,128);
@@ -1587,6 +1607,7 @@ bool MTSystemInterface::init()
 			e[len] = 0;
 			e = strchr(build,'\n');
 			if (e) *e = 0;
+*/
 		oserror:
 			strcpy(proctype,"x86 ");
 			char *_buf = (char*)calloc(1,256);
@@ -1662,7 +1683,7 @@ bool MTSystemInterface::init()
 				};
 			};
 #		endif
-		cpufrequ = 1000;
+//		cpufrequ = 1000;
 		if (cpufrequ==0){
 #			ifndef __GNUC__
 				__asm{
@@ -1702,7 +1723,7 @@ bool MTSystemInterface::init()
 					fchs\n\
 					fdivl	%[cpu_div]\n\
 					fistpl	%[cpufrequ]\n\
-					addl	8,%%esp\n\
+					addl	$8,%%esp\n\
 					"
 					:[cpufrequ]"=m"(cpufrequ)
 					:[cpu_div]"m"(cpu_div),[cpu_wait]"m"(cpu_wait)
@@ -1909,7 +1930,7 @@ void MTSystemInterface::delfilehook(char *type,MTFileHook *hook)
 extern "C"
 {
 
-MTXInterfaces* MTCT MTXMain(MTInterface *mti)
+MTEXPORT MTXInterfaces* MTCT MTXMain(MTInterface *mti)
 {
 	mtinterface = mti;
 	if (!si) si = new MTSystemInterface();

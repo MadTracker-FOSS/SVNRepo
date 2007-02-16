@@ -61,6 +61,10 @@ NoteColumn::NoteColumn()
 	ncpos = 4;
 }
 
+void NoteColumn::init(MTPatternInstance*,ColumnStatus &status)
+{
+}
+
 void NoteColumn::firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks)
 {
 	if ((*celldata>0) && (*celldata<97)) pass.flags |= MTFP_ISNOTE;
@@ -289,6 +293,10 @@ DrumsColumn::DrumsColumn()
 	ncpos = 3;
 }
 
+void DrumsColumn::init(MTPatternInstance*,ColumnStatus &status)
+{
+}
+
 void DrumsColumn::firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks)
 {
 	unsigned char note = *celldata;
@@ -421,6 +429,10 @@ VolumeColumn::VolumeColumn()
 	nbytes = 1;
 	ndata = 0;
 	ncpos = 2;
+}
+
+void VolumeColumn::init(MTPatternInstance*,ColumnStatus &status)
+{
 }
 
 void VolumeColumn::firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks)
@@ -576,6 +588,10 @@ PanningColumn::PanningColumn()
 	ncpos = 2;
 }
 
+void PanningColumn::init(MTPatternInstance*,ColumnStatus &status)
+{
+}
+
 void PanningColumn::firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks)
 {
 	if ((pass.flags & MTFP_ISNOTE) && (*celldata)){
@@ -664,6 +680,14 @@ EffectColumn::EffectColumn()
 	nbytes = 3;
 	ndata = sizeof(EffectData);
 	ncpos = 6;
+}
+
+void EffectColumn::init(MTPatternInstance*,ColumnStatus &status)
+{
+	register EffectData &ed = *(EffectData*)&status.data;
+
+	ed.needbreak = false;
+	ed.needjump = 0;
 }
 
 void EffectColumn::firstpass(MTPatternInstance *pi,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks)

@@ -45,6 +45,12 @@ int ndevices;
 	MTFile *recf;
 #endif
 //---------------------------------------------------------------------------
+struct _DP{
+	mt_uint32 offset;
+	char label[256];
+};
+void menurecord(MTShortcut *s,MTControl *c,MTUndo*);
+//---------------------------------------------------------------------------
 int AudioThread(MTThread*,void* pool)
 {
 	double oldc,curc,intc,usec;
@@ -78,7 +84,9 @@ int AudioThread(MTThread*,void* pool)
 //---------------------------------------------------------------------------
 MTAudioInterface::MTAudioInterface():
 thread(0),
-running(true)
+running(true),
+recording(false),
+_dp(0)
 {
 	type = audiotype;
 	key = &audiokey;
@@ -138,6 +146,9 @@ bool MTAudioInterface::init()
 		};
 		mtinterface->releaseconf(conf);
 	};
+#	ifdef _DEBUG
+		_dp = si->arraycreate(4,sizeof(_DP));
+#	endif
 	LOGD("%s - [Audio] Starting audio thread..."NL);
 	running = true;
 	thread = si->threadcreate(AudioThread,false,true,this,MTT_REALTIME,"Audio");
@@ -150,10 +161,9 @@ void MTAudioInterface::uninit()
 {
 	ENTER("MTAudioInterface::uninit");
 #	ifdef _DEBUG
-		if (recf){
-			si->fileclose(recf);
-			recf = 0;
-		};
+		if (recording) menurecord(0,0,0);
+		_dp->clear(true);
+		si->arraydelete(_dp);
 #	endif
 	LOGD("%s - [Audio] Uninitializing..."NL);
 	status &= (~MTX_INITIALIZED);
@@ -180,34 +190,6 @@ void MTAudioInterface::uninit()
 	LEAVE();
 }
 
-#ifdef _DEBUG
-void menurecord(MTShortcut *s,MTControl *c,MTUndo*)
-{
-	MTMenuItem *item = (MTMenuItem*)c;
-	char file[512];
-
-	if ((!c) || (c->guiid!=MTC_MENUITEM)) return;
-	MTTRY
-		output.lock->lock();
-		if (item->tag==0){
-			item->setcaption("Stop Recording");
-			item->tag = 1;
-			strcpy(file,mtinterface->getprefs()->syspath[SP_ROOT]);
-			strcat(file,"Record.raw");
-			recf = si->fileopen(file,MTF_WRITE|MTF_SHAREREAD|MTF_CREATE);
-		}
-		else{
-			si->fileclose(recf);
-			recf = 0;
-			item->setcaption("Start Recording");
-			item->tag = 0;
-		};
-	MTCATCH
-	MTEND
-	output.lock->unlock();
-}
-#endif
-
 void MTAudioInterface::start()
 {
 #	ifdef _DEBUG
@@ -228,7 +210,7 @@ void MTAudioInterface::start()
 
 void MTAudioInterface::stop()
 {
-
+	deactivatedevices();
 }
 
 void MTAudioInterface::processcmdline(void *params)
@@ -418,6 +400,142 @@ WaveOutput* MTAudioInterface::getoutput()
 {
 	return &output;
 }
+
+void MTAudioInterface::debugpoint(int offset,const char *text)
+{
+	_DP ndp;
+
+	if (!recording) return;
+	ndp.offset = offset;
+	strcpy(ndp.label,text);
+	ai->_dp->push(&ndp);
+}
+
+#ifdef _DEBUG
+void menurecord(MTShortcut *s,MTControl *c,MTUndo*)
+{
+	MTMenuItem *item = (MTMenuItem*)c;
+	char file[512];
+	static struct RIFF{
+		mt_uint32 riff;
+		mt_uint32 filesize;
+		mt_uint32 wave;
+		mt_uint32 fmt;
+		mt_uint32 fmtsize;
+		mt_uint16 comp;
+		mt_uint16 channels;
+		mt_uint32 samplerate;
+		mt_uint32 byterate;
+		mt_uint16 blockalign;
+		mt_uint16 bitspersample;
+		mt_uint32 data;
+		mt_uint32 datasize;
+	} head;
+	mt_uint32 x,csize,tmp;
+	_DP *cdp;
+
+	MTTRY
+		output.lock->lock();
+		if ((item) && (item->tag==0)){
+			strcpy(file,mtinterface->getprefs()->syspath[SP_ROOT]);
+			strcat(file,"Record.wav");
+			recf = si->fileopen(file,MTF_WRITE|MTF_CREATE);
+			if (recf){
+				ai->recording = true;
+				item->setcaption("Stop Recording");
+				item->tag = 1;
+				recf->seteof();
+				head.riff = FOURCC('R','I','F','F');
+				head.filesize = 0;
+				head.wave = FOURCC('W','A','V','E');
+				head.fmt = FOURCC('f','m','t',' ');
+				head.fmtsize = 16;
+				head.comp = 1;
+				head.channels = 2;
+				head.samplerate = 44100;
+				head.byterate = 44100*4;
+				head.blockalign = 4;
+				head.bitspersample = 16;
+				head.data = FOURCC('d','a','t','a');
+				head.datasize = 0;
+				recf->write(&head,sizeof(head));
+			};
+		}
+		else{
+			ai->recording = false;
+			head.datasize = recf->pos()-44;
+			if (ai->_dp->nitems>0){
+				tmp = FOURCC('c','u','e',' ');
+				recf->write(&tmp,4);
+				csize = recf->pos();
+				tmp = 0;
+				recf->write(&tmp,4);
+				tmp = ai->_dp->nitems;
+				recf->write(&tmp,4);
+				ai->_dp->reset();
+				x = 1;
+				while (cdp = (_DP*)ai->_dp->next()){
+					recf->write(&x,4);
+					recf->write(&cdp->offset,4);
+					tmp = FOURCC('d','a','t','a');
+					recf->write(&tmp,4);
+					tmp = 0;
+					recf->write(&tmp,4);
+					recf->write(&tmp,4);
+					recf->write(&cdp->offset,4);
+					x++;
+				};
+				x = recf->pos();
+				recf->seek(csize,MTF_BEGIN);
+				tmp = x-csize-4;
+				recf->write(&tmp,4);
+				recf->seek(x,MTF_BEGIN);
+				tmp = FOURCC('L','I','S','T');
+				recf->write(&tmp,4);
+				csize = recf->pos();
+				tmp = 0;
+				recf->write(&tmp,4);
+				tmp = FOURCC('a','d','t','l');
+				recf->write(&tmp,4);
+				ai->_dp->reset();
+				x = 1;
+				while (cdp = (_DP*)ai->_dp->next()){
+					tmp = FOURCC('l','a','b','l');
+					recf->write(&tmp,4);
+					tmp = strlen(cdp->label)+1+4;
+					if (tmp & 1) tmp++;
+					recf->write(&tmp,4);
+					recf->write(&x,4);
+					tmp = strlen(cdp->label)+1;
+					recf->write(cdp->label,tmp);
+					if (tmp & 1){
+						tmp = 0;
+						recf->write(&tmp,1);
+					};
+					x++;
+				};
+				x = recf->pos();
+				recf->seek(csize,MTF_BEGIN);
+				tmp = x-csize-4;
+				recf->write(&tmp,4);
+				recf->seek(x,MTF_BEGIN);
+				ai->_dp->clear(true);
+			};
+			head.filesize = recf->pos()-8;
+			recf->seek(0,MTF_BEGIN);
+			recf->write(&head,sizeof(head));
+			si->fileclose(recf);
+			recf = 0;
+			if (item){
+				item->setcaption("Start Recording");
+				item->tag = 0;
+			};
+		};
+	MTCATCH
+	MTEND
+	output.lock->unlock();
+}
+#endif
 //---------------------------------------------------------------------------
 extern "C"
 {

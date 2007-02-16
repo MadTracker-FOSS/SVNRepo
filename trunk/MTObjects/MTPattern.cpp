@@ -46,7 +46,7 @@ PatternType::PatternType()
 {
 	type = MTO_MTPATTERN;
 	description = "Pattern";
-	columns = si->arraycreate(4);
+	columns = si->arraycreate(4,0);
 }
 
 PatternType::~PatternType()
@@ -225,6 +225,7 @@ void MTPattern::setcolumns(int track,char **columns,bool preserve)
 //---------------------------------------------------------------------------
 MTPatternInstance::MTPatternInstance(Pattern *p,Sequence *s,int l,PatternInstance *previous):
 PatternInstance(p,s,l,previous),
+nticks(((MTPattern*)p)->ticks),
 cline(0),
 ctick(0),
 lastline(-1)
@@ -235,7 +236,7 @@ lastline(-1)
 
 	mtmemzero(cols,sizeof(cols));
 	for (x=0;x<mtp->ntracks;x++){
-		cols[x] = (ColumnStatus**)si->memalloc(sizeof(Column*)*mtp->tracks[x].ncolumns);
+		cols[x] = (ColumnStatus**)si->memalloc(sizeof(Column*)*mtp->tracks[x].ncolumns,0);
 		for (y=0;y<mtp->tracks[x].ncolumns;y++){
 			cols[x][y] = (ColumnStatus*)si->memalloc(sizeof(ColumnStatus)-1+mtp->tracks[x].cols[y].handler->ndata,MTM_ZERO);
 		};
@@ -243,6 +244,7 @@ lastline(-1)
 	if ((previous) && (previous->parent->objecttype==parent->objecttype)){
 		MTPatternInstance &cprevious = *(MTPatternInstance*)previous;
 		MTPattern &cparent = *(MTPattern*)cprevious.parent;
+		if (p->flags & MTPF_INHERIT_TICKS) nticks = cprevious.nticks;
 		n = cparent.ntracks;
 		if (mtp->ntracks<n) n = mtp->ntracks;
 		memset(colmap,-1,sizeof(colmap));
@@ -265,6 +267,7 @@ lastline(-1)
 			for (y=0;y<cparent.tracks[x].ncolumns;y++){
 				if (colmap[x][y]<0) continue;
 				memcpy(cols[x][colmap[x][y]]->data,cprevious.cols[x][y]->data,cparent.tracks[x].cols[y].handler->ndata);
+				mtp->tracks[x].cols[colmap[x][y]].handler->init(this,*cols[x][colmap[x][y]]);
 			};
 		};
 		for (;x<cparent.ntracks;x++){
@@ -297,9 +300,9 @@ void MTPatternInstance::processevents()
 	MTPattern &cparent = *(MTPattern*)parent;
 	FirstPass pass;
 
-	ctick = (int)floor(cpos*(double)(cparent.lpb*cparent.ticks)+0.0001);
-	cline = ctick/cparent.ticks;
-	ctick %= cparent.ticks;
+	ctick = (int)floor(cpos*(double)(cparent.lpb*nticks)+0.0001);
+	cline = ctick/nticks;
+	ctick %= nticks;
 	inc = 1.0;
 	celldata = cparent.data+cline*cparent.linesize;
 	if (lastline!=cline){
@@ -331,9 +334,11 @@ void MTPatternInstance::processevents()
 			for (y=0;y<ti.ncolumns;y++){
 				ColumnStatus &cstatus = *cols[ctrack][y];
 				if (cstatus.nextevent<=cstatus.cpos){
-					ti.cols[y].handler->firstpass(this,celldata+ti.cols[y].celloffset,pass,cstatus,ctick,cparent.ticks);
+					ti.cols[y].handler->firstpass(this,celldata+ti.cols[y].celloffset,pass,cstatus,ctick,nticks);
+					if (cstatus.nextevent==-2.0) nextevent = -2.0;
 				};
 			};
+			if (nextevent==-2.0) return;
 			if (pass.delay>0.0){
 				for (y=0;y<ti.ncolumns;y++){
 					ColumnStatus &cstatus = *cols[ctrack][y];
@@ -343,7 +348,7 @@ void MTPatternInstance::processevents()
 			for (y=0;y<ti.ncolumns;y++){
 				ColumnStatus &cstatus = *cols[ctrack][y];
 				if (cstatus.nextevent<=cstatus.cpos){
-					ti.cols[y].handler->columnhandle(this,celldata+ti.cols[y].celloffset,pass,cstatus,ctick,cparent.ticks);
+					ti.cols[y].handler->columnhandle(this,celldata+ti.cols[y].celloffset,pass,cstatus,ctick,nticks);
 				};
 				tmp = cstatus.nextevent-cstatus.cpos;
 				if ((tmp>0.0) && (tmp<inc)) inc = tmp;

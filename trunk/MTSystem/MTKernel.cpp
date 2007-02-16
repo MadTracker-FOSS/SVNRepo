@@ -183,7 +183,8 @@ bool mtsyscounterex(double *count)
 		struct timespec ts;
 
 		clock_gettime(CLOCK_MONOTONIC,&ts);
-		return double(ts.tv_sec)+double(ts.tv_nsec)/1000000000.0;
+		*count = double(ts.tv_sec)+double(ts.tv_nsec)/1000000000.0;
+		return true;
 #	endif
 }
 
@@ -343,6 +344,10 @@ void mttryuninit()
 void* mttry(bool pop)
 {
 	_MTTRY *mt = (_MTTRY*)mtgetprivatedata(-6);
+	if (!mt){
+		mttryinit();
+		mt = (_MTTRY*)mtgetprivatedata(-6);
+	};
 	if (!pop){
 		_MTTRY_E *prev = mt->el;
 		mt->el = (_MTTRY_E*)malloc(sizeof(_MTTRY_E));
@@ -1041,7 +1046,7 @@ void* MTThread::SysThread(void* param)
 	if (autofree) thread->mautofree = false;
 	thread->running = false;
 	thread->set();
-	if (thread->type){
+	if (thread->type>0){
 		MTProcess *p = (MTProcess*)thread;
 		p->setprogress((x==-1)?-2.0:-1.0);
 		if (autofree) delete thread;

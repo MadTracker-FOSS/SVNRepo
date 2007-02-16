@@ -339,7 +339,7 @@ bool init()
 #		ifdef _WIN32
 			MessageBox(0,"Cannot initialize the MTSystem extension!","System Error",MB_ICONEXCLAMATION|MB_OK);
 #		else
-			fprintf(stderr,"Cannot initialize the MTSystem extension!"NL);
+			fputs("Cannot initialize the MTSystem extension!"NL,stderr);
 #		endif
 		return false;
 	};

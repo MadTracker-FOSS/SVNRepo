@@ -38,10 +38,12 @@ public:
 struct MTObjectsPreferences{
 	bool hexadecimal;
 	bool showzeroes;
+	double maxsleeptime;
 };
 
 typedef bool (MTCT *ObjectIOFunc)(MTObject *object,char *filename,void *process);
 typedef bool (MTCT *ObjectEditFunc)(MTObject *object,MTWindow *window,int flags,MTUser *user);
+typedef bool (MTCT *ObjectInfoFunc)(MTMiniConfig *data,char *filename,void *process);
 
 struct ObjectIO{
 	mt_uint32 type;
@@ -53,6 +55,13 @@ struct ObjectIO{
 struct ObjectEdit{
 	mt_uint32 type;
 	ObjectEditFunc func;
+	char *description;
+};
+
+struct ObjectInfo{
+	mt_uint32 type;
+	ObjectInfoFunc func;
+	char *filetypes;
 	char *description;
 };
 
@@ -74,6 +83,7 @@ public:
 	virtual void MTCT freeobject(MTObject *object,MTUser *user);
 	virtual bool MTCT editobject(MTObject *object,MTWindow *window,int flags = 0);
 	virtual void MTCT closeobject(MTObject *object);
+	virtual bool MTCT infoobject(MTMiniConfig *data,const char *filename,void *process = 0);
 	virtual int MTCT getnumtypes();
 	virtual mt_uint32 MTCT gettype(int id);
 	virtual ObjectType* MTCT getobjecttype(mt_uint32 type);
@@ -82,10 +92,12 @@ public:
 	virtual bool MTCT addload(mt_uint32 type,ObjectIOFunc loadfunc,const char *filetypes,const char *description);
 	virtual bool MTCT addsave(mt_uint32 type,ObjectIOFunc savefunc,const char *filetypes,const char *description);
 	virtual bool MTCT addedit(mt_uint32 type,ObjectEditFunc editfunc,const char *description);
+	virtual bool MTCT addinfo(mt_uint32 type,ObjectInfoFunc infofunc,const char *filetypes,const char *description);
 	virtual void MTCT delobjecttype(ObjectType *type);
 	virtual void MTCT delload(mt_uint32 type,ObjectIOFunc loadfunc);
 	virtual void MTCT delsave(mt_uint32 type,ObjectIOFunc savefunc);
 	virtual void MTCT deledit(mt_uint32 type,ObjectEditFunc editfunc);
+	virtual void MTCT delinfo(mt_uint32 type,ObjectInfoFunc infofunc);
 };
 //---------------------------------------------------------------------------
 extern MTInterface *mtinterface;
@@ -101,7 +113,7 @@ extern Skin *skin;
 #endif
 extern MTWindow *monitor;
 extern MTHash *objecttype;
-extern MTArray *load,*save,*edit;
+extern MTArray *load,*save,*edit,*info;
 extern MTLock *objectlock;
 extern WaveOutput *output;
 #ifdef MTVERSION_PROFESSIONAL

@@ -810,9 +810,9 @@ int WINAPI ddenumproc(GUID *guid,char *desc,char *name,void *context)
 			dddev[ndddev]->guid = mtnew(GUID);
 			memcpy(dddev[ndddev]->guid,guid,sizeof(GUID));;
 		};
-		dddev[ndddev]->desc = (char*)si->memalloc(strlen(desc)+1);
+		dddev[ndddev]->desc = (char*)si->memalloc(strlen(desc)+1,0);
 		strcpy(dddev[ndddev]->desc,desc);
-		dddev[ndddev]->name = (char*)si->memalloc(strlen(name)+1);
+		dddev[ndddev]->name = (char*)si->memalloc(strlen(name)+1,0);
 		strcpy(dddev[ndddev]->name,name);
 #ifdef _DEBUG
 		LOG("[Display] Found device: ");

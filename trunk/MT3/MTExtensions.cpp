@@ -217,7 +217,7 @@ bool MT3Interface::addchannel()
 			if (mc>=0) module[mc]->delchannel(c[mc]);
 			else break;
 			tot -= cpupchan;
-			if (++ndel==2) break;
+			if (++ndel==8) break;
 		};
 	MTCATCH
 		mc = 0;
@@ -659,8 +659,8 @@ bool loadExtension(const char *file)
 #			else
 				sprintf(buf,"Cannot initialize %s!"NL"%s",file,dlerror());
 				dlclose(hi);
-				fprintf(stderr,buf);
-				fprintf(stderr,NL);
+				fputs(buf,stderr);
+				fputs(NL,stderr);
 #			endif
 		};
 	}
@@ -671,8 +671,8 @@ bool loadExtension(const char *file)
 			MessageBox(0,buf,"Error",MB_ICONERROR|MB_OK);
 #		else
 			sprintf(buf,"Cannot load %s!"NL"%s",file,dlerror());
-			fprintf(stderr,buf);
-			fprintf(stderr,NL);
+			fputs(buf,stderr);
+			fputs(NL,stderr);
 #		endif
 	};
 	return false;
@@ -792,7 +792,7 @@ bool initExtensions()
 	
 	ENTER("initExtensions");
 	displayok = audiook = 0;
-	error = (char*)si->memalloc(1024);
+	error = (char*)si->memalloc(1024,0);
 	strcpy(error,"The following extensions could not be initialized:"NL);
 	LOGD("Found extensions:"NL);
 	for (x=0;x<next;x++){
@@ -985,9 +985,7 @@ void stopExtensions()
 	ENTER("stopExtensions");
 	LOGD("%s - Stopping current modules..."NL);
 	for (x=0;x<16;x++){
-		if (module[x]){
-			module[x]->resetchannels();
-		};
+		if (module[x]) module[x]->play(PLAY_STOP);
 	};
 	LOGD("%s - Stopping extensions..."NL);
 	for (x=next-1;x>=0;x--){
@@ -1070,7 +1068,7 @@ bool initSystem()
 #		ifdef _WIN32
 			MessageBox(0,"Exception while initializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
 #		else
-			fprintf(stderr,"Exception while initializing MTSystem!"NL);
+			fputs("Exception while initializing MTSystem!"NL,stderr);
 #		endif
 	};
 	return false;
@@ -1085,7 +1083,7 @@ void uninitSystem()
 #		ifdef _WIN32
 			MessageBox(0,"Exception while uninitializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
 #		else
-			fprintf(stderr,"Exception while uninitializing MTSystem!"NL);
+			fputs("Exception while uninitializing MTSystem!"NL,stderr);
 #		endif
 	};
 }

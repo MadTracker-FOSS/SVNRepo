@@ -181,7 +181,7 @@ bool MTGUIInterface::init()
 	LOGD("%s - [GUI] Initializing..."NL);
 	di = (MTDisplayInterface*)mtinterface->getinterface(displaytype);
 	shortcuts = si->hashcreate(8);
-	cursors = si->arraycreate(4);
+	cursors = si->arraycreate(4,0);
 	if ((conf = (MTConfigFile*)mtinterface->getconf("Global",true))){
 		if (conf->setsection("MTGUI")){
 			conf->getparameter("Skin",guiprefs.skin,MTCT_STRING,sizeof(guiprefs.skin));
@@ -229,7 +229,7 @@ bool MTGUIInterface::init()
 	wndclass.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
 	wndclass.lpszClassName = "MT3GUIWindow";
 	RegisterClassEx(&wndclass);
-	runningevent = si->eventcreate(false);
+	runningevent = si->eventcreate(false,0,0,true,false);
 	timers = si->hashcreate(8);
 	status |= MTX_INITIALIZED;
 	resetcursor();
@@ -515,7 +515,7 @@ MTControl *MTGUIInterface::newcontrol(int type,int tag,MTWinControl *parent,int 
 	if (res){
 		if (skin) skin->initcontrol(res);
 		if ((parent) && (type!=MTC_DESKTOP)) parent->addcontrol(res);
-		};
+	};
 	LEAVE();
 	return res;
 }

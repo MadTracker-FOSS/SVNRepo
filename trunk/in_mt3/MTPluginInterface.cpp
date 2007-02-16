@@ -737,7 +737,7 @@ bool initSystem()
 #		ifdef _WIN32
 			MessageBox(0,"Exception while initializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
 #		else
-			fprintf(stderr,"Exception while initializing MTSystem!"NL);
+			fputs("Exception while initializing MTSystem!"NL,stderr);
 #		endif
 	};
 	return false;
@@ -752,7 +752,7 @@ void uninitSystem()
 #		ifdef _WIN32
 			MessageBox(0,"Exception while uninitializing MTSystem!","System Error",MB_ICONERROR|MB_OK);
 #		else
-			fprintf(stderr,"Exception while uninitializing MTSystem!"NL);
+			fputs("Exception while uninitializing MTSystem!"NL,stderr);
 #		endif
 	};
 }

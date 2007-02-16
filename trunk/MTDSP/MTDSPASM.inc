@@ -198,7 +198,7 @@ a_resample_%1_%2:
 	go_backward
 	do_volvar
 	dec		ecx
-	jnz		%%volvarf
+	jnz		%%volvarb
 	
 %%done:
 	fstp	qword var1

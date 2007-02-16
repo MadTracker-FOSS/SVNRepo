@@ -38,7 +38,7 @@ void extractmask(void *source,void *mask,int color,int *pal,unsigned char **buf)
 			};
 		};
 	};
-	*buf = (unsigned char*)si->memalloc(w*h);
+	*buf = (unsigned char*)si->memalloc(w*h,0);
 	b = *buf;
 	l1 = s;
 	l2 = b;

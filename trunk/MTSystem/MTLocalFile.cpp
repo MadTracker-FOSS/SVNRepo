@@ -282,12 +282,12 @@ int MTLocalFile::read(void *buffer,int size)
 int MTLocalFile::readln(char *buffer,int maxsize)
 {
 	int read = 0;
+	int x,y,i,r,r2;
 	char *e;
 	
 	if (cpos+maxsize>to) maxsize = to-cpos;
 	if (maxsize<=0) return 0;
 #	ifdef _WIN32
-		int x,y,i,r,r2;
 		x = maxsize;
 		while (x>0){
 			i = x;
@@ -320,8 +320,8 @@ int MTLocalFile::readln(char *buffer,int maxsize)
 			else break;
 			x -= r;
 		};
-done:
 #	else
+/*
 		read = ftell(fs);
 		fgets(buffer,maxsize,fs);
 		read = ftell(fs)-read;
@@ -333,7 +333,41 @@ done:
 				e--;
 			};
 		};
+*/
+		x = maxsize;
+		while (x>0){
+			i = x;
+			if (i>32) i = 32;
+			r = fread(buffer,1,i,fs);
+			if (buffer[i-1]=='\r'){
+				e = strchr(buffer,'\r');
+				if ((e==&buffer[i-1]) && (i<x)){
+					r2 = fread(&buffer[i++],1,1,fs);
+					r += r2;
+				};
+			};
+			if (r){
+				for (y=0;y<r;y++){
+					char c = *buffer++;
+					if ((c==0) || (c=='\n') || (c=='\r')){
+						cpos++;
+						if ((y<r-1) && (c=='\r') && (*buffer=='\n')){
+							y++;
+							cpos++;
+						};
+						mtmemzero(buffer-1,maxsize-read);
+						fseek(fs,y-r+1,1);
+						goto done;
+					};
+					read++;
+				};
+				if (r<i) break;
+			}
+			else break;
+			x -= r;
+		};
 #	endif
+done:
 	cpos += read;
 	return read;
 }

@@ -26,6 +26,7 @@ struct MTObjectsPreferences{
 
 typedef bool (MTCT *ObjectIOFunc)(MTObject *object,char *filename,void *process);
 typedef bool (MTCT *ObjectEditFunc)(MTObject *object,void *window,int flags,MTUser *user);
+typedef bool (MTCT *ObjectInfoFunc)(MTMiniConfig *data,char *filename,void *process);
 
 class ObjectType{
 public:
@@ -44,6 +45,7 @@ public:
 	virtual void MTCT freeobject(MTObject *object,MTUser *user) = 0;
 	virtual bool MTCT editobject(MTObject *object,void *window,int flags = 0) = 0;
 	virtual void MTCT closeobject(MTObject *object) = 0;
+	virtual bool MTCT infoobject(MTMiniConfig *data,const char *filename,void *process = 0) = 0;
 	virtual int MTCT getnumtypes() = 0;
 	virtual mt_uint32 MTCT gettype(int id) = 0;
 	virtual ObjectType* MTCT getobjecttype(mt_uint32 type) = 0;
@@ -52,10 +54,12 @@ public:
 	virtual bool MTCT addload(mt_uint32 type,ObjectIOFunc loadfunc,const char *filetypes,const char *description) = 0;
 	virtual bool MTCT addsave(mt_uint32 type,ObjectIOFunc savefunc,const char *filetypes,const char *description) = 0;
 	virtual bool MTCT addedit(mt_uint32 type,ObjectEditFunc editfunc,const char *description) = 0;
+	virtual bool MTCT addinfo(mt_uint32 type,ObjectInfoFunc infofunc,const char *filetypes,const char *description);
 	virtual void MTCT delobjecttype(ObjectType *type) = 0;
 	virtual void MTCT delload(mt_uint32 type,ObjectIOFunc loadfunc) = 0;
 	virtual void MTCT delsave(mt_uint32 type,ObjectIOFunc savefunc) = 0;
 	virtual void MTCT deledit(mt_uint32 type,ObjectEditFunc editfunc) = 0;
+	virtual void MTCT delinfo(mt_uint32 type,ObjectInfoFunc infofunc) = 0;
 };
 //---------------------------------------------------------------------------
 #endif

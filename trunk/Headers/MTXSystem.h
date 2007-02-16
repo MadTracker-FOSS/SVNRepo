@@ -434,6 +434,7 @@ public:
 	char *platform;
 	char *build;
 	char *processor;
+	char *hostname;
 	int ncpu;
 	int cpufrequ;
 	void *onerror;

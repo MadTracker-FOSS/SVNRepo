@@ -54,6 +54,12 @@ enum MTObjectNotify{
 	MTN_IINSTANCEDELETE
 };
 
+enum MTObjectParamType{
+	MTPT_CONTINUOUS = 0,
+	MTPT_DISCRETE,
+	MTPT_ONOFF
+};
+
 #define MTOM_ADDDELETE  0x010000
 #define MTOM_NAME       0x020000
 #define MTOM_PARAM      0x040000
@@ -138,6 +144,10 @@ public:
 	virtual int MTCT loadfromstream(MTFile *f,int size,void *params){ return 0; };
 	virtual int MTCT savetostream(MTFile *f,void *params){ return 0; };
 	virtual MTObject* MTCT duplicate(mt_uint32 targettype){ return 0; };
+	virtual int MTCT getnumparams(){ return 0; };
+	virtual MTObjectParamType MTCT getparamtype(int pid){ return MTPT_CONTINUOUS; };
+	virtual double MTCT getparam(int pid){ return 0.0; };
+	virtual void MTCT setparam(int pid,double value){ };
 #	else
 	MTObject(MTObject *parent,mt_uint32 type,mt_int32 i);
 	virtual ~MTObject() = 0;
@@ -152,6 +162,10 @@ public:
 	virtual int MTCT loadfromstream(MTFile *f,int size,void *params) = 0;
 	virtual int MTCT savetostream(MTFile *f,void *params) = 0;
 	virtual MTObject* MTCT duplicate(mt_uint32 targettype) = 0;
+	virtual int MTCT getnumparams() = 0;
+	virtual MTObjectParamType MTCT getparamtype(int pid) = 0;
+	virtual double MTCT getparam(int pid) = 0;
+	virtual void MTCT setparam(int pid,double value) = 0;
 #	endif
 };
 //---------------------------------------------------------------------------

@@ -662,7 +662,7 @@ void MTDXBitmap::clip(MTRect *rect)
 	crgn[cr] = CreateRectRgnIndirect((RECT*)rect);
 	if (cr>0) CombineRgn(crgn[cr],crgn[cr],crgn[cr-1],RGN_AND);
 	s = GetRegionData(crgn[cr],0,0);
-	rd = (RGNDATA*)si->memalloc(s);
+	rd = (RGNDATA*)si->memalloc(s,0);
 	GetRegionData(crgn[cr],s,rd);
 	iddclip->SetClipList(rd,0);
 	if (ddsurf) dxerror(ddsurf->SetClipper(iddclip),__FILE__,__LINE__);
@@ -680,7 +680,7 @@ void MTDXBitmap::cliprgn(void *rgn)
 	CombineRgn((HRGN)crgn[cr],(HRGN)rgn,(HRGN)rgn,RGN_COPY);
 	if (cr>0) CombineRgn(crgn[cr],crgn[cr],crgn[cr-1],RGN_AND);
 	s = GetRegionData(crgn[cr],0,0);
-	rd = (RGNDATA*)si->memalloc(s);
+	rd = (RGNDATA*)si->memalloc(s,0);
 	GetRegionData(crgn[cr],s,rd);
 	iddclip->SetClipList(rd,0);
 	if (ddsurf) dxerror(ddsurf->SetClipper(iddclip),__FILE__,__LINE__);
@@ -694,7 +694,7 @@ void MTDXBitmap::unclip()
 	if (!iddclip) return;
 	if (clipped){
 		int s = GetRegionData(crgn[clipped-1],0,0);
-		RGNDATA *rd = (RGNDATA*)si->memalloc(s);
+		RGNDATA *rd = (RGNDATA*)si->memalloc(s,0);
 		GetRegionData(crgn[clipped-1],s,rd);
 		iddclip->SetClipList(rd,0);
 		if (ddsurf) dxerror(ddsurf->SetClipper(iddclip),__FILE__,__LINE__);
@@ -1766,7 +1766,7 @@ void MTDXBitmap7::clip(MTRect *rect)
 	crgn[cr] = CreateRectRgnIndirect((RECT*)rect);
 	if (cr>0) CombineRgn(crgn[cr],crgn[cr],crgn[cr-1],RGN_AND);
 	s = GetRegionData(crgn[cr],0,0);
-	rd = (RGNDATA*)si->memalloc(s);
+	rd = (RGNDATA*)si->memalloc(s,0);
 	GetRegionData(crgn[cr],s,rd);
 	iddclip->SetClipList(rd,0);
 	if (ddsurf) dxerror(ddsurf->SetClipper(iddclip),__FILE__,__LINE__);
@@ -1784,7 +1784,7 @@ void MTDXBitmap7::cliprgn(void *rgn)
 	CombineRgn((HRGN)crgn[cr],(HRGN)rgn,(HRGN)rgn,RGN_COPY);
 	if (cr>0) CombineRgn(crgn[cr],crgn[cr],crgn[cr-1],RGN_AND);
 	s = GetRegionData(crgn[cr],0,0);
-	rd = (RGNDATA*)si->memalloc(s);
+	rd = (RGNDATA*)si->memalloc(s,0);
 	GetRegionData(crgn[cr],s,rd);
 	iddclip->SetClipList(rd,0);
 	if (ddsurf) dxerror(ddsurf->SetClipper(iddclip),__FILE__,__LINE__);
@@ -1798,7 +1798,7 @@ void MTDXBitmap7::unclip()
 	if (!iddclip) return;
 	if (clipped){
 		int s = GetRegionData(crgn[clipped-1],0,0);
-		RGNDATA *rd = (RGNDATA*)si->memalloc(s);
+		RGNDATA *rd = (RGNDATA*)si->memalloc(s,0);
 		GetRegionData(crgn[clipped-1],s,rd);
 		iddclip->SetClipList(rd,0);
 		if (ddsurf) dxerror(ddsurf->SetClipper(iddclip),__FILE__,__LINE__);

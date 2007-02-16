@@ -43,14 +43,14 @@ static const MTXKey objectskey = {0,0,0,0};
 	MTDSPInterface *dspi;
 	MTGUIInterface *gi;
 #endif
-MTObjectsPreferences objectsprefs = {false,false};
+MTObjectsPreferences objectsprefs = {false,false,32.0};
 Skin *skin;
 #ifdef MTSYSTEM_RESOURCES
 	MTResources *res;
 #endif
 MTWindow *monitor;
 MTHash *objecttype;
-MTArray *load,*save,*edit;
+MTArray *load,*save,*edit,*info;
 MTLock *objectlock;
 WaveOutput *output;
 MTObjectWrapper ow;
@@ -235,9 +235,10 @@ bool MTObjectsInterface::init()
 	objectlock = si->lockcreate();
 	output = ai->getoutput();
 	objecttype = si->hashcreate(4);
-	load = si->arraycreate(4);
-	save = si->arraycreate(4);
-	edit = si->arraycreate(4);
+	load = si->arraycreate(4,0);
+	save = si->arraycreate(4,0);
+	edit = si->arraycreate(4,0);
+	info = si->arraycreate(4,0);
 	instrumenttype = new InstrumentType();
 	sampletype = new SampleType();
 	patterntype = new PatternType();
@@ -257,6 +258,7 @@ bool MTObjectsInterface::init()
 		addedit(MTO_PATTERN,PatternEdit,"Pattern Editor");
 #	endif
 	addload(MTO_MODULE,loadMT2,".mt2","MadTracker 2 Module");
+	addinfo(MTO_MODULE,infoMT2,".mt2","MadTracker 2 Module");
 	addload(MTO_OSCILLATOR,loadWAV,".wav","Wave Sample");
 	addload(MTO_INSTRUMENT,loadSF2,".sf2","Sound Font 2");
 	status |= MTX_INITIALIZED;
@@ -295,6 +297,7 @@ void MTObjectsInterface::uninit()
 	oldlock = objectlock;
 	objectlock = 0;
 	si->lockdelete(oldlock);
+/*
 	for (x=0;x<load->nitems;x++){
 		si->memfree(((ObjectIO*)load->a[x])->filetypes);
 		si->memfree(((ObjectIO*)load->a[x])->description);
@@ -309,7 +312,14 @@ void MTObjectsInterface::uninit()
 		si->memfree(((ObjectEdit*)edit->a[x])->description);
 		si->memfree(edit->a[x]);
 	};
+	for (x=0;x<info->nitems;x++){
+		si->memfree(((ObjectInfo*)info->a[x])->filetypes);
+		si->memfree(((ObjectInfo*)info->a[x])->description);
+		si->memfree(info->a[x]);
+	};
+*/
 	delload(MTO_MODULE,loadMT2);
+	delinfo(MTO_MODULE,infoMT2);
 	delload(MTO_OSCILLATOR,loadWAV);
 	delload(MTO_INSTRUMENT,loadSF2);
 #	ifdef MTOBJECTS_EDITORS
@@ -339,6 +349,7 @@ void MTObjectsInterface::uninit()
 	si->arraydelete(load);
 	si->arraydelete(save);
 	si->arraydelete(edit);
+	si->arraydelete(info);
 #	ifdef MTSYSTEM_RESOURCES
 		si->resclose(res);
 		res = 0;
@@ -741,6 +752,31 @@ void MTObjectsInterface::closeobject(MTObject *object)
 	freeaccess(object,MTOA_CANREAD);
 }
 
+bool MTObjectsInterface::infoobject(MTMiniConfig *data,const char *filename,void *process)
+{
+	int x;
+	char filetype[32];
+	bool ret = false;
+	
+	si->filetype(filename,filetype,32);
+	if (filetype[0]==0) return false;
+	FENTER3("MTObjectsInterface::infoobject(%.8X,%s,%.8X)",info,filename,process);
+	for (x=0;x<info->nitems;x++){
+		ObjectInfo &cinfo = *(ObjectInfo*)info->a[x];
+		if (strstr(cinfo.filetypes,filetype)){
+			MTTRY
+				ret = cinfo.func(data,(char*)filename,process);
+			MTCATCH
+				ret = false;
+			MTEND
+			LEAVE();
+			return ret;
+		};
+	};
+	LEAVE();
+	return false;
+}
+
 int MTObjectsInterface::getnumtypes()
 {
 	return objecttype->nitems;
@@ -786,8 +822,8 @@ bool MTObjectsInterface::addload(mt_uint32 type,ObjectIOFunc loadfunc,const char
 	load->push(cio);
 	cio->type = type;
 	cio->func = loadfunc;
-	cio->filetypes = (char*)si->memalloc(strlen(filetypes)+1);
-	cio->description = (char*)si->memalloc(strlen(description)+1);
+	cio->filetypes = (char*)si->memalloc(strlen(filetypes)+1,0);
+	cio->description = (char*)si->memalloc(strlen(description)+1,0);
 	strcpy(cio->filetypes,filetypes);
 	strcpy(cio->description,description);
 	return true;
@@ -801,8 +837,8 @@ bool MTObjectsInterface::addsave(mt_uint32 type,ObjectIOFunc savefunc,const char
 	save->push(cio);
 	cio->type = type;
 	cio->func = savefunc;
-	cio->filetypes = (char*)si->memalloc(strlen(filetypes)+1);
-	cio->description = (char*)si->memalloc(strlen(description)+1);
+	cio->filetypes = (char*)si->memalloc(strlen(filetypes)+1,0);
+	cio->description = (char*)si->memalloc(strlen(description)+1,0);
 	strcpy(cio->filetypes,filetypes);
 	strcpy(cio->description,description);
 	return true;
@@ -816,8 +852,23 @@ bool MTObjectsInterface::addedit(mt_uint32 type,ObjectEditFunc editfunc,const ch
 	edit->push(cedit);
 	cedit->type = type;
 	cedit->func = editfunc;
-	cedit->description = (char*)si->memalloc(strlen(description)+1);
+	cedit->description = (char*)si->memalloc(strlen(description)+1,0);
 	strcpy(cedit->description,description);
+	return true;
+}
+
+bool MTObjectsInterface::addinfo(mt_uint32 type,ObjectInfoFunc infofunc,const char *filetypes,const char *description)
+{
+	ObjectInfo *cinfo;
+
+	cinfo = mtnew(ObjectInfo);
+	info->push(cinfo);
+	cinfo->type = type;
+	cinfo->func = infofunc;
+	cinfo->filetypes = (char*)si->memalloc(strlen(filetypes)+1,0);
+	cinfo->description = (char*)si->memalloc(strlen(description)+1,0);
+	strcpy(cinfo->filetypes,filetypes);
+	strcpy(cinfo->description,description);
 	return true;
 }
 
@@ -866,6 +917,21 @@ void MTObjectsInterface::deledit(mt_uint32 type,ObjectEditFunc editfunc)
 			si->memfree(cedit.description);
 			si->memfree(&cedit);
 			edit->delitems(x,1);
+		};
+	};
+}
+
+void MTObjectsInterface::delinfo(mt_uint32 type,ObjectInfoFunc infofunc)
+{
+	int x;
+	
+	for (x=0;x<info->nitems;x++){
+		ObjectInfo &cinfo = *(ObjectInfo*)info->a[x];
+		if ((cinfo.type==type) && (cinfo.func==infofunc)){
+			si->memfree(cinfo.filetypes);
+			si->memfree(cinfo.description);
+			si->memfree(&cinfo);
+			info->delitems(x,1);
 		};
 	};
 }

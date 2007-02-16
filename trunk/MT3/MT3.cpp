@@ -93,7 +93,7 @@ int main(int argc,const char* argv[])
 */
 		console = (MTConsole*)mi->getconsole();
 		if (console){
-			fprintf(stdout,"Entering console..."NL);
+			fputs("Entering console..."NL,stdout);
 			while (running){
 				if (console->readln(input,sizeof(input))){
 					console->userinput(input);
