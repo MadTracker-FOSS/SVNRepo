@@ -133,7 +133,9 @@ void MTCPUGraph::cpuproc(void *cpu)
 	if (module->cpu->flushid==cpumonitor->lastid) return;
 	cpumonitor->lastid = module->cpu->flushid;
 	output = module->cpu->getcpu(0);
+	if (output>1.0) output = 1.0;
 	objects = output-module->cpu->getcpu(3);
+	if (objects>1.0) objects = 1.0;
 	((MTCPUGraph*)cpu)->setcpu(output,objects);
 }
 
@@ -154,7 +156,7 @@ void MTCPUGraph::setcpu(double output,double objects)
 	};
 	if (ok){
 		if ((output<scale/8.0) && (objects<scale/8.0)){
-			scale /= 8.0;
+			scale *= 0.5;
 			if (scale<0.03125) scale = 0.03125;
 		};
 	};
@@ -275,15 +277,15 @@ void MTChannelsGraph::chanproc(void *channels)
 //	if (module->cpu->flushid==chanmonitor->lastid) return;
 	chanmonitor->lastid = module->cpu->flushid;
 	PlayStatus &cs = module->playstatus;
-	if (objectlock->lock(10)){
+	if (objectlock->lock(50)){
 		foreground = cs.nchannels;
 		background = 0;
 		for (x=0;x<foreground;x++){
 			if (cs.chan[x]->flags & IIF_BACKGROUND) background++;
 		};
 		objectlock->unlock();
+		chanmonitor->setchannels(foreground,background);
 	};
-	chanmonitor->setchannels(foreground,background);
 }
 
 void MTChannelsGraph::setchannels(int foreground,int background)
@@ -303,7 +305,7 @@ void MTChannelsGraph::setchannels(int foreground,int background)
 	};
 	if (ok){
 		if ((foreground<scale/8) && (background<scale/8)){
-			scale /= 8;
+			scale *= 0.5;
 			if (scale<32) scale = 32;
 		};
 	};

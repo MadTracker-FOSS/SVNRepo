@@ -16,6 +16,7 @@
 #define MIN_RAMP  32
 #define FAST_RAMP 64
 #define MAX_RAMP  128
+#define MAX_POINTS 128
 
 #define IF_NEEDPREPROCESS  0x01
 #define IF_NEEDPOSTPROCESS 0x02
@@ -158,14 +159,14 @@ public:
 	int layer;
 	double note;
 	double cpos;
-	double nextevent;
+	double nextevent,sleepingtime;
 	double gvol;
 	double mvol;
 	float gpanx,gpany,gpanz;
 	float mpanx,mpany,mpanz;
 	
 	InstrumentInstance(Instrument *p,Track *t,PatternInstance *c,int l,InstrumentInstance *previous){
-		flags = 0; cpu = 0; parent = p; module = p->module; track = t; caller = c; layer = l; note = cpos = nextevent = 0.0;	gvol = mvol = 1.0; mpanx = mpany = mpanz = 0.0;
+		flags = 0; cpu = 0; parent = p; module = p->module; track = t; caller = c; layer = l; note = cpos = nextevent = sleepingtime = 0.0; gvol = mvol = 1.0; mpanx = mpany = mpanz = 0.0;
 	};
 	virtual ~InstrumentInstance(){
 	};
@@ -222,7 +223,7 @@ struct IEnvelope{
 	mt_uint8 npoints;
 	mt_uint8 susts,suste,loops,loope;
 	mt_uint16 reserved;
-	EnvPoint points[16];
+	EnvPoint points[MAX_POINTS];
 };
 
 class InstrumentType : public ObjectType{
@@ -245,7 +246,7 @@ public:
 	unsigned short nna;
 	MTFilter *filter;
 	unsigned short cutoff;
-	unsigned char resonance,attack,decay;
+	unsigned char resonance,attack,decay,tpb;
 	IEnvelope env[8];
 	Group grp[MAX_GRPS];
 	unsigned char range[8][96];
@@ -260,7 +261,7 @@ public:
 
 #define MTIIF_NOTECUT    0x100
 #define MTIIF_NOTEOFF    0x200
-#define MTIIF_FADEOUT    0x300
+#define MTIIF_FADEOUT    0x400
 #define MTIIF_STATUSMASK 0x700
 
 struct EnvStatus{
@@ -275,7 +276,6 @@ class MTInstrumentInstance : public InstrumentInstance{
 public:
 	OscillatorInstance *osc[1];
 	unsigned char grp[1];
-	double cfadeout;
 	double fadeout;
 	mt_uint32 iflags;
 	unsigned short nna;
@@ -295,7 +295,7 @@ private:
 	double tvol,cvol;
 	float tpanx,tpany,tpanz,cpanx,cpany,cpanz;
 	double ccutoff;
-	double getvolume(double delay = 0.0);
+	double getvolume(double delay = 0.0,bool needfadeout = true);
 	void getpanning(float *x,float *y,float *z,double delay = 0.0);
 };
 //---------------------------------------------------------------------------

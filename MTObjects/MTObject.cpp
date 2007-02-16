@@ -127,6 +127,25 @@ MTObject* MTObject::duplicate(mt_uint32 targettype)
 {
 	return 0;
 }
+
+int MTObject::getnumparams()
+{
+	return 0;
+}
+
+MTObjectParamType MTObject::getparamtype(int pid)
+{
+	return MTPT_CONTINUOUS;
+}
+
+double MTObject::getparam(int pid)
+{
+	return 0.0;
+}
+
+void MTObject::setparam(int pid,double value)
+{
+}
 //---------------------------------------------------------------------------
 // MadTracker object wrapperfunctions
 //---------------------------------------------------------------------------

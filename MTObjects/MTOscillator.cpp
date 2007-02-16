@@ -231,8 +231,8 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 	int x,e,ls,le;
 	int ccount,coffset,cmax;
 	int flags;
-	int pitchi;
-	unsigned int pitchd;
+	int pitchi,dposi;
+	unsigned int pitchd,dposd;
 
 	silence = true;
 	if (!dspi) return false;
@@ -264,6 +264,7 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 		panz += panzvar*x;
 		panvarlng -= x;
 	};
+//	if (ai->recording) ai->debugpoint(module->beatstosamples(module->playstatus.pos)-1,"B");
 	e = 0;
 	for (x=0;x<nstatus;x++){
 		ChannelStatus &cstatus = status[x];
@@ -278,6 +279,7 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 				}
 				else{
 					if (cstatus.posi>=le){
+//						if (ai->recording) ai->debugpoint(module->beatstosamples(module->playstatus.pos)+count-cmax,"LE");
 						cstatus.posi = (cstatus.posi-ls)%(le-ls)+ls;
 					};
 				};
@@ -298,9 +300,18 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 					};
 				};
 			};
+			cstatus.pitch = pitch;
+			dposi = cstatus.posi;
+			dposd = cstatus.posd;
+			a_floattofixed(cstatus.pitch,pitchi,pitchd);
+			a_calcposition(dposi,dposd,pitchi,pitchd,cmax,cstatus.reverse);
 			if (cstatus.reverse){
-				if (cstatus.posi-(cmax+1)*pitch<ls){
+				if (dposi<=ls){
+//				if (cstatus.posi-(cmax+1)*pitch<ls){
 					ccount = (int)ceil((cstatus.posi-ls)/pitch);
+					dposi = cstatus.posi;
+					dposd = cstatus.posd;
+					a_calcposition(dposi,dposd,pitchi,pitchd,ccount,cstatus.reverse);
 					e++;
 				}
 				else{
@@ -308,8 +319,12 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 				};
 			}
 			else{
-				if (cstatus.posi+(cmax+1)*pitch>le){
+				if (dposi>=le){
+//				if (cstatus.posi+(cmax+1)*pitch>le){
 					ccount = (int)ceil((le-cstatus.posi)/pitch);
+					dposi = cstatus.posi;
+					dposd = cstatus.posd;
+					a_calcposition(dposi,dposd,pitchi,pitchd,ccount,cstatus.reverse);
 					e++;
 				}
 				else{
@@ -317,38 +332,31 @@ bool MTSampleInstance::process(int offset,int count,bool &silence)
 				};
 			};
 			if (ccount<=0) break;
-			cstatus.pitch = pitch;
 			if ((fabs(cstatus.vol)<VOLUME_THRESOLD) && ((cstatus.volvarlng==0) || (cstatus.volvar==0.0))){
-				a_floattofixed(cstatus.pitch,pitchi,pitchd);
-				a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,ccount,cstatus.reverse);
+				cstatus.posi = dposi;
+				cstatus.posd = dposd;
 			}
 			else{
 				if ((cstatus.volvarlng!=0) && (cstatus.volvarlng<ccount)){
 					dspi->resample[flags](outputs[cstatus.tc]+coffset,(char*)(cparent.data[cstatus.sc])+(cstatus.posi<<flags),cstatus.volvarlng,cstatus);
 
 					cstatus.vol += cstatus.volvar*cstatus.volvarlng;
+					coffset += cstatus.volvarlng;
+					cmax -= cstatus.volvarlng;
 					ccount -= cstatus.volvarlng;
 
 					a_floattofixed(cstatus.pitch,pitchi,pitchd);
 					a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,cstatus.volvarlng,cstatus.reverse);
 
 					cstatus.volvarlng = 0;
-
-					dspi->resample[flags](outputs[cstatus.tc]+coffset,(char*)(cparent.data[cstatus.sc])+(cstatus.posi<<flags),ccount,cstatus);
-					
-					a_floattofixed(cstatus.pitch,pitchi,pitchd);
-					a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,ccount,cstatus.reverse);
-				}
-				else{
-					dspi->resample[flags](outputs[cstatus.tc]+coffset,(char*)(cparent.data[cstatus.sc])+(cstatus.posi<<flags),ccount,cstatus);
-
-					if (cstatus.volvarlng>=ccount){
-						cstatus.vol += cstatus.volvar*ccount;
-						cstatus.volvarlng -= ccount;
-					};
-					a_floattofixed(cstatus.pitch,pitchi,pitchd);
-					a_calcposition(cstatus.posi,cstatus.posd,pitchi,pitchd,ccount,cstatus.reverse);
 				};
+				dspi->resample[flags](outputs[cstatus.tc]+coffset,(char*)(cparent.data[cstatus.sc])+(cstatus.posi<<flags),ccount,cstatus);
+				if (cstatus.volvarlng>=ccount){
+					cstatus.vol += cstatus.volvar*ccount;
+					cstatus.volvarlng -= ccount;
+				};
+				cstatus.posi = dposi;
+				cstatus.posd = dposd;
 //				dspi->resample[flags](outputs[cstatus.tc]+coffset,(sample*)cparent.data[cstatus.sc]+cstatus.posi,ccount,cstatus);
 				silence = false;
 			};

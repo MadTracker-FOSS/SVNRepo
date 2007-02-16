@@ -385,7 +385,7 @@ notifycount(0)
 		height = 96;
 	};
 	if ((guiid!=MTC_WINDOW) && (guiid!=MTC_DESKTOP)) flags |= MTCF_BORDER;
-	controls = (MTControl**)si->memalloc(256*4);
+	controls = (MTControl**)si->memalloc(256*4,0);
 	if (p){
 		if (p->dsk) dsk = p->dsk;
 		else if (p->guiid==MTC_DESKTOP) dsk = (MTDesktop*)p;
@@ -1536,7 +1536,7 @@ void MTWinControl::addcontrol(MTControl *control)
 		if (controls)
 			controls = (MTControl**)si->memrealloc(controls,nacontrols2*4);
 		else
-			controls = (MTControl**)si->memalloc(nacontrols2*4);
+			controls = (MTControl**)si->memalloc(nacontrols2*4,0);
 	};
 	if (guiid==MTC_DESKTOP){
 		cmodal = (control->flags>>24);
@@ -2557,7 +2557,7 @@ void MTWinControl::startdrag()
 	};
 	if (!y) return;
 	triggered = true;
-	dctrl = (DragContext*)si->memalloc(sizeof(DragContext)*y);
+	dctrl = (DragContext*)si->memalloc(sizeof(DragContext)*y,0);
 	aw = (aw+y-1)/y;
 	ah = (ah+y-1)/y;
 	r.left = r.top = 0;

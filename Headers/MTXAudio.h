@@ -78,6 +78,8 @@ public:
 
 class MTAudioInterface : public MTXInterface{
 public:
+	bool running,recording;
+
 	virtual int MTCT getnumdevices() = 0;
 	virtual const char* MTCT getdevicename(int id) = 0;
 	virtual void MTCT selectdevice(int id) = 0;
@@ -87,6 +89,7 @@ public:
 	virtual bool MTCT adddevicemanager(MTAudioDeviceManager *manager) = 0;
 	virtual void MTCT deldevicemanager(MTAudioDeviceManager *manager) = 0;
 	virtual WaveOutput* MTCT getoutput() = 0;
+	virtual void MTCT debugpoint(int offset,const char *text) = 0;
 };
 //---------------------------------------------------------------------------
 #endif

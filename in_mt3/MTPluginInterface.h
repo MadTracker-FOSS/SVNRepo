@@ -78,6 +78,7 @@ public:
 	bool MTCT adddevicemanager(MTAudioDeviceManager *manager){ return false; };
 	void MTCT deldevicemanager(MTAudioDeviceManager *manager){ };
 	WaveOutput* MTCT getoutput(){ return &waoutput; };
+	void MTCT debugpoint(int offset,const char *text){ };
 };
 //---------------------------------------------------------------------------
 bool loadExtensions();

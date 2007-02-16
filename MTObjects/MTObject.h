@@ -66,6 +66,12 @@ enum MTObjectNotify{
 	MTN_IINSTANCEDELETE
 };
 
+enum MTObjectParamType{
+	MTPT_CONTINUOUS = 0,
+	MTPT_DISCRETE,
+	MTPT_ONOFF
+};
+
 #define MTOM_ADDDELETE  0x010000
 #define MTOM_NAME       0x020000
 #define MTOM_PARAM      0x040000
@@ -155,6 +161,10 @@ public:
 	virtual int MTCT loadfromstream(MTFile *f,int size,void *params);
 	virtual int MTCT savetostream(MTFile *f,void *params);
 	virtual MTObject* MTCT duplicate(mt_uint32 targettype);
+	virtual int MTCT getnumparams();
+	virtual MTObjectParamType MTCT getparamtype(int pid);
+	virtual double MTCT getparam(int pid);
+	virtual void MTCT setparam(int pid,double value);
 };
 //---------------------------------------------------------------------------
 #include "MTModule.h"

@@ -106,7 +106,7 @@ InputPath=.\MTBuffer.asm
 InputName=MTBuffer
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasmw -f win32 -Xvc -O1 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -118,7 +118,7 @@ InputPath=.\MTBuffer.asm
 InputName=MTBuffer
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasmw -f coff -Xvc -O1 -g -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -142,7 +142,7 @@ InputPath=.\MTResampling.asm
 InputName=MTResampling
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasmw -f win32 -Xvc -O1 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -155,7 +155,7 @@ InputPath=.\MTResampling.asm
 InputName=MTResampling
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	D:\dev\nasm\nasmw -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasmw -f coff -Xvc -O1 -g -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -182,10 +182,6 @@ SOURCE=.\MTCatmullASM.h
 # Begin Source File
 
 SOURCE=.\MTDSP.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\MTDSP.def
 # End Source File
 # Begin Source File
 

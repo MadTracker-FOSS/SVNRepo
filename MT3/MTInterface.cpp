@@ -68,6 +68,85 @@ void MTCT designmode(MTShortcut*,MTControl*,MTUndo*)
 	};
 }
 
+int MTCT loadprocess(MTThread *thread,void *param)
+{
+	MTProcess *p = (MTProcess*)thread;
+
+	FENTER2("loadprocess(%.8X,%.8X)",thread,param);
+	if (!oi->loadobject((MTModule*)param,(char*)p->data,(void*)p)) thread->result = -1;
+	LEAVE();
+	return 0;
+}
+
+void MTCT loadprogress(MTProcess *process,void *param,float p)
+{
+	int x;
+	bool locked = false;
+
+	FENTER3("loadprogress(%.8X,%.8X,%f)",process,param,p);
+	if (p==-2.0){
+		LOGD("%s - [MT3] ERROR: An error occured while loading the module!"NL);
+	}
+	else if (p==-1.0){
+		MTModule *m = (MTModule*)param;
+		m->lock(MTOL_LOCK,false);
+		if (process->result<0){
+			MTTRY
+				oi->deleteobject(m);
+			MTCATCH
+			MTEND
+			si->memfree(process->data);
+			LEAVE();
+			return;
+		};
+		if (gi) setmodule(m);
+		MTTRY
+			if (output){
+				output->lock->lock();
+				locked = true;
+			};
+			for (x=0;x<16;x++){
+				if ((module[x]) && (module[x]!=m)){
+					MTModule *oldmodule = module[x];
+					module[x] = 0;
+					if (locked){
+						output->lock->unlock();
+						locked = false;
+					};
+					oi->deleteobject(oldmodule);
+				};
+			};
+		MTCATCH
+		MTEND
+		if (locked) output->lock->unlock();
+		mi->editobject(m,false);
+		si->memfree(process->data);
+	};
+	LEAVE();
+}
+
+void loadmodule(const char *filename)
+{
+	int x;
+	char *file;
+
+	if (!oi) return;
+	FENTER1("loadmodule(%s)",filename);
+	MTTRY
+		if (output) output->lock->lock();
+		for (x=0;x<16;x++){
+			if (module[x]==0) break;
+		};
+		module[x] = (MTModule*)oi->newobject(MTO_MODULE,0,0,0,true);
+	MTCATCH
+	MTEND
+	if (output) output->lock->unlock();
+	file = (char*)si->memalloc(strlen(filename)+1,0);
+	strcpy(file,filename);
+	si->processcreate(loadprocess,module[x],MTP_LOADMODULE,MTT_LOWER,file,loadprogress,false,"Load Module");
+	LEAVE();
+}
+
 #ifdef _DEBUG
 void MTCT openresources(MTShortcut *s,MTControl *c,MTUndo*)
 {
@@ -156,85 +235,6 @@ void MTCT openskin(MTShortcut *s,MTControl *c,MTUndo*)
 		si->memfree(open.lpstrFile);
 		LEAVE();
 #	endif
-}
-
-int MTCT loadprocess(MTThread *thread,void *param)
-{
-	MTProcess *p = (MTProcess*)thread;
-
-	FENTER2("loadprocess(%.8X,%.8X)",thread,param);
-	if (!oi->loadobject((MTModule*)param,(char*)p->data,(void*)p)) thread->result = -1;
-	LEAVE();
-	return 0;
-}
-
-void MTCT loadprogress(MTProcess *process,void *param,float p)
-{
-	int x;
-	bool locked = false;
-
-	FENTER3("loadprogress(%.8X,%.8X,%f)",process,param,p);
-	if (p==-2.0){
-		LOGD("%s - [MT3] ERROR: An error occured while loading the module!"NL);
-	}
-	else if (p==-1.0){
-		MTModule *m = (MTModule*)param;
-		m->lock(MTOL_LOCK,false);
-		if (process->result<0){
-			MTTRY
-				oi->deleteobject(m);
-			MTCATCH
-			MTEND
-			si->memfree(process->data);
-			LEAVE();
-			return;
-		};
-		if (gi) setmodule(m);
-		MTTRY
-			if (output){
-				output->lock->lock();
-				locked = true;
-			};
-			for (x=0;x<16;x++){
-				if ((module[x]) && (module[x]!=m)){
-					MTModule *oldmodule = module[x];
-					module[x] = 0;
-					if (locked){
-						output->lock->unlock();
-						locked = false;
-					};
-					oi->deleteobject(oldmodule);
-				};
-			};
-		MTCATCH
-		MTEND
-		if (locked) output->lock->unlock();
-		mi->editobject(m,false);
-		si->memfree(process->data);
-	};
-	LEAVE();
-}
-
-void loadmodule(const char *filename)
-{
-	int x;
-	char *file;
-
-	if (!oi) return;
-	FENTER1("loadmodule(%s)",filename);
-	MTTRY
-		if (output) output->lock->lock();
-		for (x=0;x<16;x++){
-			if (module[x]==0) break;
-		};
-		module[x] = (MTModule*)oi->newobject(MTO_MODULE,0,0,0,true);
-	MTCATCH
-	MTEND
-	if (output) output->lock->unlock();
-	file = (char*)si->memalloc(strlen(filename)+1);
-	strcpy(file,filename);
-	si->processcreate(loadprocess,module[x],MTP_LOADMODULE,MTT_LOWER,file,loadprogress,false,"Load Module");
-	LEAVE();
 }
 
 void MTCT playmodule(MTShortcut *s,MTControl *c,MTUndo*)
@@ -620,7 +620,7 @@ bool initInterface()
 					gi->loadwindow(res,uid,mtdsk);
 					break;
 				case MTR_TEXT:
-					help = (char*)si->memalloc(size+1);
+					help = (char*)si->memalloc(size+1,0);
 					e = (char*)res->getresource(type,uid,&size);
 					if (e) strcpy(help,e);
 					res->releaseresource(e);

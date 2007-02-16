@@ -367,15 +367,7 @@ SOURCE=..\Headers\MTXAutomation.h
 # Begin Source File
 
 SOURCE=..\Headers\MTXEffect.cpp
-
-!IF  "$(CFG)" == "MTObjects - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "MTObjects - Win32 Debug"
-
 # PROP Exclude_From_Build 1
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 

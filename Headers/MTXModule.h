@@ -131,13 +131,14 @@ public:
 	virtual void MTCT disabletracks() = 0;
 	virtual int MTCT getpattpos(int layer,double pos,double *offset,int *cseq,int from = 0) = 0;
 	virtual int MTCT getsequence(int layer,double pos,int last) = 0;
-	virtual void MTCT play(int mode) = 0;
-	virtual void MTCT setpos(double pos) = 0;
-	virtual void MTCT settempo(int ctempo,int param,void *value) = 0;
+	virtual void MTCT play(int mode,bool fromengine = false) = 0;
+	virtual void MTCT setpos(double pos,bool fromengine = false) = 0;
+	virtual void MTCT settempo(int ctempo,int param,void *value,bool fromengine = false) = 0;
 	virtual bool MTCT process(WaveOutput *output) = 0;
 	virtual bool MTCT addchannel(InstrumentInstance *c) = 0;
 	virtual void MTCT delchannel(InstrumentInstance *c) = 0;
 	virtual void MTCT resetchannels() = 0;
+	virtual void MTCT resetpatterns() = 0;
 	virtual InstrumentInstance* MTCT getlessimportantchannel(int *importance) = 0;
 	virtual double MTCT beatstosamples(double nbeats) = 0;
 	virtual double MTCT samplestobeats(double nsamples) = 0;

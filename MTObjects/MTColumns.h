@@ -45,11 +45,14 @@ struct EffectData{
 	short tredepth,trephase;
 	char tremorcount,tremorstatus,tremorontime,tremorofftime;
 	char tonespeed;
+	bool needbreak;
+	mt_uint8 needjump;
 };
 
 class NoteColumn : public Column{
 public:
 	NoteColumn();
+	void MTCT init(MTPatternInstance*,ColumnStatus &status);
 	void MTCT firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	void MTCT columnhandle(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	int MTCT getwidth(int charwidth);
@@ -60,6 +63,7 @@ public:
 class DrumsColumn : public Column{
 public:
 	DrumsColumn();
+	void MTCT init(MTPatternInstance*,ColumnStatus &status);
 	void MTCT firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	void MTCT columnhandle(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	int MTCT getwidth(int charwidth);
@@ -70,6 +74,7 @@ public:
 class VolumeColumn : public Column{
 public:
 	VolumeColumn();
+	void MTCT init(MTPatternInstance*,ColumnStatus &status);
 	void MTCT firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	void MTCT columnhandle(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	int MTCT getwidth(int charwidth);
@@ -80,6 +85,7 @@ public:
 class PanningColumn : public Column{
 public:
 	PanningColumn();
+	void MTCT init(MTPatternInstance*,ColumnStatus &status);
 	void MTCT firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	void MTCT columnhandle(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	int MTCT getwidth(int charwidth);
@@ -90,6 +96,7 @@ public:
 class EffectColumn : public Column{
 public:
 	EffectColumn();
+	void MTCT init(MTPatternInstance*,ColumnStatus &status);
 	void MTCT firstpass(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	void MTCT columnhandle(MTPatternInstance*,unsigned char *celldata,FirstPass &pass,ColumnStatus &status,int tick,int nticks);
 	int MTCT getwidth(int charwidth);

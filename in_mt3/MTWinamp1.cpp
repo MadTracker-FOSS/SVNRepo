@@ -14,6 +14,7 @@
 #include "MTPluginInterface.h"
 #ifndef _WIN32
 #	include <stdio.h>
+#	include <stdlib.h>
 #endif
 //---------------------------------------------------------------------------
 WaveDevice wadevice;
@@ -50,7 +51,7 @@ void MTCT ri16(sample *source,void *dest,int count,int nchannels,int channel)
 			add		edi,eax
 			ALIGN	8
 		render:
-			fld	  a_sample ptr [esi]
+			fld		a_sample ptr [esi]
 			fmul	f32767
 			fistp	dword ptr [esp]
 			add		edi,ebx
@@ -76,10 +77,10 @@ void MTCT ri16(sample *source,void *dest,int count,int nchannels,int channel)
 		};
 #	else
 		asm ("\
+			mov		%[channel],%%eax\n\
 			subl	$4,%%esp\n\
 			testl	%%ecx,%%ecx\n\
 			jz		_mexit2\n\
-			mov		%[channel],%%eax\n\
 			sall	$1,%%ebx\n\
 			sall	$1,%%eax\n\
 			subl	%%ebx,%%edi\n\
@@ -122,12 +123,13 @@ int MTCT PlayerThread(MTThread *thread,void *param)
 
 	buf = (short*)si->memalloc(sizeof(short)*bufsamples,MTM_ZERO);
 	si->setprivatedata(0,si->memalloc(sizeof(sample)*PRIVATE_BUFFER,MTM_ZERO));
+	module->setpos(0);
 	module->play(PLAY_SONG);
-	while ((!thread->terminated) && (module->playstatus.flags==PLAY_SONG)){
+	while (!thread->terminated){
 #		ifdef _WIN32
 			if (module->playstatus.flags==PLAY_STOP){
 				mod.outMod->CanWrite();
-				if (mod.outMod->IsPlaying==0){
+				if (mod.outMod->IsPlaying()==0){
 					PostMessage(mod.hMainWindow,WM_USER+2,0,0);
 					break;
 				};
@@ -141,7 +143,11 @@ int MTCT PlayerThread(MTThread *thread,void *param)
 			waoutput.playlng = bufsamples/2;
 			mtmemzero(wadevice.master->buffer[0],waoutput.playlng*sizeof(sample));
 			mtmemzero(wadevice.master->buffer[1],waoutput.playlng*sizeof(sample));
-			module->process(&waoutput);
+			MTTRY
+				module->process(&waoutput);
+			MTCATCH
+				module->play(PLAY_STOP);
+			MTEND
 			ri16(wadevice.master->buffer[0],buf,waoutput.playlng,2,0);
 			ri16(wadevice.master->buffer[1],buf,waoutput.playlng,2,1);
 
@@ -151,6 +157,10 @@ int MTCT PlayerThread(MTThread *thread,void *param)
 			l = mod.dsp_dosamples(buf,waoutput.playlng,16,2,44100)*4;
 			mod.outMod->Write((char*)buf,l);
 #		else
+			if (module->playstatus.flags==PLAY_STOP){
+				si->syswait(50);
+				continue;
+			};
 			l = mod.output->buffer_free();
 			if (l<bufsamples*2){
 				si->syswait(50);
@@ -196,7 +206,7 @@ void init()
 #			ifdef _WIN32
 				MessageBox(0,"Cannot initialize the MTSystem extension!","System Error",MB_ICONEXCLAMATION|MB_OK);
 #			else
-				fprintf(stderr,"Cannot initialize the MTSystem extension!"NL);
+				fputs("Cannot initialize the MTSystem extension!"NL,stderr);
 #			endif
 			return;
 		};
@@ -265,11 +275,6 @@ int isourfile(char *fn)
 	};
 	return 0;
 }
-
-void seek(int time_in_ms)
-{
-
-}
 #ifdef _WIN32
 //---------------------------------------------------------------------------
 // Winamp only
@@ -286,36 +291,56 @@ void about(HWND hwndParent)
 
 int play(char *fn)
 {
+	FENTER1("play(%s)",fn);
 	if (strcmp(lastfile,fn)){
 		strcpy(lastfile,fn);
 		if (module){
+			module->play(PLAY_STOP);
 			if (playerthread) playerthread->terminate();
 			oi->deleteobject(module);
 		};
 		module = (MTModule*)oi->newobject(MTO_MODULE,0,0,0,true);
-		if (!module) return 1;
-		if (!oi->loadobject(module,fn,0)){
+		if (!module){
+			LOGD("%s - [in_mt3] Cannot create module object!"NL);
+			LEAVE();
+			return 1;
+		};
+		if (!oi->loadobject(module,lastfile,0)){
 			oi->deleteobject(module);
 			module = 0;
 		}
 		else module->lock(MTOL_LOCK,false);
 	};
-	if (!module) return -1;
+	if (!module){
+		LOGD("%s - [in_mt3] No module!"NL);
+		LEAVE();
+		return -1;
+	};
 	maxlatency = mod.outMod->Open(44100,2,16,-1,-1);
 	mod.SetInfo(module->ntracks*1000,44100/1000,2,1);
 	mod.SAVSAInit(maxlatency,44100);
 	mod.VSASetInfo(44100,2);
 	mod.outMod->SetVolume(-666);
 	if (!playerthread) playerthread = si->threadcreate(PlayerThread,true,true,module,MTT_HIGH);
+	LEAVE();
 	return 0;
 }
 
 void stop()
 {
+	ENTER("stop()");
 	mod.outMod->Close();
 	mod.SAVSADeInit();
 	if (playerthread) playerthread->terminate();
 	if (module)	module->play(PLAY_STOP);
+	LEAVE();
+}
+
+void seek(int time_in_ms)
+{
+	if (!module) return;
+	module->setpos(time_in_ms*module->playstatus.bpm/(1000*60));
+	mod.outMod->Flush(time_in_ms);
 }
 
 void pause()
@@ -337,7 +362,8 @@ int ispaused()
 
 int getlength()
 {
-	return -1000;
+	if (!module) return -1000;
+	return 1000*60*module->loope/module->playstatus.bpm;
 }
 
 int getoutputtime()
@@ -357,13 +383,28 @@ void setpan(int pan)
 
 void getfileinfo(char *filename,char *title,int *length_in_ms)
 {
+	MTMiniConfig *data;
+	double bpm,beats;
+
+	FENTER1("getfileinfo(%s)",filename);
 	if ((filename==0) || (filename[0]==0)){
 		if (module){
-			strcpy(title,module->name);
+			module->getdisplayname(title,256);
 		};
 	}
 	else{
+		data = si->miniconfigcreate();
+		if (oi->infoobject(data,filename,0)){
+			data->getparameter("title",title,MTCT_STRING,256);
+			bpm = 125.0;
+			beats = 0.0;
+			data->getparameter("bpm",&bpm,MTCT_FLOAT,sizeof(bpm));
+			data->getparameter("beats",&beats,MTCT_FLOAT,sizeof(beats));
+			*length_in_ms = 1000*60*beats/bpm;
+		};
+		si->miniconfigdelete(data);
 	};
+	LEAVE();
 }
 
 int infoDlg(char *fn,HWND hwnd)
@@ -391,6 +432,9 @@ void about()
 
 void play(char *fn)
 {
+	char title[256];
+
+	FENTER1("play(%s)",fn);
 	if (strcmp(lastfile,fn)){
 		strcpy(lastfile,fn);
 		if (module){
@@ -399,29 +443,42 @@ void play(char *fn)
 		};
 		module = (MTModule*)oi->newobject(MTO_MODULE,0,0,0,true);
 		if (!module){
+			LOGD("%s - [in_mt3] Could not create module object!"NL);
 			mod.set_info_text("Could not create module!");
 			return;
 		};
-		if (!oi->loadobject(module,fn,0)){
+		if (!oi->loadobject(module,lastfile,0)){
 			oi->deleteobject(module);
 			module = 0;
 		};
 		module->lock(MTOL_LOCK,false);
 	};
 	if (!module){
+		LOGD("%s - [in_mt3] No module!"NL);
 		mod.set_info_text("Could not load module!");
 		return;
 	};
+	module->getdisplayname(title,sizeof(title));
 	mod.output->open_audio(FMT_S16_NE,44100,2);
-	mod.set_info(module->name,-1,module->ntracks*1000,44100,2);
+	mod.set_info(title,1000*60*module->loope/module->playstatus.bpm,module->ntracks*1000,44100,2);
 	if (!playerthread) playerthread = si->threadcreate(PlayerThread,true,true,module,MTT_HIGH);
+	LEAVE();
 }
 
 void stop()
 {
+	ENTER("stop()");
 	mod.output->close_audio();
 	if (playerthread) playerthread->terminate();
 	if (module) module->play(PLAY_STOP);
+	LEAVE();
+}
+
+void seek(int time)
+{
+	if (!module) return;
+	module->setpos(time*module->playstatus.bpm/60);
+	mod.output->flush(time*1000);
 }
 
 void pause_unpause(short paused)
@@ -434,33 +491,35 @@ int getoutputtime()
 	return mod.output->output_time();
 }
 
-void getvolume(int *l,int *r)
-{
-
-}
-
-void setvolume(int l,int r)
-{
-
-}
-
 void getfileinfo(char *filename,char **title,int *length_in_ms)
 {
+	MTMiniConfig *data;
+	double bpm,beats;
+
+	FENTER1("getfileinfo(%s)",filename);
 	if ((filename==0) || (filename[0]==0)){
 		if (module){
-			*title = module->name;
+			*title = (char*)malloc(256);
+			module->getdisplayname(*title,256);
 		};
 	}
 	else{
+		data = si->miniconfigcreate();
+		if (oi->infoobject(data,filename,0)){
+			*title = (char*)malloc(256);
+			data->getparameter("title",*title,MTCT_STRING,256);
+			bpm = 125.0;
+			beats = 0.0;
+			data->getparameter("bpm",&bpm,MTCT_FLOAT,sizeof(bpm));
+			data->getparameter("beats",&beats,MTCT_FLOAT,sizeof(beats));
+			*length_in_ms = 1000*60*beats/bpm;
+		};
+		si->miniconfigdelete(data);
 	};
+	LEAVE();
 }
 
 void file_info_box(char *filename)
-{
-
-}
-
-void eq_set(int on,float preamp,float *bands) 
 {
 
 }
@@ -529,7 +588,7 @@ InputPlugin mod =
 	stop,
 	pause_unpause,
 	seek,
-	eq_set,
+	0,
 	getoutputtime,
 	0,
 	0,

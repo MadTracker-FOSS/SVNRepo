@@ -26,6 +26,7 @@ MTGUIInterface *gi;
 #include "../MTSystem/MTLocalFile.cpp"
 #include "../MTSystem/MTMD5.cpp"
 #include "../MTSystem/MTStructures.cpp"
+#include "../MTSystem/MTMiniConfig.cpp"
 #include "../MTSystem/MTSystem1.cpp"
 
 #include "../MTDSP/MTDSP1.cpp"

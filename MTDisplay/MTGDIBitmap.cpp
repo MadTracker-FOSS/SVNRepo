@@ -1365,7 +1365,7 @@ MTGDIMask::~MTGDIMask()
 void MTGDIMask::blur(int amount)
 {
 	if (!amount) return;
-	void *tmp = si->memalloc(mpitch*height);
+	void *tmp = si->memalloc(mpitch*height,0);
 	asm_blur(tmp,mbits,width,height,mpitch,amount);
 	si->memfree(tmp);
 }

@@ -18,17 +18,47 @@ static char retrigmul[16] = {0,0,0,0,0,0,11,8,0,0,0,0,0,0,24,32};
 //---------------------------------------------------------------------------
 void xmfirstpass(MTPatternInstance *pi,unsigned short command,FirstPass &pass,ColumnStatus &status,int tick,int nticks)
 {
+	register EffectData &ed = *(EffectData*)&status.data;
 	unsigned char fx = command>>8;
 	register unsigned char param = command & 0xFF;
 
 	if (tick) return;
-	if ((fx==0xE) && ((param>>4)==0xD)){
+	if (ed.needjump){
+		MTModule &cmod = *pi->module;
+		int x,y;
+		for (x=0,y=0;x<ed.needjump;x++){
+			if (x>=pi->module->nsequ[1]) break;
+			y += ceil(cmod.sequ[1][x].length/A(cmod.patt,MTPattern)[cmod.sequ[1][x].patt]->nbeats);
+			if (y>=ed.needjump){
+				y -= ed.needjump;
+				cmod.setpos(cmod.sequ[1][x].pos+A(cmod.patt,MTPattern)[cmod.sequ[1][x].patt]->nbeats*y,true);
+				break;
+			};
+		};
+		ed.needjump = 0;
+		status.nextevent = -2.0;
+	}
+	else if (ed.needbreak){
+		pi->module->setpos(pi->sequ->pos+pi->sequ->length,true);
+		ed.needbreak = false;
+		status.nextevent = -2.0;
+	};
+	if ((fx==0x3) && (pass.flags & MTFP_ISNOTE)){
+		pass.delay = -1.0;
+		pass.flags &= (~MTFP_ISNOTE);
+	}
+	else if ((fx==0xE) && ((param>>4)==0xD)){
 		param &= 0xF;
 		pass.delay = (double)param/nticks-status.cpos;
 	}
-	else if ((fx==0x3) && (pass.flags & MTFP_ISNOTE)){
-		pass.delay = -1.0;
-		pass.flags &= (~MTFP_ISNOTE);
+	else if (fx==0xF){
+		if (param>=32){
+			pi->module->playstatus.bpm = param;
+		}
+		else if (param>0){
+			pi->module->playstatus.bpm = pi->module->playstatus.bpm*pi->nticks/param;
+			pi->nticks = param;
+		};
 	};
 }
 
@@ -37,7 +67,7 @@ double xmcommand(MTPatternInstance *pi,unsigned short command,FirstPass &pass,Co
 	register EffectData &ed = *(EffectData*)&status.data;
 	NoteData *nd = (NoteData*)&pi->getnotestatus()->data;
 	unsigned char fx = command>>8;
-	register unsigned char param = command & 0xFF;
+	register mt_uint8 param = command & 0xFF;
 	int x;
 	static MTIParamEvent pe[2] = {{0,MTIE_PARAM,0.0,0,sizeof(MTIParamEvent)},{0,MTIE_PARAM,0.0,0,sizeof(MTIParamEvent)}};
 	static MTIParamEvent *cpe = pe;
@@ -181,12 +211,20 @@ double xmcommand(MTPatternInstance *pi,unsigned short command,FirstPass &pass,Co
 			pi->sendevents(1,(MTIEvent**)&cpe);
 		};
 		return 1.0/nticks;
+// Position jump
+	case 0xB:
+		ed.needjump = param;
+		break;
 // Set volume
 	case 0xC:
 		pe[0].param = MTIP_VOLUME;
 		pe[0].flags = MTIEF_DONTSATURATE;
 		pe[0].dvalue1 = /*pass.volume**/((double)param/64.0);
 		pi->sendevents(1,(MTIEvent**)&cpe);
+		break;
+// Pattern break
+	case 0xD:
+		ed.needbreak = true;
 		break;
 // Extended commands
 	case 0xE:
@@ -244,6 +282,9 @@ double xmcommand(MTPatternInstance *pi,unsigned short command,FirstPass &pass,Co
 		case 0xC:
 			break;
 		};
+		break;
+// Set tempo
+	case 0xF:
 		break;
 // Global volume
 	case 0x10:

@@ -497,7 +497,7 @@ void MTEdit::undo()
 
 	isnew = false;
 	if (oldtext){
-		newtext = (char*)si->memalloc(strlen(text)+1);
+		newtext = (char*)si->memalloc(strlen(text)+1,0);
 		strcpy(newtext,text);
 		strcpy(text,oldtext);
 		si->memfree(oldtext);
@@ -510,7 +510,7 @@ void MTEdit::undo()
 		oldselend = newselend;
 	}
 	else if (text[0]){
-		oldtext = (char*)si->memalloc(strlen(text)+1);
+		oldtext = (char*)si->memalloc(strlen(text)+1,0);
 		strcpy(oldtext,text);
 		oldselstart = selstart;
 		oldselend = selend;
@@ -524,7 +524,7 @@ void MTEdit::modify()
 {
 	if (!isnew){
 		if (oldtext) si->memfree(oldtext);
-		oldtext = (char*)si->memalloc(strlen(text)+1);
+		oldtext = (char*)si->memalloc(strlen(text)+1,0);
 		strcpy(oldtext,text);
 		oldselstart = selstart;
 		oldselend = selend;

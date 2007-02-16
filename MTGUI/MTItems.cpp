@@ -509,7 +509,7 @@ int MTItemView::loadfromstream(MTFile *f,int size,int flags)
 	csize += 12;
 	for (x=0;x<nc;x++){
 		f->read(&psize,4);
-		caption = (char*)si->memalloc(psize);
+		caption = (char*)si->memalloc(psize,0);
 		f->read(caption,psize);
 		f->read(&itemdata,sizeof(itemdata));
 		additem(caption,itemdata.image,itemdata.flags,itemdata.editable,0);
@@ -1312,7 +1312,7 @@ process(0)
 	viewflags |= MTVF_IMAGES;
 	guiid = MTC_FILELISTBOX;
 	gi->setcontrolname(this,"file");
-	path = (char*)si->memalloc(1024);
+	path = (char*)si->memalloc(1024,0);
 	setpath(0);
 }
 
@@ -1336,7 +1336,7 @@ void MTFileListBox::additem(const char *c,int type,int imageindex)
 
 	entry.type = type;
 	entry.imageindex = imageindex;
-	entry.filename = (char*)si->memalloc(strlen(c)+1);
+	entry.filename = (char*)si->memalloc(strlen(c)+1,0);
 	strcpy(entry.filename,c);
 	entries->push(&entry);
 }
@@ -1362,6 +1362,7 @@ void MTFileListBox::setpath(const char *p)
 	int x;
 	char *s;
 
+//TODO Linux
 	if (process){
 		gi->setmouseshape(DCUR_BACKGROUND);
 		process->terminate();

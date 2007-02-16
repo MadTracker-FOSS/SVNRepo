@@ -130,13 +130,14 @@ public:
 	virtual void MTCT disabletracks();
 	virtual int MTCT getpattpos(int layer,double pos,double *offset,int *cseq,int from = 0);
 	virtual int MTCT getsequence(int layer,double pos,int last);
-	virtual void MTCT play(int mode);
-	virtual void MTCT setpos(double pos);
-	virtual void MTCT settempo(int ctempo,int param,void *value);
+	virtual void MTCT play(int mode,bool fromengine = false);
+	virtual void MTCT setpos(double pos,bool fromengine = false);
+	virtual void MTCT settempo(int ctempo,int param,void *value,bool fromengine = false);
 	virtual bool MTCT process(WaveOutput *output);
 	virtual bool MTCT addchannel(InstrumentInstance *c);
 	virtual void MTCT delchannel(InstrumentInstance *c);
 	virtual void MTCT resetchannels();
+	virtual void MTCT resetpatterns();
 	virtual InstrumentInstance* MTCT getlessimportantchannel(int *importance);
 	virtual double MTCT beatstosamples(double nbeats);
 	virtual double MTCT samplestobeats(double nsamples);
@@ -153,7 +154,7 @@ private:
 	MTArray *buffers;
 	MTArray *ris;
 	void *mts;
-	bool MTCT subprocess(WaveOutput *output,int = 0,int = 0,bool silence = false);
+	bool MTCT subprocess(WaveOutput *output,int = 0,double = 0.0,int = 0,bool silence = false);
 };
 //---------------------------------------------------------------------------
 #include "MTPattern.h"
